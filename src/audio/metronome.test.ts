@@ -89,10 +89,11 @@ describe('ToneMetronome', () => {
     expect(onPulse).not.toHaveBeenCalled();
   });
 
-  it('stops the transport on stop()', () => {
+  it('stops only its own loop on stop(), leaving Tone.Transport running for sequence playback', () => {
     const metronome = new ToneMetronome();
     metronome.start();
     metronome.stop();
-    expect(transportStop).toHaveBeenCalled();
+    expect(loopStop).toHaveBeenCalled();
+    expect(transportStop).not.toHaveBeenCalled();
   });
 });

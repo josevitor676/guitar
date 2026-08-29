@@ -26,8 +26,10 @@ export class ToneMetronome implements IMetronome {
   }
 
   stop(): void {
+    // Only stop this metronome's own loop. Tone.Transport is shared with
+    // sequence playback, which must keep running independently of the
+    // metronome (see spec Global Constraints).
     this.loop?.stop();
-    Tone.Transport.stop();
   }
 
   setBpm(bpm: number): void {
