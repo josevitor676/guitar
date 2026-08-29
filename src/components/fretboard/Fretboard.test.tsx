@@ -17,10 +17,13 @@ describe('Fretboard', () => {
     toggleNote.mockClear();
   });
 
-  it('renders one row per string with the string tuning label', () => {
+  it('renders one row per string with the string tuning label (no octave)', () => {
     render(<Fretboard currentIndex={null} />);
-    expect(screen.getByText('E2')).toBeInTheDocument();
-    expect(screen.getByText('E4')).toBeInTheDocument();
+    expect(screen.getAllByText('E')).toHaveLength(2);
+    expect(screen.getByText('A')).toBeInTheDocument();
+    expect(screen.getByText('D')).toBeInTheDocument();
+    expect(screen.getByText('G')).toBeInTheDocument();
+    expect(screen.getByText('B')).toBeInTheDocument();
   });
 
   it('renders a clickable cell for every string/fret combination in range', () => {
