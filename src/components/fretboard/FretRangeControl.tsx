@@ -8,7 +8,7 @@ export function FretRangeControl({ minFret, maxFret, onChange }: FretRangeContro
   const span = maxFret - minFret;
 
   const goToPrevious = () => {
-    const nextMin = Math.max(0, minFret - 1);
+    const nextMin = Math.max(1, minFret - 1);
     onChange(nextMin, nextMin + span);
   };
 
