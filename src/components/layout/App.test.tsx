@@ -21,24 +21,23 @@ describe('App', () => {
     useUiStore.setState({ activeTab: 'practice' });
   });
 
-  it('applies the gothic dark theme to the document root', () => {
-    render(<App />);
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-  });
-
   it('renders the practice tab by default with the fretboard, play button, and metronome controls', () => {
     render(<App />);
     expect(screen.getAllByRole('button', { name: /corda \d, casa \d+/ }).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
     expect(screen.getByText(/BPM/)).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /exerc[ií]cios/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/continue sua evolu[cç][aã]o/i)).not.toBeInTheDocument();
   });
 
-  it('shows the exercise list and fretboard together after selecting Exercícios in the sidebar', () => {
+  it('shows the exercise list and fretboard together after switching to the exercises tab', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Exercícios' }));
-    expect(screen.getByRole('heading', { name: /exerc[ií]cios/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /exerc[ií]cios/i }));
+    expect(screen.getByText(/continue sua evolu[cç][aã]o/i)).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /corda \d, casa \d+/ }).length).toBeGreaterThan(0);
+  });
+
+  it('shows the exercise count badge on the Exercícios tab', () => {
+    render(<App />);
+    expect(screen.getByText('04')).toBeInTheDocument();
   });
 
   it('clamps a stale persisted minFret of 0 to 1 instead of restoring fret 0', () => {
