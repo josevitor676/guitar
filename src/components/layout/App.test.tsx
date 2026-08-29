@@ -44,4 +44,9 @@ describe('App', () => {
     render(<App />);
     expect(screen.queryByRole('button', { name: /casa 0$/ })).not.toBeInTheDocument();
   });
+
+  it('applies the gothic dark theme to the document root', () => {
+    render(<App />);
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+  });
 });

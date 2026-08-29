@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { Theme } from '@astryxdesign/core/theme';
+import { gothicTheme } from '@astryxdesign/theme-gothic/built';
 import { Fretboard } from '../fretboard/Fretboard';
 import { FretRangeControl } from '../fretboard/FretRangeControl';
 import { MetronomeControls } from '../metronome/MetronomeControls';
@@ -40,49 +42,51 @@ export function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6 font-medium tracking-wide text-zinc-100">
-      <h1 className="mb-6 text-2xl font-bold tracking-wide">Guitar Teacher</h1>
+    <Theme theme={gothicTheme} mode="dark">
+      <div className="min-h-screen bg-zinc-950 p-6 font-medium tracking-wide text-zinc-100">
+        <h1 className="mb-6 text-2xl font-bold tracking-wide">Guitar Teacher</h1>
 
-      {!samplerLoaded && (
-        <p className="mb-4 text-sm text-amber-400" role="status">
-          Carregando sons...
-        </p>
-      )}
+        {!samplerLoaded && (
+          <p className="mb-4 text-sm text-amber-400" role="status">
+            Carregando sons...
+          </p>
+        )}
 
-      <Tabs tabs={TABS} activeTabId={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
+        <Tabs tabs={TABS} activeTabId={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
 
-      {activeTab === 'practice' && (
-        <div className="mt-6">
-          <div className="mb-4 flex items-center gap-4">
-            <FretRangeControl minFret={minFret} maxFret={maxFret} onChange={setFretRange} />
-            <PulseIndicator currentPulse={currentPulse} isPlaying={isPlaying} />
-          </div>
+        {activeTab === 'practice' && (
+          <div className="mt-6">
+            <div className="mb-4 flex items-center gap-4">
+              <FretRangeControl minFret={minFret} maxFret={maxFret} onChange={setFretRange} />
+              <PulseIndicator currentPulse={currentPulse} isPlaying={isPlaying} />
+            </div>
 
-          <Fretboard currentIndex={currentIndex} />
-
-          <div className="mt-6 flex items-center gap-6">
-            <PlayButton />
-            <MetronomeControls />
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'exercises' && (
-        <div className="mt-6 flex flex-col gap-6 lg:flex-row">
-          <div className="lg:w-64">
-            <h2 className="mb-2 text-lg font-semibold tracking-wide">Exercícios</h2>
-            <ExerciseList />
-          </div>
-
-          <div>
             <Fretboard currentIndex={currentIndex} />
+
             <div className="mt-6 flex items-center gap-6">
               <PlayButton />
               <MetronomeControls />
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {activeTab === 'exercises' && (
+          <div className="mt-6 flex flex-col gap-6 lg:flex-row">
+            <div className="lg:w-64">
+              <h2 className="mb-2 text-lg font-semibold tracking-wide">Exercícios</h2>
+              <ExerciseList />
+            </div>
+
+            <div>
+              <Fretboard currentIndex={currentIndex} />
+              <div className="mt-6 flex items-center gap-6">
+                <PlayButton />
+                <MetronomeControls />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </Theme>
   );
 }
