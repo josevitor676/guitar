@@ -844,7 +844,7 @@ git commit -m "feat(domain): add exercise types and initial hardcoded catalog"
 
 **Interfaces:**
 - Consumes: `Tone` (mocked in tests).
-- Produces: `INoteSampler { isLoaded(): boolean; playNote(frequencyHz: number, durationSeconds: number): void }`, `ToneNoteSampler implements INoteSampler`. Used by Task 10 (`sequence-player.ts`) and Task 11 (singleton wiring).
+- Produces: `INoteSampler { isLoaded(): boolean; playNote(frequencyHz: number, duration: number | string): void }`, `ToneNoteSampler implements INoteSampler`. `duration` accepts either seconds (a plain number, used for immediate click-to-preview playback) or Tone.js notation (e.g. `'4n'`, used when playing a scheduled sequence note) — both are valid `Tone.Unit.Time` values that `Tone.Sampler.triggerAttackRelease` accepts natively. Used by Task 10 (`sequence-player.ts`) and Task 11 (singleton wiring).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -916,7 +916,7 @@ import type { Subdivision } from '../domain/music-theory/rhythm';
 
 export interface INoteSampler {
   isLoaded(): boolean;
-  playNote(frequencyHz: number, durationSeconds: number): void;
+  playNote(frequencyHz: number, duration: number | string): void;
 }
 
 export interface IMetronome {
@@ -971,9 +971,9 @@ export class ToneNoteSampler implements INoteSampler {
     return this.loaded;
   }
 
-  playNote(frequencyHz: number, durationSeconds: number): void {
+  playNote(frequencyHz: number, duration: number | string): void {
     if (!this.loaded) return;
-    this.sampler.triggerAttackRelease(frequencyHz, durationSeconds);
+    this.sampler.triggerAttackRelease(frequencyHz, duration);
   }
 }
 ```
@@ -1302,8 +1302,11 @@ import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
 export class ToneSequencePlayer implements ISequencePlayer {
   private sequence: Tone.Sequence | null = null;
   private listeners = new Set<(index: number) => void>();
+  private readonly sampler: INoteSampler;
 
-  constructor(private readonly sampler: INoteSampler) {}
+  constructor(sampler: INoteSampler) {
+    this.sampler = sampler;
+  }
 
   play(notes: { frequency: number }[], bpm: number, subdivision: Subdivision): void {
     this.stop();
