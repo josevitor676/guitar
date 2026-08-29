@@ -5,7 +5,7 @@ import { PulseIndicator } from './PulseIndicator';
 describe('PulseIndicator', () => {
   it('is dim when not playing', () => {
     render(<PulseIndicator currentPulse={0} isPlaying={false} />);
-    expect(screen.getByTestId('pulse-indicator')).toHaveClass('bg-neutral-700');
+    expect(screen.getByTestId('pulse-indicator')).toHaveClass('bg-zinc-700');
   });
 
   it('is lit when playing', () => {

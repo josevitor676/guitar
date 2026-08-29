@@ -20,11 +20,14 @@ export function ExerciseList() {
             type="button"
             onClick={() => selectExercise(exercise.id)}
             aria-pressed={exercise.id === activeExerciseId}
-            className="w-full rounded bg-neutral-800 px-3 py-2 text-left text-neutral-200 hover:bg-neutral-700"
+            className={[
+              'w-full rounded border px-3 py-2 text-left font-medium tracking-wide transition-all duration-200',
+              exercise.id === activeExerciseId
+                ? 'border-amber-400/50 bg-zinc-800 text-zinc-100'
+                : 'border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800',
+            ].join(' ')}
           >
-            <span className="mr-2 text-xs uppercase text-neutral-500">
-              {CATEGORY_LABELS[exercise.category]}
-            </span>
+            <span className="mr-2 text-xs uppercase text-zinc-500">{CATEGORY_LABELS[exercise.category]}</span>
             {exercise.name}
           </button>
         </li>

@@ -12,12 +12,20 @@ export function MetronomeControls() {
   const { bpm, subdivision, setBpm, setSubdivision } = useMetronome();
 
   return (
-    <div className="flex items-center gap-4 text-neutral-200">
-      <button type="button" onClick={() => setBpm(bpm - 5)} className="rounded bg-neutral-800 px-3 py-1">
+    <div className="flex items-center gap-4 font-medium tracking-wide text-zinc-200">
+      <button
+        type="button"
+        onClick={() => setBpm(bpm - 5)}
+        className="rounded bg-zinc-800 px-3 py-1 transition-all duration-200 hover:bg-zinc-700 active:scale-95"
+      >
         -
       </button>
       <span>{bpm} BPM</span>
-      <button type="button" onClick={() => setBpm(bpm + 5)} className="rounded bg-neutral-800 px-3 py-1">
+      <button
+        type="button"
+        onClick={() => setBpm(bpm + 5)}
+        className="rounded bg-zinc-800 px-3 py-1 transition-all duration-200 hover:bg-zinc-700 active:scale-95"
+      >
         +
       </button>
 
@@ -26,7 +34,7 @@ export function MetronomeControls() {
         <select
           value={subdivision}
           onChange={(event) => setSubdivision(event.target.value as Subdivision)}
-          className="rounded bg-neutral-800 px-2 py-1"
+          className="rounded bg-zinc-800 px-2 py-1 transition-all duration-200"
         >
           {Object.entries(SUBDIVISION_LABELS).map(([value, label]) => (
             <option key={value} value={value}>

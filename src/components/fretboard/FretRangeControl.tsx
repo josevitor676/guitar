@@ -17,14 +17,22 @@ export function FretRangeControl({ minFret, maxFret, onChange }: FretRangeContro
   };
 
   return (
-    <div className="flex items-center gap-2 text-sm text-neutral-300">
-      <button type="button" onClick={goToPrevious} className="rounded bg-neutral-800 px-2 py-1">
+    <div className="flex items-center gap-2 text-sm font-medium tracking-wide text-zinc-300">
+      <button
+        type="button"
+        onClick={goToPrevious}
+        className="rounded bg-zinc-800 px-2 py-1 transition-all duration-200 hover:bg-zinc-700 active:scale-95"
+      >
         Anterior
       </button>
       <span>
         Casas {minFret}-{maxFret}
       </span>
-      <button type="button" onClick={goToNext} className="rounded bg-neutral-800 px-2 py-1">
+      <button
+        type="button"
+        onClick={goToNext}
+        className="rounded bg-zinc-800 px-2 py-1 transition-all duration-200 hover:bg-zinc-700 active:scale-95"
+      >
         Próximo
       </button>
     </div>
