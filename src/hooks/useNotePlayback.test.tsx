@@ -3,6 +3,8 @@ import { renderHook, act } from '@testing-library/react';
 import { useFretboardStore } from '../state/fretboard-store';
 import { useMetronomeStore } from '../state/metronome-store';
 import { usePlaybackStore } from '../state/playback-store';
+import { getNoteAt } from '../domain/music-theory/notes';
+import { STANDARD_TUNING } from '../domain/music-theory/tuning';
 
 const { play, stop, onNoteChange, ensureAudioStarted } = vi.hoisted(() => ({
   play: vi.fn(),
@@ -71,5 +73,26 @@ describe('useNotePlayback', () => {
 
     expect(a.result.current.currentIndex).toBeNull();
     expect(a.result.current.isPlaying).toBe(false);
+  });
+
+  it('preserves the exact click order the user selected (F#, C, F#, G, C#, B), without sorting by string/fret and without deduping repeated note names', async () => {
+    const clickOrder = [
+      { string: 6, fret: 2 }, // F#2
+      { string: 2, fret: 1 }, // C4
+      { string: 1, fret: 2 }, // F#4 (same note name as the first, different position)
+      { string: 1, fret: 3 }, // G4
+      { string: 2, fret: 2 }, // C#4
+      { string: 2, fret: 0 }, // B3
+    ];
+    useFretboardStore.setState({ selectedNotes: clickOrder });
+
+    const { result } = renderHook(() => useNotePlayback());
+    await act(async () => {
+      await result.current.play();
+    });
+
+    const [notes] = play.mock.calls[0];
+    const expectedFrequencies = clickOrder.map((position) => getNoteAt(STANDARD_TUNING, position).frequency);
+    expect(notes.map((note: { frequency: number }) => note.frequency)).toEqual(expectedFrequencies);
   });
 });

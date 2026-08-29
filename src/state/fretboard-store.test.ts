@@ -61,4 +61,14 @@ describe('useFretboardStore', () => {
       { string: 2, fret: 1 },
     ]);
   });
+
+  it('keeps both positions selected when they produce the same note name at different frets/strings (F# on string 6 fret 2, and F# on string 1 fret 2)', () => {
+    const store = useFretboardStore.getState();
+    store.toggleNote({ string: 6, fret: 2 }); // F#2
+    store.toggleNote({ string: 1, fret: 2 }); // F#4
+    expect(useFretboardStore.getState().selectedNotes).toEqual([
+      { string: 6, fret: 2 },
+      { string: 1, fret: 2 },
+    ]);
+  });
 });
