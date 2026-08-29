@@ -49,4 +49,19 @@ describe('Fretboard', () => {
     expect(screen.queryByTestId('inlay-fret-1')).not.toBeInTheDocument();
     expect(screen.queryByTestId('inlay-fret-2')).not.toBeInTheDocument();
   });
+
+  it('applies a glow/ring style to a selected fret marker', () => {
+    useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [{ string: 6, fret: 1 }] });
+    render(<Fretboard currentIndex={null} />);
+    const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
+    expect(cell.className).toMatch(/ring-2/);
+    expect(cell.className).toMatch(/shadow-/);
+  });
+
+  it('applies a stronger glow to the currently highlighted marker during playback', () => {
+    useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [{ string: 6, fret: 1 }] });
+    render(<Fretboard currentIndex={0} />);
+    const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
+    expect(cell.className).toMatch(/ring-amber-200/);
+  });
 });
