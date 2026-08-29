@@ -36,3 +36,11 @@ export function getNoteAt(tuning: Tuning, position: FretPosition): Note {
   const { pitchClass, octave } = midiToNoteName(midi);
   return { pitchClass, octave, midi, frequency: midiToFrequency(midi) };
 }
+
+export function getPitchClass(noteName: string): string {
+  const match = /^([A-G]#?)-?\d+$/.exec(noteName);
+  if (!match) {
+    throw new Error(`Invalid note name: ${noteName}`);
+  }
+  return match[1];
+}

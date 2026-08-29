@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { noteNameToMidi, midiToNoteName, midiToFrequency, getNoteAt } from './notes';
+import { noteNameToMidi, midiToNoteName, midiToFrequency, getNoteAt, getPitchClass } from './notes';
 import { STANDARD_TUNING } from './tuning';
 
 describe('noteNameToMidi', () => {
@@ -52,5 +52,19 @@ describe('getNoteAt', () => {
   it('computes the correct frequency for string 1 open (E4)', () => {
     const note = getNoteAt(STANDARD_TUNING, { string: 1, fret: 0 });
     expect(note.frequency).toBeCloseTo(329.63, 1);
+  });
+});
+
+describe('getPitchClass', () => {
+  it('strips the octave from a natural note name', () => {
+    expect(getPitchClass('E2')).toBe('E');
+  });
+
+  it('strips the octave from a sharp note name', () => {
+    expect(getPitchClass('C#4')).toBe('C#');
+  });
+
+  it('handles negative octaves', () => {
+    expect(getPitchClass('A-1')).toBe('A');
   });
 });
