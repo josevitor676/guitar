@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useMetronomeStore } from '../../state/metronome-store';
+import { useUiStore } from '../../state/ui-store';
 
 vi.mock('../../audio', () => ({
   sampler: { isLoaded: () => true, playNote: vi.fn() },
@@ -17,13 +18,21 @@ describe('App', () => {
     localStorage.clear();
     useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });
     useMetronomeStore.setState({ bpm: 100, subdivision: 'quarter', isPlaying: false, currentPulse: 0 });
+    useUiStore.setState({ activeTab: 'practice' });
   });
 
-  it('renders the fretboard, play button, metronome controls and exercise list together', () => {
+  it('renders the practice tab by default with the fretboard, play button, and metronome controls', () => {
     render(<App />);
     expect(screen.getAllByRole('button', { name: /corda \d, casa \d+/ }).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
     expect(screen.getByText(/BPM/)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /exerc[ií]cios/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the exercise list and fretboard together after switching to the exercises tab', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('tab', { name: /exerc[ií]cios/i }));
     expect(screen.getByRole('heading', { name: /exerc[ií]cios/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /corda \d, casa \d+/ }).length).toBeGreaterThan(0);
   });
 });
