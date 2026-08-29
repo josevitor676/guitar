@@ -77,4 +77,10 @@ describe('Fretboard', () => {
       'corda 6, casa 1',
     ]);
   });
+
+  it('renders a vertical fret-line marker after every visible fret', () => {
+    render(<Fretboard currentIndex={null} />);
+    expect(screen.getByTestId('fret-line-1')).toBeInTheDocument();
+    expect(screen.getByTestId('fret-line-7')).toBeInTheDocument();
+  });
 });
