@@ -25,17 +25,25 @@ describe('useExerciseStore', () => {
     expect(useFretboardStore.getState().selectedNotes).toEqual(first.positions);
   });
 
-  it('widens the visible fret range to cover an exercise whose positions fall outside the default range', () => {
-    const exercise = EXERCISE_CATALOG.find((item) => item.id === 'scale-c-major-open-position');
-    expect(exercise).toBeDefined();
-    expect(exercise!.positions.some((p) => p.fret === 0)).toBe(true);
+  it('widens the visible fret range to cover an exercise whose positions fall outside the current range', () => {
+    useFretboardStore.setState({ minFret: 5, maxFret: 10 });
+    const exercise = EXERCISE_CATALOG.find((item) => item.id === 'warmup-1234-low-e')!;
 
-    useExerciseStore.getState().selectExercise(exercise!.id);
+    useExerciseStore.getState().selectExercise(exercise.id);
 
     const { minFret, maxFret } = useFretboardStore.getState();
-    const frets = exercise!.positions.map((p) => p.fret);
+    const frets = exercise.positions.map((position) => position.fret);
     expect(minFret).toBeLessThanOrEqual(Math.min(...frets));
     expect(maxFret).toBeGreaterThanOrEqual(Math.max(...frets));
+  });
+
+  it('never widens the visible range below fret 1', () => {
+    useFretboardStore.setState({ minFret: 5, maxFret: 10 });
+    const exercise = EXERCISE_CATALOG.find((item) => item.id === 'scale-c-major-open-position')!;
+
+    useExerciseStore.getState().selectExercise(exercise.id);
+
+    expect(useFretboardStore.getState().minFret).toBeGreaterThanOrEqual(1);
   });
 
   it('does nothing when selecting an unknown exercise id', () => {

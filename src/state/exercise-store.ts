@@ -16,13 +16,13 @@ export const useExerciseStore = create<ExerciseState>((set) => ({
     fretboardStore.loadSequence(exercise.positions);
 
     const exerciseFrets = exercise.positions.map((position) => position.fret);
-    const exerciseMinFret = Math.min(...exerciseFrets);
+    const exerciseMinFret = Math.max(1, Math.min(...exerciseFrets));
     const exerciseMaxFret = Math.max(...exerciseFrets);
     const { minFret, maxFret } = useFretboardStore.getState();
     if (exerciseMinFret < minFret || exerciseMaxFret > maxFret) {
       useFretboardStore
         .getState()
-        .setFretRange(Math.min(minFret, exerciseMinFret), Math.max(maxFret, exerciseMaxFret));
+        .setFretRange(Math.max(1, Math.min(minFret, exerciseMinFret)), Math.max(maxFret, exerciseMaxFret));
     }
 
     set({ activeExerciseId: id });

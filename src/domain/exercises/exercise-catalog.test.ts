@@ -26,4 +26,10 @@ describe('EXERCISE_CATALOG', () => {
       expect(exercise.positions.length).toBeGreaterThan(0);
     }
   });
+
+  it('never includes fret 0 (open string) positions', () => {
+    for (const exercise of EXERCISE_CATALOG) {
+      expect(exercise.positions.every((position) => position.fret >= 1)).toBe(true);
+    }
+  });
 });

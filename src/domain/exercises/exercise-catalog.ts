@@ -29,8 +29,8 @@ export const EXERCISE_CATALOG: Exercise[] = [
     name: 'Escala Maior de Dó (posição aberta)',
     category: 'escala',
     positions: generatePositionsForPattern(STANDARD_TUNING, 'C', SCALE_PATTERNS.major, {
-      minFret: 0,
-      maxFret: 3,
+      minFret: 1,
+      maxFret: 4,
     }),
   },
   {
@@ -38,8 +38,8 @@ export const EXERCISE_CATALOG: Exercise[] = [
     name: 'Arpejo Maior de Dó (posição aberta)',
     category: 'arpejo',
     positions: generatePositionsForPattern(STANDARD_TUNING, 'C', ARPEGGIO_PATTERNS.majorTriad, {
-      minFret: 0,
-      maxFret: 3,
+      minFret: 1,
+      maxFret: 4,
     }),
   },
 ];
