@@ -32,7 +32,7 @@ export function App() {
   useEffect(() => {
     const preferences = loadPreferences();
     if (preferences) {
-      useFretboardStore.getState().setFretRange(preferences.minFret, preferences.maxFret);
+      useFretboardStore.getState().setFretRange(Math.max(1, preferences.minFret), preferences.maxFret);
       useMetronomeStore.getState().setBpm(preferences.bpm);
       useMetronomeStore.getState().setSubdivision(preferences.subdivision);
     }

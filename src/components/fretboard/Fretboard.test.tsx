@@ -64,4 +64,17 @@ describe('Fretboard', () => {
     const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
     expect(cell.className).toMatch(/ring-amber-200/);
   });
+
+  it('renders string 1 (high E) on top and string 6 (low E) on the bottom', () => {
+    render(<Fretboard currentIndex={null} />);
+    const cells = screen.getAllByRole('button', { name: /corda \d, casa 1$/ });
+    expect(cells.map((cell) => cell.getAttribute('aria-label'))).toEqual([
+      'corda 1, casa 1',
+      'corda 2, casa 1',
+      'corda 3, casa 1',
+      'corda 4, casa 1',
+      'corda 5, casa 1',
+      'corda 6, casa 1',
+    ]);
+  });
 });

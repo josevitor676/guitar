@@ -13,7 +13,7 @@ describe('EXERCISE_CATALOG', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('has only valid fret positions (frets 0-24, strings 1-6)', () => {
+  it('has only structurally valid fret positions (any fret 0-24, any string 1-6)', () => {
     for (const exercise of EXERCISE_CATALOG) {
       for (const position of exercise.positions) {
         expect(isValidPosition(position, { minFret: 0, maxFret: 24 })).toBe(true);
