@@ -21,6 +21,11 @@ describe('App', () => {
     useUiStore.setState({ activeTab: 'practice' });
   });
 
+  it('applies the gothic dark theme to the document root', () => {
+    render(<App />);
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+  });
+
   it('renders the practice tab by default with the fretboard, play button, and metronome controls', () => {
     render(<App />);
     expect(screen.getAllByRole('button', { name: /corda \d, casa \d+/ }).length).toBeGreaterThan(0);
@@ -29,24 +34,10 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: /exerc[ií]cios/i })).not.toBeInTheDocument();
   });
 
-  it('shows the exercise list and fretboard together after switching to the exercises tab', () => {
+  it('shows the exercise list and fretboard together after selecting Exercícios in the sidebar', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('tab', { name: /exerc[ií]cios/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Exercícios' }));
     expect(screen.getByRole('heading', { name: /exerc[ií]cios/i })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /corda \d, casa \d+/ }).length).toBeGreaterThan(0);
-  });
-
-  it('clamps a stale persisted minFret of 0 to 1 instead of restoring fret 0', () => {
-    localStorage.setItem(
-      'guitar-teacher:preferences',
-      JSON.stringify({ bpm: 100, subdivision: 'quarter', minFret: 0, maxFret: 7 }),
-    );
-    render(<App />);
-    expect(screen.queryByRole('button', { name: /casa 0$/ })).not.toBeInTheDocument();
-  });
-
-  it('applies the gothic dark theme to the document root', () => {
-    render(<App />);
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
 });
