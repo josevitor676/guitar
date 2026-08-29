@@ -36,4 +36,9 @@ describe('MetronomeControls', () => {
     fireEvent.change(screen.getByLabelText(/figura r[ií]tmica/i), { target: { value: 'eighth' } });
     expect(useMetronomeStore.getState().subdivision).toBe('eighth');
   });
+
+  it('does not render a metronome start/stop button', () => {
+    render(<MetronomeControls />);
+    expect(screen.queryByRole('button', { name: /metr[oô]nomo/i })).not.toBeInTheDocument();
+  });
 });

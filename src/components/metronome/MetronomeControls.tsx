@@ -9,7 +9,7 @@ const SUBDIVISION_LABELS: Record<Subdivision, string> = {
 };
 
 export function MetronomeControls() {
-  const { bpm, subdivision, isPlaying, setBpm, setSubdivision, start, stop } = useMetronome();
+  const { bpm, subdivision, setBpm, setSubdivision } = useMetronome();
 
   return (
     <div className="flex items-center gap-4 text-neutral-200">
@@ -35,14 +35,6 @@ export function MetronomeControls() {
           ))}
         </select>
       </label>
-
-      <button
-        type="button"
-        onClick={() => (isPlaying ? stop() : start())}
-        className="rounded bg-amber-500 px-3 py-1 text-neutral-900"
-      >
-        {isPlaying ? 'Parar' : 'Iniciar'} metrônomo
-      </button>
     </div>
   );
 }
