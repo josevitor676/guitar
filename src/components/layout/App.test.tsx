@@ -40,4 +40,15 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /exerc[ií]cios/i })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /corda \d, casa \d+/ }).length).toBeGreaterThan(0);
   });
+
+  it('clamps a stale persisted minFret of 0 to 1 instead of restoring fret 0', () => {
+    localStorage.setItem(
+      'guitar-teacher:preferences',
+      JSON.stringify({ bpm: 100, subdivision: 'quarter', minFret: 0, maxFret: 7 }),
+    );
+
+    render(<App />);
+
+    expect(screen.queryByRole('button', { name: /casa 0$/ })).not.toBeInTheDocument();
+  });
 });
