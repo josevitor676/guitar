@@ -6,7 +6,7 @@ import { EXERCISE_CATALOG } from '../domain/exercises/exercise-catalog';
 describe('useExerciseStore', () => {
   beforeEach(() => {
     useExerciseStore.setState({ activeExerciseId: null });
-    useFretboardStore.setState({ selectedNotes: [] });
+    useFretboardStore.setState({ selectedNotes: [], minFret: 1, maxFret: 7 });
   });
 
   it('starts with no active exercise', () => {
@@ -23,6 +23,19 @@ describe('useExerciseStore', () => {
     const [first] = EXERCISE_CATALOG;
     useExerciseStore.getState().selectExercise(first.id);
     expect(useFretboardStore.getState().selectedNotes).toEqual(first.positions);
+  });
+
+  it('widens the visible fret range to cover an exercise whose positions fall outside the default range', () => {
+    const exercise = EXERCISE_CATALOG.find((item) => item.id === 'scale-c-major-open-position');
+    expect(exercise).toBeDefined();
+    expect(exercise!.positions.some((p) => p.fret === 0)).toBe(true);
+
+    useExerciseStore.getState().selectExercise(exercise!.id);
+
+    const { minFret, maxFret } = useFretboardStore.getState();
+    const frets = exercise!.positions.map((p) => p.fret);
+    expect(minFret).toBeLessThanOrEqual(Math.min(...frets));
+    expect(maxFret).toBeGreaterThanOrEqual(Math.max(...frets));
   });
 
   it('does nothing when selecting an unknown exercise id', () => {
