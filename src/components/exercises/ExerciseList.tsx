@@ -21,14 +21,14 @@ export function ExerciseList() {
             onClick={() => selectExercise(exercise.id)}
             aria-pressed={exercise.id === activeExerciseId}
             className={[
-              'w-full rounded border px-3 py-2 text-left font-medium tracking-wide transition-all duration-200',
-              exercise.id === activeExerciseId
-                ? 'border-amber-400/50 bg-zinc-800 text-zinc-100'
-                : 'border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800',
+              'w-full rounded border bg-card px-3 py-3 text-left transition-all duration-200',
+              exercise.id === activeExerciseId ? 'border-white/30' : 'border-white/10 hover:border-white/20',
             ].join(' ')}
           >
-            <span className="mr-2 text-xs uppercase text-zinc-500">{CATEGORY_LABELS[exercise.category]}</span>
-            {exercise.name}
+            <span className="block text-xs uppercase tracking-wide text-text-secondary">
+              {CATEGORY_LABELS[exercise.category]}
+            </span>
+            <span className="mt-1 block text-sm font-semibold text-text-primary">{exercise.name}</span>
           </button>
         </li>
       ))}
