@@ -4,7 +4,7 @@ import { useFretboardStore } from '../state/fretboard-store';
 import { useMetronomeStore } from '../state/metronome-store';
 import { usePlaybackStore } from '../state/playback-store';
 import { getNoteAt } from '../domain/music-theory/notes';
-import { STANDARD_TUNING } from '../domain/music-theory/tuning';
+import { STANDARD_TUNING, type FretPosition } from '../domain/music-theory/tuning';
 
 const { play, stop, onNoteChange, ensureAudioStarted } = vi.hoisted(() => ({
   play: vi.fn(),
@@ -76,7 +76,7 @@ describe('useNotePlayback', () => {
   });
 
   it('preserves the exact click order the user selected (F#, C, F#, G, C#, B), without sorting by string/fret and without deduping repeated note names', async () => {
-    const clickOrder = [
+    const clickOrder: FretPosition[] = [
       { string: 6, fret: 2 }, // F#2
       { string: 2, fret: 1 }, // C4
       { string: 1, fret: 2 }, // F#4 (same note name as the first, different position)
@@ -94,5 +94,21 @@ describe('useNotePlayback', () => {
     const [notes] = play.mock.calls[0];
     const expectedFrequencies = clickOrder.map((position) => getNoteAt(STANDARD_TUNING, position).frequency);
     expect(notes.map((note: { frequency: number }) => note.frequency)).toEqual(expectedFrequencies);
+  });
+
+  it('resets currentIndex before starting a new sequence, clearing any stale highlight', async () => {
+    usePlaybackStore.setState({ isPlaying: false, currentIndex: 3 });
+    const { result } = renderHook(() => useNotePlayback());
+
+    let indexDuringPlayCall: number | null = null;
+    play.mockImplementationOnce(() => {
+      indexDuringPlayCall = usePlaybackStore.getState().currentIndex;
+    });
+
+    await act(async () => {
+      await result.current.play();
+    });
+
+    expect(indexDuringPlayCall).toBeNull();
   });
 });

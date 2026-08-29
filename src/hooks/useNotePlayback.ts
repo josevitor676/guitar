@@ -18,11 +18,12 @@ export function useNotePlayback() {
   useEffect(() => sequencePlayer.onNoteChange(setCurrentIndex), [setCurrentIndex]);
 
   const play = useCallback(async () => {
+    setCurrentIndex(null);
     await ensureAudioStarted();
     const notes = selectedNotes.map((position) => getNoteAt(STANDARD_TUNING, position));
     sequencePlayer.play(notes, bpm, subdivision);
     setIsPlaying(true);
-  }, [selectedNotes, bpm, subdivision, setIsPlaying]);
+  }, [selectedNotes, bpm, subdivision, setIsPlaying, setCurrentIndex]);
 
   const stop = useCallback(() => {
     sequencePlayer.stop();
