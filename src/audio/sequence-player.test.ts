@@ -4,6 +4,7 @@ import type { INoteSampler } from './audio-engine.types';
 const sequenceStart = vi.fn();
 const sequenceDispose = vi.fn();
 const transportStart = vi.fn();
+const transportStop = vi.fn();
 
 let capturedCallback: ((time: number, index: number) => void) | undefined;
 let capturedEvents: number[] | undefined;
@@ -24,6 +25,7 @@ vi.mock('tone', () => {
     ),
     Transport: {
       start: () => transportStart(),
+      stop: () => transportStop(),
       bpm: { value: 120 },
     },
   };
@@ -44,6 +46,7 @@ describe('ToneSequencePlayer', () => {
     sequenceStart.mockClear();
     sequenceDispose.mockClear();
     transportStart.mockClear();
+    transportStop.mockClear();
     capturedCallback = undefined;
   });
 
@@ -84,5 +87,25 @@ describe('ToneSequencePlayer', () => {
     player.play([{ frequency: 220 }], 100, 'quarter');
     player.stop();
     expect(sequenceDispose).toHaveBeenCalled();
+  });
+
+  it('resets the transport position before starting, so a second play() always restarts from the beginning of the sequence', () => {
+    const sampler = createFakeSampler();
+    const player = new ToneSequencePlayer(sampler);
+
+    // Simulates: user plays, stops partway through (transport keeps advancing
+    // ticks internally), then plays again — the new sequence must restart at
+    // index 0, not resume from wherever the transport's clock happened to be.
+    player.play([{ frequency: 220 }, { frequency: 440 }], 100, 'quarter');
+    player.stop();
+    transportStop.mockClear();
+    transportStart.mockClear();
+
+    player.play([{ frequency: 220 }, { frequency: 440 }], 100, 'quarter');
+
+    expect(transportStop).toHaveBeenCalled();
+    const stopOrder = transportStop.mock.invocationCallOrder[0];
+    const startOrder = transportStart.mock.invocationCallOrder[0];
+    expect(stopOrder).toBeLessThan(startOrder);
   });
 });

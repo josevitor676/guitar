@@ -14,6 +14,7 @@ export class ToneSequencePlayer implements ISequencePlayer {
 
   play(notes: { frequency: number }[], bpm: number, subdivision: Subdivision): void {
     this.stop();
+    Tone.Transport.stop();
     Tone.Transport.bpm.value = bpm;
     const duration = SUBDIVISION_DURATIONS[subdivision];
     this.sequence = new Tone.Sequence(
