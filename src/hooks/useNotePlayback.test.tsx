@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFretboardStore } from '../state/fretboard-store';
 import { useMetronomeStore } from '../state/metronome-store';
+import { usePlaybackStore } from '../state/playback-store';
 
 const { play, stop, onNoteChange, ensureAudioStarted } = vi.hoisted(() => ({
   play: vi.fn(),
@@ -21,6 +22,7 @@ describe('useNotePlayback', () => {
   beforeEach(() => {
     useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 0 }, { string: 5, fret: 2 }] });
     useMetronomeStore.setState({ bpm: 100, subdivision: 'quarter' });
+    usePlaybackStore.setState({ isPlaying: false, currentIndex: null });
     play.mockClear();
     stop.mockClear();
     onNoteChange.mockClear();
@@ -46,5 +48,28 @@ describe('useNotePlayback', () => {
       result.current.stop();
     });
     expect(stop).toHaveBeenCalled();
+  });
+
+  it('shares currentIndex/isPlaying across independent hook instances, so stop() in one clears the highlight seen by the other', async () => {
+    const a = renderHook(() => useNotePlayback());
+    const b = renderHook(() => useNotePlayback());
+
+    await act(async () => {
+      await a.result.current.play();
+    });
+
+    act(() => {
+      usePlaybackStore.getState().setCurrentIndex(1);
+    });
+
+    expect(a.result.current.currentIndex).toBe(1);
+    expect(b.result.current.currentIndex).toBe(1);
+
+    act(() => {
+      b.result.current.stop();
+    });
+
+    expect(a.result.current.currentIndex).toBeNull();
+    expect(a.result.current.isPlaying).toBe(false);
   });
 });
