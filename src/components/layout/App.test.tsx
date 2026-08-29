@@ -50,4 +50,11 @@ describe('App', () => {
 
     expect(screen.queryByRole('button', { name: /casa 0$/ })).not.toBeInTheDocument();
   });
+
+  it('clears the selected notes when Reiniciar is clicked', () => {
+    useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 1 }] });
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /reiniciar/i }));
+    expect(useFretboardStore.getState().selectedNotes).toEqual([]);
+  });
 });

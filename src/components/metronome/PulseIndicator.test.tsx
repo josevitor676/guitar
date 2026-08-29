@@ -5,11 +5,11 @@ import { PulseIndicator } from './PulseIndicator';
 describe('PulseIndicator', () => {
   it('is dim when not playing', () => {
     render(<PulseIndicator currentPulse={0} isPlaying={false} />);
-    expect(screen.getByTestId('pulse-indicator')).toHaveClass('bg-zinc-700');
+    expect(screen.getByTestId('pulse-indicator')).toHaveClass('bg-white/10');
   });
 
   it('is lit when playing', () => {
     render(<PulseIndicator currentPulse={2} isPlaying />);
-    expect(screen.getByTestId('pulse-indicator')).toHaveClass('bg-amber-400');
+    expect(screen.getByTestId('pulse-indicator')).toHaveClass('bg-accent');
   });
 });

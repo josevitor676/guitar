@@ -25,9 +25,9 @@ describe('PlayButton', () => {
     stop.mockClear();
   });
 
-  it('shows "Play" initially and starts playback on click', async () => {
+  it('shows "Começar" initially and starts playback on click', async () => {
     render(<PlayButton />);
-    const button = screen.getByRole('button', { name: /play/i });
+    const button = screen.getByRole('button', { name: /come[cç]ar/i });
     await fireEvent.click(button);
     expect(play).toHaveBeenCalled();
   });

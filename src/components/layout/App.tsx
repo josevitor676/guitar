@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Volume2, RotateCcw } from 'lucide-react';
 import { Fretboard } from '../fretboard/Fretboard';
 import { FretRangeControl } from '../fretboard/FretRangeControl';
 import { MetronomeControls } from '../metronome/MetronomeControls';
@@ -76,9 +77,25 @@ export function App() {
 
             <Fretboard currentIndex={currentIndex} />
 
-            <div className="mt-6 flex items-center gap-6">
-              <PlayButton />
-              <MetronomeControls />
+            <div className="mt-6">
+              <div className="flex items-center gap-6">
+                <PlayButton />
+                <MetronomeControls />
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-sm text-text-secondary">
+                <span className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4" />
+                  Metrônomo ativo
+                </span>
+                <button
+                  type="button"
+                  onClick={() => useFretboardStore.getState().clearSelection()}
+                  className="flex items-center gap-2 transition-all duration-200 hover:text-text-primary"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Reiniciar
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -100,9 +117,25 @@ export function App() {
             <div className="flex-1 rounded border border-white/10 bg-card p-6">
               <Fretboard currentIndex={currentIndex} />
 
-              <div className="mt-6 flex items-center gap-6">
-                <PlayButton />
-                <MetronomeControls />
+              <div className="mt-6">
+                <div className="flex items-center gap-6">
+                  <PlayButton />
+                  <MetronomeControls />
+                </div>
+                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-sm text-text-secondary">
+                  <span className="flex items-center gap-2">
+                    <Volume2 className="h-4 w-4" />
+                    Metrônomo ativo
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => useFretboardStore.getState().clearSelection()}
+                    className="flex items-center gap-2 transition-all duration-200 hover:text-text-primary"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reiniciar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
