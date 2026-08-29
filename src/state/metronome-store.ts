@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
 import type { Subdivision } from '../domain/music-theory/rhythm';
 
 interface MetronomeState {
@@ -13,7 +14,7 @@ interface MetronomeState {
   setCurrentPulse: (pulseIndex: number) => void;
 }
 
-export const useMetronomeStore = create<MetronomeState>((set) => ({
+export const useMetronomeStore = create<MetronomeState>()(subscribeWithSelector((set) => ({
   bpm: 100,
   subdivision: 'quarter',
   isPlaying: false,
@@ -23,4 +24,4 @@ export const useMetronomeStore = create<MetronomeState>((set) => ({
   start: () => set({ isPlaying: true }),
   stop: () => set({ isPlaying: false, currentPulse: 0 }),
   setCurrentPulse: (pulseIndex) => set({ currentPulse: pulseIndex }),
-}));
+})));

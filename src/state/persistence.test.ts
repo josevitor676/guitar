@@ -38,4 +38,39 @@ describe('persistence', () => {
     expect(loadPreferences()?.maxFret).toBe(12);
     stop();
   });
+
+  it('returns null instead of throwing when localStorage contains malformed JSON', () => {
+    localStorage.setItem(STORAGE_KEY, '{not valid json');
+    expect(() => loadPreferences()).not.toThrow();
+    expect(loadPreferences()).toBeNull();
+  });
+
+  it('returns null when the stored shape has invalid field types/values', () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ bpm: 'fast', subdivision: 'quarter', minFret: 1, maxFret: 7 }),
+    );
+    expect(loadPreferences()).toBeNull();
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ bpm: 100, subdivision: 'not-a-subdivision', minFret: 1, maxFret: 7 }),
+    );
+    expect(loadPreferences()).toBeNull();
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ bpm: Infinity, subdivision: 'quarter', minFret: 1, maxFret: 7 }),
+    );
+    expect(loadPreferences()).toBeNull();
+  });
+
+  it('does NOT trigger a save when setCurrentPulse alone changes on the metronome store', () => {
+    const stop = initPersistence();
+    savePreferences({ bpm: 100, subdivision: 'quarter', minFret: 1, maxFret: 7 });
+    useMetronomeStore.getState().setCurrentPulse(3);
+    useMetronomeStore.getState().setCurrentPulse(4);
+    expect(loadPreferences()).toEqual({ bpm: 100, subdivision: 'quarter', minFret: 1, maxFret: 7 });
+    stop();
+  });
 });
