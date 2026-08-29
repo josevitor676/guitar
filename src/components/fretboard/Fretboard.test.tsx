@@ -54,15 +54,24 @@ describe('Fretboard', () => {
     useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [{ string: 6, fret: 1 }] });
     render(<Fretboard currentIndex={null} />);
     const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
-    expect(cell.className).toMatch(/ring-2/);
-    expect(cell.className).toMatch(/shadow-/);
+    const circle = cell.querySelector('span');
+    expect(circle?.className).toMatch(/ring-2/);
+    expect(circle?.className).toMatch(/shadow-/);
   });
 
   it('applies a stronger glow to the currently highlighted marker during playback', () => {
     useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [{ string: 6, fret: 1 }] });
     render(<Fretboard currentIndex={0} />);
     const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
-    expect(cell.className).toMatch(/ring-amber-200/);
+    const circle = cell.querySelector('span');
+    expect(circle?.className).toMatch(/ring-amber-200/);
+  });
+
+  it('renders the fret marker as a circular button', () => {
+    render(<Fretboard currentIndex={null} />);
+    const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
+    const circle = cell.querySelector('span');
+    expect(circle?.className).toMatch(/rounded-full/);
   });
 
   it('renders string 1 (high E) on top and string 6 (low E) on the bottom', () => {
