@@ -8,6 +8,7 @@ import { ExerciseList } from '../exercises/ExerciseList';
 import { useFretboardSelection } from '../../hooks/useFretboardSelection';
 import { useNotePlayback } from '../../hooks/useNotePlayback';
 import { useMetronome } from '../../hooks/useMetronome';
+import { useSamplerLoaded } from '../../hooks/useSamplerLoaded';
 import { loadPreferences, initPersistence } from '../../state/persistence';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useMetronomeStore } from '../../state/metronome-store';
@@ -16,6 +17,7 @@ export function App() {
   const { minFret, maxFret, setFretRange } = useFretboardSelection();
   const { currentIndex } = useNotePlayback();
   const { isPlaying, currentPulse } = useMetronome();
+  const samplerLoaded = useSamplerLoaded();
 
   useEffect(() => {
     const preferences = loadPreferences();
@@ -30,6 +32,12 @@ export function App() {
   return (
     <div className="min-h-screen bg-neutral-950 p-6 text-neutral-100">
       <h1 className="mb-6 text-2xl font-bold">Guitar Teacher</h1>
+
+      {!samplerLoaded && (
+        <p className="mb-4 text-sm text-amber-400" role="status">
+          Carregando sons...
+        </p>
+      )}
 
       <div className="mb-4 flex items-center gap-4">
         <FretRangeControl minFret={minFret} maxFret={maxFret} onChange={setFretRange} />
