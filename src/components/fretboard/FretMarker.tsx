@@ -15,7 +15,7 @@ export function FretMarker({ string, fret, selected, highlighted, noteLabel, onC
       aria-pressed={selected}
       onClick={onClick}
       className={[
-        'flex h-10 w-14 items-center justify-center border-r border-neutral-700 text-xs font-medium transition-colors',
+        'flex h-10 w-14 items-center justify-center border-r border-zinc-400/60 text-xs font-medium transition-colors',
         highlighted ? 'bg-amber-400 text-neutral-900' : selected ? 'bg-neutral-300 text-neutral-900' : 'bg-neutral-900 text-neutral-500 hover:bg-neutral-800',
       ].join(' ')}
     >

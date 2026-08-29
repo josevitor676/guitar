@@ -40,4 +40,13 @@ describe('Fretboard', () => {
     });
     expect(useFretboardStore.getState().selectedNotes).toEqual([{ string: 6, fret: 1 }]);
   });
+
+  it('renders inlay markers only at frets 3, 5, and 7 within the visible range', () => {
+    render(<Fretboard currentIndex={null} />);
+    expect(screen.getByTestId('inlay-fret-3')).toBeInTheDocument();
+    expect(screen.getByTestId('inlay-fret-5')).toBeInTheDocument();
+    expect(screen.getByTestId('inlay-fret-7')).toBeInTheDocument();
+    expect(screen.queryByTestId('inlay-fret-1')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('inlay-fret-2')).not.toBeInTheDocument();
+  });
 });
