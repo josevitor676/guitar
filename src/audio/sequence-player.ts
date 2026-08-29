@@ -6,8 +6,11 @@ import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
 export class ToneSequencePlayer implements ISequencePlayer {
   private sequence: Tone.Sequence | null = null;
   private listeners = new Set<(index: number) => void>();
+  private readonly sampler: INoteSampler;
 
-  constructor(private readonly sampler: INoteSampler) {}
+  constructor(sampler: INoteSampler) {
+    this.sampler = sampler;
+  }
 
   play(notes: { frequency: number }[], bpm: number, subdivision: Subdivision): void {
     this.stop();
