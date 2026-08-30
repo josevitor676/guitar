@@ -5,6 +5,7 @@ import { useMetronomeStore } from '../state/metronome-store';
 import { usePlaybackStore } from '../state/playback-store';
 import { getNoteAt } from '../domain/music-theory/notes';
 import { STANDARD_TUNING, type FretPosition } from '../domain/music-theory/tuning';
+import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
 
 const { play, stop, onNoteChange, ensureAudioStarted } = vi.hoisted(() => ({
   play: vi.fn(),
@@ -47,6 +48,7 @@ describe('useNotePlayback', () => {
     expect(notes).toHaveLength(2);
     expect(bpm).toBe(100);
     expect(subdivision).toBe('quarter');
+    expect(notes[0].duration).toBe(SUBDIVISION_DURATIONS.quarter);
   });
 
   it('calls sequencePlayer.stop on stop()', () => {
@@ -136,8 +138,9 @@ describe('useNotePlayback', () => {
       await result.current.play();
     });
 
-    const [notes] = play.mock.calls[0];
+    const [notes, , spacingSubdivision] = play.mock.calls[0];
     expect(notes[0].duration).toBe('8n');
     expect(notes[1].duration).toBe('16n');
+    expect(spacingSubdivision).toBe('quarter');
   });
 });
