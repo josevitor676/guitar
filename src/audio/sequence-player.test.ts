@@ -50,10 +50,17 @@ describe('ToneSequencePlayer', () => {
     capturedCallback = undefined;
   });
 
-  it('sets the transport BPM and schedules one event per note', () => {
+  it('sets the transport BPM and schedules one event per note, using the spacing subdivision as the step interval', () => {
     const sampler = createFakeSampler();
     const player = new ToneSequencePlayer(sampler);
-    player.play([{ frequency: 220 }, { frequency: 440 }], 100, 'eighth');
+    player.play(
+      [
+        { frequency: 220, duration: '8n' },
+        { frequency: 440, duration: '8n' },
+      ],
+      100,
+      'eighth',
+    );
 
     expect(Tone.Transport.bpm.value).toBe(100);
     expect(capturedEvents).toEqual([0, 1]);
@@ -61,13 +68,22 @@ describe('ToneSequencePlayer', () => {
     expect(transportStart).toHaveBeenCalled();
   });
 
-  it('plays the correct note frequency when the sequence callback fires', () => {
+  it("plays each note with its own duration, independent of the sequence's spacing subdivision", () => {
     const sampler = createFakeSampler();
     const player = new ToneSequencePlayer(sampler);
-    player.play([{ frequency: 220 }, { frequency: 440 }], 100, 'quarter');
+    // Spacing is 'quarter' (4n), but the second note carries its own '8n'
+    // duration — proving playNote uses the note's duration, not the spacing.
+    player.play(
+      [
+        { frequency: 220, duration: '4n' },
+        { frequency: 440, duration: '8n' },
+      ],
+      100,
+      'quarter',
+    );
 
     capturedCallback?.(0, 1);
-    expect(sampler.playNote).toHaveBeenCalledWith(440, '4n');
+    expect(sampler.playNote).toHaveBeenCalledWith(440, '8n');
   });
 
   it('notifies note-change listeners with the current index', () => {
@@ -75,7 +91,7 @@ describe('ToneSequencePlayer', () => {
     const player = new ToneSequencePlayer(sampler);
     const onNoteChange = vi.fn();
     player.onNoteChange(onNoteChange);
-    player.play([{ frequency: 220 }], 100, 'quarter');
+    player.play([{ frequency: 220, duration: '4n' }], 100, 'quarter');
 
     capturedCallback?.(0, 0);
     expect(onNoteChange).toHaveBeenCalledWith(0);
@@ -84,7 +100,7 @@ describe('ToneSequencePlayer', () => {
   it('disposes the previous sequence when stop is called', () => {
     const sampler = createFakeSampler();
     const player = new ToneSequencePlayer(sampler);
-    player.play([{ frequency: 220 }], 100, 'quarter');
+    player.play([{ frequency: 220, duration: '4n' }], 100, 'quarter');
     player.stop();
     expect(sequenceDispose).toHaveBeenCalled();
   });
@@ -93,15 +109,26 @@ describe('ToneSequencePlayer', () => {
     const sampler = createFakeSampler();
     const player = new ToneSequencePlayer(sampler);
 
-    // Simulates: user plays, stops partway through (transport keeps advancing
-    // ticks internally), then plays again — the new sequence must restart at
-    // index 0, not resume from wherever the transport's clock happened to be.
-    player.play([{ frequency: 220 }, { frequency: 440 }], 100, 'quarter');
+    player.play(
+      [
+        { frequency: 220, duration: '4n' },
+        { frequency: 440, duration: '4n' },
+      ],
+      100,
+      'quarter',
+    );
     player.stop();
     transportStop.mockClear();
     transportStart.mockClear();
 
-    player.play([{ frequency: 220 }, { frequency: 440 }], 100, 'quarter');
+    player.play(
+      [
+        { frequency: 220, duration: '4n' },
+        { frequency: 440, duration: '4n' },
+      ],
+      100,
+      'quarter',
+    );
 
     expect(transportStop).toHaveBeenCalled();
     const stopOrder = transportStop.mock.invocationCallOrder[0];

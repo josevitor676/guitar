@@ -14,7 +14,7 @@ export interface IMetronome {
 }
 
 export interface ISequencePlayer {
-  play(notes: { frequency: number }[], bpm: number, subdivision: Subdivision): void;
+  play(notes: { frequency: number; duration: string }[], bpm: number, spacingSubdivision: Subdivision): void;
   stop(): void;
   onNoteChange(callback: (index: number) => void): () => void;
 }

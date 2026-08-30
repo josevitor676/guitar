@@ -12,19 +12,19 @@ export class ToneSequencePlayer implements ISequencePlayer {
     this.sampler = sampler;
   }
 
-  play(notes: { frequency: number }[], bpm: number, subdivision: Subdivision): void {
+  play(notes: { frequency: number; duration: string }[], bpm: number, spacingSubdivision: Subdivision): void {
     this.stop();
     Tone.Transport.stop();
     Tone.Transport.bpm.value = bpm;
-    const duration = SUBDIVISION_DURATIONS[subdivision];
+    const spacing = SUBDIVISION_DURATIONS[spacingSubdivision];
     this.sequence = new Tone.Sequence(
       (_time, index: number) => {
         const note = notes[index];
-        this.sampler.playNote(note.frequency, duration);
+        this.sampler.playNote(note.frequency, note.duration);
         this.listeners.forEach((listener) => listener(index));
       },
       notes.map((_, index) => index),
-      duration,
+      spacing,
     ).start(0);
     Tone.Transport.start();
   }
