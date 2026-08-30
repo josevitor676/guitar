@@ -6,10 +6,14 @@ import { metronome, ensureAudioStarted } from '../audio';
 export function useMetronome() {
   const bpm = useMetronomeStore((state) => state.bpm);
   const subdivision = useMetronomeStore((state) => state.subdivision);
+  const rhythmMode = useMetronomeStore((state) => state.rhythmMode);
+  const subdivisionByString = useMetronomeStore((state) => state.subdivisionByString);
   const isPlaying = useMetronomeStore((state) => state.isPlaying);
   const currentPulse = useMetronomeStore((state) => state.currentPulse);
   const setBpmInStore = useMetronomeStore((state) => state.setBpm);
   const setSubdivisionInStore = useMetronomeStore((state) => state.setSubdivision);
+  const setRhythmMode = useMetronomeStore((state) => state.setRhythmMode);
+  const setStringSubdivision = useMetronomeStore((state) => state.setStringSubdivision);
   const startInStore = useMetronomeStore((state) => state.start);
   const stopInStore = useMetronomeStore((state) => state.stop);
   const setCurrentPulse = useMetronomeStore((state) => state.setCurrentPulse);
@@ -45,5 +49,18 @@ export function useMetronome() {
     [setSubdivisionInStore],
   );
 
-  return { bpm, subdivision, isPlaying, currentPulse, start, stop, setBpm, setSubdivision };
+  return {
+    bpm,
+    subdivision,
+    rhythmMode,
+    subdivisionByString,
+    isPlaying,
+    currentPulse,
+    start,
+    stop,
+    setBpm,
+    setSubdivision,
+    setRhythmMode,
+    setStringSubdivision,
+  };
 }
