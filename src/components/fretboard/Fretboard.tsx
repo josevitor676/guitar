@@ -51,12 +51,13 @@ export function Fretboard({ currentIndex }: FretboardProps) {
 
         <div className="relative z-10">
           {STRING_ORDER.map((string) => (
-            <div
-              key={string}
-              className="flex items-center border-b border-white/10"
-              style={{ height: `${ROW_HEIGHT_PX}px` }}
-            >
-              <span className="w-10 text-center text-sm text-text-secondary">
+            <div key={string} className="relative flex items-center" style={{ height: `${ROW_HEIGHT_PX}px` }}>
+              <span
+                data-testid={`string-line-${string}`}
+                aria-hidden="true"
+                className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/10"
+              />
+              <span className="relative z-10 w-10 text-center text-sm text-text-secondary">
                 {getPitchClass(STANDARD_TUNING[string])}
               </span>
               {frets.map((fret) => {
@@ -65,7 +66,7 @@ export function Fretboard({ currentIndex }: FretboardProps) {
                 const highlighted = !!highlightedPosition && positionsEqual(highlightedPosition, position);
                 const note = getNoteAt(STANDARD_TUNING, position);
                 return (
-                  <div key={fret} className="border-r border-white/10">
+                  <div key={fret} className="relative z-10 border-r border-white/10">
                     <FretMarker
                       string={string}
                       fret={fret}

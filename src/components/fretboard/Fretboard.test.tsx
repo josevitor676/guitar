@@ -86,6 +86,13 @@ describe('Fretboard', () => {
     ]);
   });
 
+  it('renders each string line centered vertically in its row, not at the row edge', () => {
+    render(<Fretboard currentIndex={null} />);
+    const line = screen.getByTestId('string-line-1');
+    expect(line.className).toMatch(/top-1\/2/);
+    expect(line.className).toMatch(/-translate-y-1\/2/);
+  });
+
   it('renders a fret-number header row above the grid', () => {
     render(<Fretboard currentIndex={null} />);
     expect(screen.getByTestId('fret-number-1')).toHaveTextContent('1');
