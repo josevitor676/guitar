@@ -4,12 +4,15 @@ import { useMetronomeStore } from '../state/metronome-store';
 import { usePlaybackStore } from '../state/playback-store';
 import { STANDARD_TUNING } from '../domain/music-theory/tuning';
 import { getNoteAt } from '../domain/music-theory/notes';
+import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
 import { sequencePlayer, ensureAudioStarted } from '../audio';
 
 export function useNotePlayback() {
   const selectedNotes = useFretboardStore((state) => state.selectedNotes);
   const bpm = useMetronomeStore((state) => state.bpm);
   const subdivision = useMetronomeStore((state) => state.subdivision);
+  const rhythmMode = useMetronomeStore((state) => state.rhythmMode);
+  const subdivisionByString = useMetronomeStore((state) => state.subdivisionByString);
   const currentIndex = usePlaybackStore((state) => state.currentIndex);
   const isPlaying = usePlaybackStore((state) => state.isPlaying);
   const setCurrentIndex = usePlaybackStore((state) => state.setCurrentIndex);
@@ -20,10 +23,14 @@ export function useNotePlayback() {
   const play = useCallback(async () => {
     setCurrentIndex(null);
     await ensureAudioStarted();
-    const notes = selectedNotes.map((position) => getNoteAt(STANDARD_TUNING, position));
+    const notes = selectedNotes.map((position) => {
+      const note = getNoteAt(STANDARD_TUNING, position);
+      const subdivisionForNote = rhythmMode === 'string' ? subdivisionByString[position.string] : subdivision;
+      return { frequency: note.frequency, duration: SUBDIVISION_DURATIONS[subdivisionForNote] };
+    });
     sequencePlayer.play(notes, bpm, subdivision);
     setIsPlaying(true);
-  }, [selectedNotes, bpm, subdivision, setIsPlaying, setCurrentIndex]);
+  }, [selectedNotes, bpm, subdivision, rhythmMode, subdivisionByString, setIsPlaying, setCurrentIndex]);
 
   const stop = useCallback(() => {
     sequencePlayer.stop();
