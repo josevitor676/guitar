@@ -6,6 +6,8 @@ describe('useMetronomeStore', () => {
     useMetronomeStore.setState({
       bpm: 100,
       subdivision: 'quarter',
+      rhythmMode: 'note',
+      subdivisionByString: { 1: 'quarter', 2: 'quarter', 3: 'quarter', 4: 'quarter', 5: 'quarter', 6: 'quarter' },
       isPlaying: false,
       currentPulse: 0,
     });
@@ -44,5 +46,30 @@ describe('useMetronomeStore', () => {
   it('tracks the current pulse via setCurrentPulse', () => {
     useMetronomeStore.getState().setCurrentPulse(2);
     expect(useMetronomeStore.getState().currentPulse).toBe(2);
+  });
+
+  it('defaults to note mode with every string set to quarter subdivision', () => {
+    const state = useMetronomeStore.getState();
+    expect(state.rhythmMode).toBe('note');
+    expect(state.subdivisionByString).toEqual({
+      1: 'quarter',
+      2: 'quarter',
+      3: 'quarter',
+      4: 'quarter',
+      5: 'quarter',
+      6: 'quarter',
+    });
+  });
+
+  it('switches rhythm mode via setRhythmMode', () => {
+    useMetronomeStore.getState().setRhythmMode('string');
+    expect(useMetronomeStore.getState().rhythmMode).toBe('string');
+  });
+
+  it('updates only the targeted string via setStringSubdivision', () => {
+    useMetronomeStore.getState().setStringSubdivision(6, 'eighth');
+    const { subdivisionByString } = useMetronomeStore.getState();
+    expect(subdivisionByString[6]).toBe('eighth');
+    expect(subdivisionByString[1]).toBe('quarter');
   });
 });
