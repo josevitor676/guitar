@@ -73,7 +73,7 @@ describe('useFretboardStore', () => {
   });
 
   describe('loadSequence', () => {
-    it('brings the loaded positions into view instead of leaving them hidden', () => {
+    it('slides the window onto the loaded positions instead of leaving them hidden', () => {
       useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });
 
       useFretboardStore.getState().loadSequence([
@@ -83,8 +83,17 @@ describe('useFretboardStore', () => {
 
       const { minFret, maxFret, selectedNotes } = useFretboardStore.getState();
       expect(selectedNotes).toHaveLength(2);
-      expect(minFret).toBe(1);
-      expect(maxFret).toBeGreaterThanOrEqual(12);
+      expect(minFret).toBe(8);
+      expect(maxFret).toBe(14);
+    });
+
+    it('keeps the window the same width when it slides', () => {
+      useFretboardStore.setState({ minFret: 1, maxFret: 12, selectedNotes: [] });
+
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 15 }]);
+
+      const { minFret, maxFret } = useFretboardStore.getState();
+      expect(maxFret - minFret + 1).toBe(12);
     });
 
     it('leaves the visible range alone when the sequence already fits', () => {
@@ -93,6 +102,16 @@ describe('useFretboardStore', () => {
       useFretboardStore.getState().loadSequence([{ string: 6, fret: 3 }]);
 
       expect(useFretboardStore.getState().maxFret).toBe(7);
+    });
+  });
+
+  describe('setVisibleSpan', () => {
+    it('resizes the window without moving where it starts', () => {
+      useFretboardStore.setState({ minFret: 5, maxFret: 11 });
+
+      useFretboardStore.getState().setVisibleSpan(12);
+
+      expect(useFretboardStore.getState()).toMatchObject({ minFret: 5, maxFret: 16 });
     });
   });
 });

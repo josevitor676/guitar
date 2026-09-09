@@ -13,24 +13,45 @@ export function positionsEqual(a: FretPosition, b: FretPosition): boolean {
   return a.string === b.string && a.fret === b.fret;
 }
 
+/** A twelve-fret neck covers one octave, which is as much as is useful at once. */
+export const MAX_VISIBLE_FRETS = 12;
+/** Below this the neck stops being playable, so a small screen scrolls instead. */
+export const MIN_VISIBLE_FRETS = 4;
+
 /**
- * The fret range needed to show every position of a sequence.
+ * How many frets fit in the space available, capped at one octave.
  *
- * Loading a sequence the student cannot see is the same as loading nothing, so
- * the visible window grows to cover it. It only ever grows: narrowing would
- * hide frets the student had deliberately brought into view.
+ * A width of zero means the neck has not been measured yet — on the first
+ * render, or wherever ResizeObserver is unavailable — and the full span is the
+ * right assumption there, since it is what a normal screen shows anyway.
  */
-export function rangeToReveal(
+export function fretSpanForWidth(availableWidth: number, cellWidth: number, labelWidth: number): number {
+  if (availableWidth <= 0) return MAX_VISIBLE_FRETS;
+
+  const fits = Math.floor((availableWidth - labelWidth) / cellWidth);
+  return Math.min(MAX_VISIBLE_FRETS, Math.max(MIN_VISIBLE_FRETS, fits));
+}
+
+/**
+ * Where the visible window should start so a sequence can be seen.
+ *
+ * The window slides rather than stretching: how many frets are shown is decided
+ * by how much room the screen has, so revealing a sequence higher up the neck
+ * moves the view instead of squeezing more frets into the same space. A
+ * sequence longer than the window shows from its first note.
+ */
+export function windowStartToReveal(
   positions: FretPosition[],
-  current: { minFret: number; maxFret: number },
-): { minFret: number; maxFret: number } {
-  if (positions.length === 0) return current;
+  minFret: number,
+  span: number,
+): number {
+  if (positions.length === 0) return minFret;
 
   const frets = positions.map((position) => position.fret);
+  // Fret 0 is the open string, which the grid does not draw.
+  const lowest = Math.max(1, Math.min(...frets));
+  const highest = Math.max(...frets);
 
-  return {
-    // Fret 0 is the open string, which the grid does not draw.
-    minFret: Math.max(1, Math.min(current.minFret, ...frets)),
-    maxFret: Math.max(current.maxFret, ...frets),
-  };
+  const alreadyVisible = lowest >= minFret && highest <= minFret + span - 1;
+  return alreadyVisible ? minFret : lowest;
 }

@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Card } from '../ui/Card';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Fretboard } from '../fretboard/Fretboard';
@@ -9,6 +10,7 @@ import { useFretboardSelection } from '../../hooks/useFretboardSelection';
 import { useNotePlayback } from '../../hooks/useNotePlayback';
 import { useMetronome } from '../../hooks/useMetronome';
 import { useTimeline } from '../../hooks/useTimeline';
+import { useResponsiveFretSpan } from '../../hooks/useResponsiveFretSpan';
 import { useUiStore } from '../../state/ui-store';
 import type { FretboardView } from '../../state/ui-store';
 
@@ -24,6 +26,11 @@ export function PracticePanel() {
   const timeline = useTimeline();
   const fretboardView = useUiStore((state) => state.fretboardView);
   const setFretboardView = useUiStore((state) => state.setFretboardView);
+
+  // The neck's own box is what decides how many frets fit, not the viewport:
+  // on the Exercícios tab the exercise list shares the row with it.
+  const neckRef = useRef<HTMLDivElement>(null);
+  useResponsiveFretSpan(neckRef);
 
   const total = timeline.length;
   const played = currentIndex === null ? 0 : currentIndex + 1;
@@ -62,11 +69,13 @@ export function PracticePanel() {
         <ProgressBar value={played} max={total} label="Progresso da sequência" />
       </div>
 
-      {fretboardView === 'grid' ? (
-        <Fretboard currentIndex={currentIndex} />
-      ) : (
-        <TimelineRoll timeline={timeline} currentIndex={currentIndex} />
-      )}
+      <div ref={neckRef}>
+        {fretboardView === 'grid' ? (
+          <Fretboard currentIndex={currentIndex} />
+        ) : (
+          <TimelineRoll timeline={timeline} currentIndex={currentIndex} />
+        )}
+      </div>
 
       <div className="mt-6">
         <ControlBar />

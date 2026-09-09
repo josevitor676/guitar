@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { isValidPosition, positionsEqual, rangeToReveal } from './fretboard-model';
+import {
+  isValidPosition,
+  positionsEqual,
+  fretSpanForWidth,
+  windowStartToReveal,
+  MAX_VISIBLE_FRETS,
+  MIN_VISIBLE_FRETS,
+} from './fretboard-model';
 
 describe('isValidPosition', () => {
   it('accepts a position within string 1-6 and the given fret range', () => {
@@ -34,36 +41,57 @@ describe('positionsEqual', () => {
   });
 });
 
-describe('rangeToReveal', () => {
-  const current = { minFret: 1, maxFret: 7 };
+describe('fretSpanForWidth', () => {
+  const CELL = 56;
+  const LABEL = 40;
 
-  it('leaves the range alone when every position already fits', () => {
-    expect(rangeToReveal([{ string: 6, fret: 3 }], current)).toEqual(current);
+  it('shows twelve frets once the neck has room for them', () => {
+    expect(fretSpanForWidth(LABEL + CELL * 12, CELL, LABEL)).toBe(12);
   });
 
-  it('widens upward to reach a position past the last visible fret', () => {
-    expect(rangeToReveal([{ string: 6, fret: 12 }], current)).toEqual({ minFret: 1, maxFret: 12 });
+  it('never shows more than twelve, however wide the screen gets', () => {
+    expect(fretSpanForWidth(4000, CELL, LABEL)).toBe(MAX_VISIBLE_FRETS);
   });
 
-  it('widens downward to reach a position below the first visible fret', () => {
-    expect(rangeToReveal([{ string: 6, fret: 2 }], { minFret: 5, maxFret: 10 })).toEqual({
-      minFret: 2,
-      maxFret: 10,
-    });
+  it('shows only what fits on a narrower screen', () => {
+    expect(fretSpanForWidth(LABEL + CELL * 7, CELL, LABEL)).toBe(7);
   });
 
-  it('never reveals a fret below the first, since fret 0 is the open string', () => {
-    expect(rangeToReveal([{ string: 6, fret: 0 }], current).minFret).toBe(1);
+  it('drops a fret rather than cutting one in half', () => {
+    expect(fretSpanForWidth(LABEL + CELL * 7 + CELL / 2, CELL, LABEL)).toBe(7);
   });
 
-  it('covers the whole span when positions fall on both sides', () => {
-    expect(rangeToReveal([{ string: 6, fret: 2 }, { string: 1, fret: 14 }], { minFret: 5, maxFret: 10 })).toEqual({
-      minFret: 2,
-      maxFret: 14,
-    });
+  it('keeps a usable neck on a very small screen', () => {
+    expect(fretSpanForWidth(80, CELL, LABEL)).toBe(MIN_VISIBLE_FRETS);
   });
 
-  it('leaves the range alone for an empty sequence', () => {
-    expect(rangeToReveal([], current)).toEqual(current);
+  it('falls back to the full span when the width is not measurable yet', () => {
+    expect(fretSpanForWidth(0, CELL, LABEL)).toBe(MAX_VISIBLE_FRETS);
+  });
+});
+
+describe('windowStartToReveal', () => {
+  it('leaves the window alone when the sequence already fits inside it', () => {
+    expect(windowStartToReveal([{ string: 6, fret: 3 }], 1, 7)).toBe(1);
+  });
+
+  it('slides up to a sequence that sits past the window', () => {
+    expect(windowStartToReveal([{ string: 6, fret: 9 }, { string: 5, fret: 12 }], 1, 7)).toBe(9);
+  });
+
+  it('slides back down to a sequence below the window', () => {
+    expect(windowStartToReveal([{ string: 6, fret: 2 }], 8, 7)).toBe(2);
+  });
+
+  it('starts at the beginning of a sequence too long to fit', () => {
+    expect(windowStartToReveal([{ string: 6, fret: 3 }, { string: 1, fret: 19 }], 1, 7)).toBe(3);
+  });
+
+  it('never starts below the first fret, since fret 0 is the open string', () => {
+    expect(windowStartToReveal([{ string: 6, fret: 0 }], 5, 7)).toBe(1);
+  });
+
+  it('leaves the window alone for an empty sequence', () => {
+    expect(windowStartToReveal([], 4, 7)).toBe(4);
   });
 });

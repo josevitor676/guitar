@@ -4,12 +4,10 @@ import type { StringNumber } from '../../domain/music-theory/tuning';
 import { getNoteAt, getPitchClass } from '../../domain/music-theory/notes';
 import { positionsEqual } from '../../domain/fretboard/fretboard-model';
 import { FretMarker } from './FretMarker';
+import { LABEL_WIDTH_PX, FRET_CELL_WIDTH_PX, ROW_HEIGHT_PX } from './fretboard-layout';
 
 const STRING_ORDER: StringNumber[] = [1, 2, 3, 4, 5, 6];
-const INLAY_FRETS = new Set([3, 5, 7]);
-const LABEL_WIDTH_PX = 40;
-const FRET_CELL_WIDTH_PX = 56;
-const ROW_HEIGHT_PX = 48;
+const INLAY_FRETS = new Set([3, 5, 7, 9, 12]);
 
 interface FretboardProps {
   currentIndex: number | null;
