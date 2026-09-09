@@ -10,6 +10,7 @@ import { useFretboardSelection } from '../../hooks/useFretboardSelection';
 import { useNotePlayback } from '../../hooks/useNotePlayback';
 import { useMetronome } from '../../hooks/useMetronome';
 import { useTimeline } from '../../hooks/useTimeline';
+import { isOnBeatHead } from '../../domain/playback/timeline-model';
 import { useResponsiveFretSpan } from '../../hooks/useResponsiveFretSpan';
 import { useUiStore } from '../../state/ui-store';
 import type { FretboardView } from '../../state/ui-store';
@@ -31,6 +32,9 @@ export function PracticePanel() {
   // on the Exercícios tab the exercise list shares the row with it.
   const neckRef = useRef<HTMLDivElement>(null);
   useResponsiveFretSpan(neckRef);
+
+  const playingNote = currentIndex === null ? undefined : timeline[currentIndex];
+  const currentOnBeatHead = isPlaying && !!playingNote && isOnBeatHead(playingNote);
 
   const total = timeline.length;
   const played = currentIndex === null ? 0 : currentIndex + 1;
@@ -71,9 +75,9 @@ export function PracticePanel() {
 
       <div ref={neckRef}>
         {fretboardView === 'grid' ? (
-          <Fretboard currentIndex={currentIndex} />
+          <Fretboard currentIndex={currentIndex} currentOnBeatHead={currentOnBeatHead} />
         ) : (
-          <TimelineRoll timeline={timeline} currentIndex={currentIndex} />
+          <TimelineRoll timeline={timeline} currentIndex={currentIndex} metronomeOn={isPlaying} />
         )}
       </div>
 

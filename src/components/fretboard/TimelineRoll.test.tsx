@@ -97,4 +97,33 @@ describe('TimelineRoll', () => {
 
     expect(screen.queryByTestId(/^timeline-divider-/)).not.toBeInTheDocument();
   });
+
+  it('keeps the notes the same distance apart whatever the rhythmic figure', () => {
+    const positions = [
+      { string: 6 as const, fret: 3 },
+      { string: 6 as const, fret: 5 },
+    ];
+    const inQuarters = buildTimeline(positions, 'quarter', () => 'quarter');
+    const inSixteenths = buildTimeline(positions, 'sixteenth', () => 'sixteenth');
+
+    const { rerender } = render(<TimelineRoll timeline={inQuarters} currentIndex={null} />);
+    const quarterGap =
+      Number.parseFloat(screen.getByTestId('timeline-note-1').style.left) -
+      Number.parseFloat(screen.getByTestId('timeline-note-0').style.left);
+
+    rerender(<TimelineRoll timeline={inSixteenths} currentIndex={null} />);
+    const sixteenthGap =
+      Number.parseFloat(screen.getByTestId('timeline-note-1').style.left) -
+      Number.parseFloat(screen.getByTestId('timeline-note-0').style.left);
+
+    expect(sixteenthGap).toBeCloseTo(quarterGap, 5);
+  });
+
+  it('marks the note on a beat head only while the metronome leads', () => {
+    render(<TimelineRoll timeline={timeline} currentIndex={null} metronomeOn />);
+    expect(screen.getByTestId('timeline-note-0')).toHaveAttribute('data-on-beat', 'true');
+
+    render(<TimelineRoll timeline={timeline} currentIndex={null} />);
+    expect(screen.getAllByTestId('timeline-note-0')[1]).toHaveAttribute('data-on-beat', 'false');
+  });
 });

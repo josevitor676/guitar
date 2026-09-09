@@ -1,12 +1,19 @@
 import { useEffect, useRef } from 'react';
 import type { TimedNote } from '../../domain/playback/timeline-model';
-import { timelineLengthInBeats } from '../../domain/playback/timeline-model';
+import { timelineLengthInBeats, isOnBeatHead } from '../../domain/playback/timeline-model';
 import { STANDARD_TUNING } from '../../domain/music-theory/tuning';
 import type { StringNumber } from '../../domain/music-theory/tuning';
 import { getNoteAt, getPitchClass } from '../../domain/music-theory/notes';
 
 const STRING_ORDER: StringNumber[] = [1, 2, 3, 4, 5, 6];
-const PX_PER_BEAT = 72;
+/**
+ * Consecutive notes always sit this far apart, whatever rhythmic figure is
+ * chosen. Scaling pixels by beats instead would shrink the whole roll into the
+ * left of the card as soon as the figure got shorter — eight notes of
+ * semicolcheia occupy a quarter of the width that eight semínimas do, and the
+ * roll stopped being readable long before it stopped being correct.
+ */
+const PX_PER_NOTE = 72;
 const ROW_HEIGHT_PX = 48;
 const LABEL_WIDTH_PX = 40;
 const TRAILING_BEATS = 2;
@@ -17,25 +24,30 @@ const SCROLL_MARGIN_PX = 120;
 interface TimelineRollProps {
   timeline: TimedNote[];
   currentIndex: number | null;
+  /** While the metronome leads, notes on a beat head are marked out. */
+  metronomeOn?: boolean;
 }
 
-function beatToX(beat: number): number {
-  return LABEL_WIDTH_PX + beat * PX_PER_BEAT;
-}
 
-export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
+
+export function TimelineRoll({ timeline, currentIndex, metronomeOn = false }: TimelineRollProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Beats are converted through the gap between notes, so the layout keeps its
+  // density while bar boundaries still land on the right beats.
+  const beatStep = timeline.length > 1 ? timeline[1].startBeat - timeline[0].startBeat : 1;
+  const pxPerBeat = PX_PER_NOTE / Math.max(beatStep, 1e-6);
+  const beatToX = (beat: number) => LABEL_WIDTH_PX + beat * pxPerBeat;
   const activeNote = currentIndex !== null ? timeline[currentIndex] : undefined;
   const playheadX = beatToX(activeNote ? activeNote.startBeat : 0);
   const lengthInBeats = timelineLengthInBeats(timeline);
-  const widthPx = beatToX(lengthInBeats + TRAILING_BEATS);
+  const widthPx = beatToX(lengthInBeats + TRAILING_BEATS * beatStep);
   const gridHeightPx = STRING_ORDER.length * ROW_HEIGHT_PX;
 
   // Dividers fall *between* notes, not through them, so each note sits inside
   // its own cell exactly as it sits between two frets on the neck. Boundary k
   // is the one just before note k, and it opens a bar when that note lands on
   // a downbeat.
-  const beatStep = timeline.length > 1 ? timeline[1].startBeat - timeline[0].startBeat : 1;
   const cellBoundaries = Array.from({ length: timeline.length + 1 }, (_, index) => ({
     index,
     beat: index * beatStep - beatStep / 2,
@@ -62,7 +74,7 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
   }
 
   return (
-    <div ref={scrollRef} className="relative overflow-x-auto overflow-y-hidden pt-4">
+    <div ref={scrollRef} className="timeline-scroll relative overflow-x-auto overflow-y-hidden pt-4">
       <div className="relative" style={{ width: `${widthPx}px`, height: `${gridHeightPx}px` }}>
         {/*
           One divider per beat, so the roll reads in columns the way tablature
@@ -105,6 +117,7 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
         {timeline.map((note) => {
           const rowIndex = STRING_ORDER.indexOf(note.position.string);
           const active = currentIndex === note.index;
+          const onBeatHead = metronomeOn && isOnBeatHead(note);
           const pitch = getNoteAt(STANDARD_TUNING, note.position).pitchClass;
 
           return (
@@ -113,6 +126,7 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
               data-testid={`timeline-note-${note.index}`}
               data-string={note.position.string}
               data-active={active}
+              data-on-beat={onBeatHead}
               className="absolute z-30 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
               style={{
                 left: `${beatToX(note.startBeat)}px`,
@@ -124,7 +138,9 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-all duration-200 ${
                   active
                     ? 'bg-accent text-body ring-4 ring-accent-dim'
-                    : 'border border-white/20 bg-body text-text-primary'
+                    : onBeatHead
+                      ? 'border-2 border-accent bg-body text-accent'
+                      : 'border border-white/20 bg-body text-text-primary'
                 }`}
               >
                 {note.position.fret}

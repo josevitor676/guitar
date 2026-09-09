@@ -75,15 +75,22 @@ export function orderAlongNeck(positions: FretPosition[]): FretPosition[] {
   });
 }
 
-/** Which way through the sequence the student wants to practise. */
-export type PlaybackDirection = 'up' | 'down' | 'upDown';
+/**
+ * Which way through the neck the student wants to practise.
+ *
+ * Named by the strings rather than by "up" and "down", because those mean
+ * opposite things depending on whether you think in pitch or in where the
+ * string physically sits: the sixth string is the lowest in pitch and the
+ * highest on the instrument.
+ */
+export type PlaybackDirection = 'sixthToFirst' | 'firstToSixth' | 'roundTrip';
 
 /**
  * Lays the sequence out in the direction being practised.
  *
- * A scale or arpeggio is practised both ways, and a round trip turns at the top
- * without sounding the highest note twice, then finishes on the note it began
- * on — which is what the ear waits for and how the pattern is drilled.
+ * `orderAlongNeck` already runs from the sixth string to the first, so that is
+ * the identity case. A round trip turns at the far end without sounding that
+ * note twice and finishes where it began, which is how the pattern is drilled.
  */
 export function applyDirection(
   positions: FretPosition[],
@@ -92,9 +99,9 @@ export function applyDirection(
   if (positions.length < 2) return [...positions];
 
   switch (direction) {
-    case 'down':
+    case 'firstToSixth':
       return [...positions].reverse();
-    case 'upDown':
+    case 'roundTrip':
       return [...positions, ...[...positions].reverse().slice(1)];
     default:
       return [...positions];

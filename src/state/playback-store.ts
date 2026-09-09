@@ -13,7 +13,8 @@ interface PlaybackState {
 export const usePlaybackStore = create<PlaybackState>((set) => ({
   isPlaying: false,
   currentIndex: null,
-  direction: 'up',
+  // The Mizona-first reading of the neck, which is where a scale is started.
+  direction: 'sixthToFirst',
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setCurrentIndex: (currentIndex) => set({ currentIndex }),
   setDirection: (direction) => set({ direction }),

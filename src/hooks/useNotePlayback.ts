@@ -11,6 +11,7 @@ export function useNotePlayback() {
   const sequence = usePlaybackSequence();
   const bpm = useMetronomeStore((state) => state.bpm);
   const subdivision = useMetronomeStore((state) => state.subdivision);
+  const metronomeOn = useMetronomeStore((state) => state.isPlaying);
   const currentIndex = usePlaybackStore((state) => state.currentIndex);
   const isPlaying = usePlaybackStore((state) => state.isPlaying);
   const setCurrentIndex = usePlaybackStore((state) => state.setCurrentIndex);
@@ -25,9 +26,10 @@ export function useNotePlayback() {
       const note = getNoteAt(STANDARD_TUNING, position);
       return { frequency: note.frequency, duration: SUBDIVISION_DURATIONS[subdivision] };
     });
-    sequencePlayer.play(notes, bpm, subdivision);
+    // With the metronome leading, the notes stay silent so the click is clear.
+    sequencePlayer.play(notes, bpm, subdivision, { silent: metronomeOn });
     setIsPlaying(true);
-  }, [sequence, bpm, subdivision, setIsPlaying, setCurrentIndex]);
+  }, [sequence, bpm, subdivision, metronomeOn, setIsPlaying, setCurrentIndex]);
 
   const stop = useCallback(() => {
     sequencePlayer.stop();

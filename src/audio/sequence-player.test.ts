@@ -158,4 +158,28 @@ describe('ToneSequencePlayer', () => {
     expect(sampler.playNote).toHaveBeenNthCalledWith(1, 110, '4n', 1.5);
     expect(sampler.playNote).toHaveBeenNthCalledWith(2, 220, '4n', 2.0);
   });
+
+  it('runs the sequence silently when the metronome is leading', () => {
+    const sampler = createFakeSampler();
+    const player = new ToneSequencePlayer(sampler);
+    const advanced: number[] = [];
+    player.onNoteChange((index) => advanced.push(index));
+
+    player.play([{ frequency: 110, duration: '4n' }], 120, 'quarter', { silent: true });
+    capturedCallback?.(0, 0);
+
+    // The playhead still moves; only the guitar stays quiet.
+    expect(sampler.playNote).not.toHaveBeenCalled();
+    expect(advanced).toEqual([0]);
+  });
+
+  it('sounds the notes when no options are given at all', () => {
+    const sampler = createFakeSampler();
+    const player = new ToneSequencePlayer(sampler);
+
+    player.play([{ frequency: 110, duration: '4n' }], 120, 'quarter');
+    capturedCallback?.(0, 0);
+
+    expect(sampler.playNote).toHaveBeenCalledOnce();
+  });
 });

@@ -12,7 +12,17 @@ export class ToneSequencePlayer implements ISequencePlayer {
     this.sampler = sampler;
   }
 
-  play(notes: { frequency: number; duration: string }[], bpm: number, spacingSubdivision: Subdivision): void {
+  /**
+   * `silent` runs the sequence without sounding it. With the metronome on the
+   * student plays the notes themselves on the instrument, and a synthesised
+   * guitar underneath the click only muddies the beat.
+   */
+  play(
+    notes: { frequency: number; duration: string }[],
+    bpm: number,
+    spacingSubdivision: Subdivision,
+    options: { silent?: boolean } = {},
+  ): void {
     this.stop();
     Tone.Transport.stop();
     Tone.Transport.bpm.value = bpm;
@@ -20,7 +30,7 @@ export class ToneSequencePlayer implements ISequencePlayer {
     this.sequence = new Tone.Sequence(
       (time, index: number) => {
         const note = notes[index];
-        this.sampler.playNote(note.frequency, note.duration, time);
+        if (!options.silent) this.sampler.playNote(note.frequency, note.duration, time);
         this.listeners.forEach((listener) => listener(index));
       },
       notes.map((_, index) => index),

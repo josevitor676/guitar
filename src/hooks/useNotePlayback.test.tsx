@@ -140,4 +140,28 @@ describe('useNotePlayback', () => {
 
     expect(indexDuringPlayCall).toBeNull();
   });
+
+  it('mutes the notes while the metronome leads, so the click is not muddied', async () => {
+    useMetronomeStore.setState({ isPlaying: true });
+    useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+
+    const { result } = renderHook(() => useNotePlayback());
+    await act(async () => {
+      await result.current.play();
+    });
+
+    expect(play.mock.calls[0][3]).toMatchObject({ silent: true });
+  });
+
+  it('sounds the notes when the metronome is off', async () => {
+    useMetronomeStore.setState({ isPlaying: false });
+    useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+
+    const { result } = renderHook(() => useNotePlayback());
+    await act(async () => {
+      await result.current.play();
+    });
+
+    expect(play.mock.calls[0][3]).toMatchObject({ silent: false });
+  });
 });

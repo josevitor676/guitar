@@ -27,3 +27,12 @@ export function buildTimeline(
 export function timelineLengthInBeats(timeline: TimedNote[]): number {
   return timeline.reduce((end, note) => Math.max(end, note.startBeat + note.durationBeats), 0);
 }
+
+/**
+ * Whether a note falls on the head of a beat, which is where the metronome
+ * clicks. With eighths every other note lands there; with quarters, all of
+ * them.
+ */
+export function isOnBeatHead(note: TimedNote): boolean {
+  return Math.abs(note.startBeat - Math.round(note.startBeat)) < 1e-6;
+}

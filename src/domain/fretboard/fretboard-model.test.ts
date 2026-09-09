@@ -160,17 +160,17 @@ describe('applyDirection', () => {
     { string: 5 as const, fret: 5 },
   ];
 
-  it('leaves the sequence as it is when going up', () => {
-    expect(applyDirection(ascending, 'up')).toEqual(ascending);
+  it('leaves the sequence as it is when running from the sixth string to the first', () => {
+    expect(applyDirection(ascending, 'sixthToFirst')).toEqual(ascending);
   });
 
-  it('reverses the sequence when going down', () => {
-    expect(applyDirection(ascending, 'down').map((position) => position.fret)).toEqual([5, 8, 5]);
-    expect(applyDirection(ascending, 'down')[0]).toEqual({ string: 5, fret: 5 });
+  it('reverses the sequence when running from the first string to the sixth', () => {
+    expect(applyDirection(ascending, 'firstToSixth').map((position) => position.fret)).toEqual([5, 8, 5]);
+    expect(applyDirection(ascending, 'firstToSixth')[0]).toEqual({ string: 5, fret: 5 });
   });
 
-  it('climbs and comes back down, turning at the top without repeating it', () => {
-    const roundTrip = applyDirection(ascending, 'upDown');
+  it('runs out and back, turning at the far end without repeating it', () => {
+    const roundTrip = applyDirection(ascending, 'roundTrip');
 
     expect(roundTrip).toHaveLength(5);
     expect(roundTrip.map((position) => `${position.string}:${position.fret}`)).toEqual([
@@ -182,8 +182,8 @@ describe('applyDirection', () => {
     ]);
   });
 
-  it('ends a round trip back where it started, which is where the ear expects it', () => {
-    const roundTrip = applyDirection(ascending, 'upDown');
+  it('ends a round trip on the note it began with', () => {
+    const roundTrip = applyDirection(ascending, 'roundTrip');
 
     expect(roundTrip[roundTrip.length - 1]).toEqual(ascending[0]);
   });
@@ -191,11 +191,11 @@ describe('applyDirection', () => {
   it('does not double a single note into two', () => {
     const one = [{ string: 6 as const, fret: 5 }];
 
-    expect(applyDirection(one, 'upDown')).toEqual(one);
+    expect(applyDirection(one, 'roundTrip')).toEqual(one);
   });
 
   it('handles an empty sequence in every direction', () => {
-    for (const direction of ['up', 'down', 'upDown'] as const) {
+    for (const direction of ['sixthToFirst', 'firstToSixth', 'roundTrip'] as const) {
       expect(applyDirection([], direction)).toEqual([]);
     }
   });

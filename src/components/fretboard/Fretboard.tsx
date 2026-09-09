@@ -14,9 +14,11 @@ const DOUBLE_INLAY_FRETS = new Set([12, 24]);
 
 interface FretboardProps {
   currentIndex: number | null;
+  /** True when the note being played lands on a beat head and the metronome leads. */
+  currentOnBeatHead?: boolean;
 }
 
-export function Fretboard({ currentIndex }: FretboardProps) {
+export function Fretboard({ currentIndex, currentOnBeatHead = false }: FretboardProps) {
   const { minFret, maxFret, selectedNotes, toggleNote } = useFretboardSelection();
   // currentIndex counts through the played order, which is not the order the
   // notes were marked in.
@@ -82,6 +84,7 @@ export function Fretboard({ currentIndex }: FretboardProps) {
                       fret={fret}
                       selected={selected}
                       highlighted={highlighted}
+                      onBeatHead={highlighted && currentOnBeatHead}
                       noteLabel={note.pitchClass}
                       onClick={() => toggleNote(position)}
                     />

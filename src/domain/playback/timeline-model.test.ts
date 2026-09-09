@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildTimeline, timelineLengthInBeats } from './timeline-model';
+import { buildTimeline, timelineLengthInBeats, isOnBeatHead } from './timeline-model';
 import type { FretPosition } from '../music-theory/tuning';
 
 const positions: FretPosition[] = [
@@ -54,5 +54,28 @@ describe('timelineLengthInBeats', () => {
   it('accounts for a final note that sustains past its slot', () => {
     const timeline = buildTimeline(positions, 'eighth', allQuarters);
     expect(timelineLengthInBeats(timeline)).toBe(2);
+  });
+});
+
+describe('isOnBeatHead', () => {
+  const at = (startBeat: number) => ({
+    index: 0,
+    position: { string: 6 as const, fret: 3 },
+    startBeat,
+    durationBeats: 1,
+  });
+
+  it('counts a note that starts exactly on a beat', () => {
+    expect(isOnBeatHead(at(0))).toBe(true);
+    expect(isOnBeatHead(at(3))).toBe(true);
+  });
+
+  it('rejects a note that falls between beats', () => {
+    expect(isOnBeatHead(at(0.5))).toBe(false);
+    expect(isOnBeatHead(at(2.25))).toBe(false);
+  });
+
+  it('tolerates the rounding a triplet grid produces', () => {
+    expect(isOnBeatHead(at(1 / 3 + 1 / 3 + 1 / 3))).toBe(true);
   });
 });

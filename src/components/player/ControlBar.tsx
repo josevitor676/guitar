@@ -91,9 +91,9 @@ export function ControlBar() {
           onChange={(event) => setDirection(event.target.value as PlaybackDirection)}
           className="rounded-full border border-white/[0.06] bg-surface px-2 py-1 text-text-primary transition-all duration-200"
         >
-          <option value="up">Subindo</option>
-          <option value="down">Descendo</option>
-          <option value="upDown">Subindo e descendo</option>
+          <option value="sixthToFirst">Descendo</option>
+          <option value="firstToSixth">Subindo</option>
+          <option value="roundTrip">Descendo e subindo</option>
         </select>
       </label>
 

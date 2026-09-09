@@ -3,13 +3,26 @@ interface FretMarkerProps {
   fret: number;
   selected: boolean;
   highlighted: boolean;
+  onBeatHead?: boolean;
   noteLabel: string;
   onClick: () => void;
 }
 
-export function FretMarker({ string, fret, selected, highlighted, noteLabel, onClick }: FretMarkerProps) {
+export function FretMarker({
+  string,
+  fret,
+  selected,
+  highlighted,
+  noteLabel,
+  onClick,
+  onBeatHead = false,
+}: FretMarkerProps) {
+  // On a beat head the note is filled solid white against the accent ring, so
+  // it reads apart from the ordinary highlight at a glance.
   const circleClasses = highlighted
-    ? 'bg-accent text-body ring-4 ring-accent-dim'
+    ? onBeatHead
+      ? 'bg-text-primary text-body ring-4 ring-accent'
+      : 'bg-accent text-body ring-4 ring-accent-dim'
     : selected
       ? 'border border-white/20 bg-body text-text-primary'
       : 'border border-transparent text-transparent group-hover:border-white/20';
