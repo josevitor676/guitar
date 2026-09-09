@@ -7,7 +7,9 @@ import { FretMarker } from './FretMarker';
 import { LABEL_WIDTH_PX, FRET_CELL_WIDTH_PX, ROW_HEIGHT_PX } from './fretboard-layout';
 
 const STRING_ORDER: StringNumber[] = [1, 2, 3, 4, 5, 6];
-const INLAY_FRETS = new Set([3, 5, 7, 9, 12]);
+const INLAY_FRETS = new Set([3, 5, 7, 9, 15, 17, 19, 21]);
+/** The octave frets carry two dots on a real neck, which is how players find them. */
+const DOUBLE_INLAY_FRETS = new Set([12, 24]);
 
 interface FretboardProps {
   currentIndex: number | null;
@@ -32,19 +34,25 @@ export function Fretboard({ currentIndex }: FretboardProps) {
 
       <div className="relative">
         <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
-          {frets.map((fret, index) =>
-            INLAY_FRETS.has(fret) ? (
+          {frets.map((fret, index) => {
+            const isDouble = DOUBLE_INLAY_FRETS.has(fret);
+            if (!isDouble && !INLAY_FRETS.has(fret)) return null;
+
+            return (
               <span
                 key={`inlay-${fret}`}
                 data-testid={`inlay-fret-${fret}`}
-                className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10"
+                className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-8"
                 style={{
                   left: `${LABEL_WIDTH_PX + index * FRET_CELL_WIDTH_PX + FRET_CELL_WIDTH_PX / 2}px`,
                   top: `${gridHeightPx / 2}px`,
                 }}
-              />
-            ) : null,
-          )}
+              >
+                <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+                {isDouble && <span className="h-2.5 w-2.5 rounded-full bg-white/10" />}
+              </span>
+            );
+          })}
         </div>
 
         <div className="relative z-10">

@@ -101,4 +101,19 @@ describe('Fretboard', () => {
     expect(screen.getByTestId('fret-number-7')).toHaveTextContent('7');
   });
 
+  it('marks the twelfth fret with the double dot that stands for the octave', () => {
+    useFretboardStore.setState({ minFret: 1, maxFret: 12, selectedNotes: [] });
+    render(<Fretboard currentIndex={null} />);
+
+    expect(screen.getByTestId('inlay-fret-12').children).toHaveLength(2);
+  });
+
+  it('marks every other position with a single dot', () => {
+    useFretboardStore.setState({ minFret: 1, maxFret: 12, selectedNotes: [] });
+    render(<Fretboard currentIndex={null} />);
+
+    for (const fret of [3, 5, 7, 9]) {
+      expect(screen.getByTestId(`inlay-fret-${fret}`).children).toHaveLength(1);
+    }
+  });
 });
