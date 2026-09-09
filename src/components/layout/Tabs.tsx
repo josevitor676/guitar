@@ -12,7 +12,7 @@ interface TabsProps {
 
 export function Tabs({ tabs, activeTabId, onChange }: TabsProps) {
   return (
-    <div role="tablist" className="flex items-center gap-8 border-b border-white/10 pb-3">
+    <div role="tablist" className="flex items-center gap-8 border-b border-white/[0.06] pb-3">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -23,7 +23,7 @@ export function Tabs({ tabs, activeTabId, onChange }: TabsProps) {
           className={[
             'flex items-center gap-2 pb-3 text-sm font-semibold transition-all duration-200',
             tab.id === activeTabId
-              ? 'border-b-2 border-text-primary text-text-primary'
+              ? 'border-b-2 border-accent text-text-primary'
               : 'text-text-secondary hover:text-text-primary',
           ].join(' ')}
         >

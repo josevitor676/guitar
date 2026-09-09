@@ -1,15 +1,7 @@
 import { useEffect } from 'react';
-import { Volume2, RotateCcw } from 'lucide-react';
-import { Fretboard } from '../fretboard/Fretboard';
-import { FretRangeControl } from '../fretboard/FretRangeControl';
-import { MetronomeControls } from '../metronome/MetronomeControls';
-import { PulseIndicator } from '../metronome/PulseIndicator';
-import { PlayButton } from '../player/PlayButton';
+import { PracticePanel } from '../practice/PracticePanel';
 import { ExerciseList } from '../exercises/ExerciseList';
 import { Tabs } from './Tabs';
-import { useFretboardSelection } from '../../hooks/useFretboardSelection';
-import { useNotePlayback } from '../../hooks/useNotePlayback';
-import { useMetronome } from '../../hooks/useMetronome';
 import { useSamplerLoaded } from '../../hooks/useSamplerLoaded';
 import { loadPreferences, initPersistence } from '../../state/persistence';
 import { useFretboardStore } from '../../state/fretboard-store';
@@ -24,9 +16,6 @@ const TABS: { id: TabId; label: string; badge?: number }[] = [
 ];
 
 export function App() {
-  const { minFret, maxFret, setFretRange } = useFretboardSelection();
-  const { currentIndex } = useNotePlayback();
-  const { isPlaying, currentPulse } = useMetronome();
   const samplerLoaded = useSamplerLoaded();
   const activeTab = useUiStore((state) => state.activeTab);
   const setActiveTab = useUiStore((state) => state.setActiveTab);
@@ -44,7 +33,7 @@ export function App() {
   return (
     <div className="min-h-screen bg-body px-8 py-6 text-text-primary">
       <header className="mb-8 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center border border-white/20 text-sm font-bold">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.06] bg-surface text-sm font-bold">
           GT
         </div>
         <div>
@@ -69,34 +58,8 @@ export function App() {
             Escolha uma casa, encontre novas combinações e aqueça os dedos.
           </p>
 
-          <div className="mt-6 rounded border border-white/10 bg-card p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <FretRangeControl minFret={minFret} maxFret={maxFret} onChange={setFretRange} />
-              <PulseIndicator currentPulse={currentPulse} isPlaying={isPlaying} />
-            </div>
-
-            <Fretboard currentIndex={currentIndex} />
-
-            <div className="mt-6">
-              <div className="flex items-center gap-6">
-                <PlayButton />
-                <MetronomeControls />
-              </div>
-              <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-sm text-text-secondary">
-                <span className="flex items-center gap-2">
-                  <Volume2 className="h-4 w-4" />
-                  Metrônomo ativo
-                </span>
-                <button
-                  type="button"
-                  onClick={() => useFretboardStore.getState().clearSelection()}
-                  className="flex items-center gap-2 transition-all duration-200 hover:text-text-primary"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Reiniciar
-                </button>
-              </div>
-            </div>
+          <div className="mt-6">
+            <PracticePanel />
           </div>
         </section>
       )}
@@ -113,30 +76,8 @@ export function App() {
             <div className="lg:w-64">
               <ExerciseList />
             </div>
-
-            <div className="flex-1 rounded border border-white/10 bg-card p-6">
-              <Fretboard currentIndex={currentIndex} />
-
-              <div className="mt-6">
-                <div className="flex items-center gap-6">
-                  <PlayButton />
-                  <MetronomeControls />
-                </div>
-                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-sm text-text-secondary">
-                  <span className="flex items-center gap-2">
-                    <Volume2 className="h-4 w-4" />
-                    Metrônomo ativo
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => useFretboardStore.getState().clearSelection()}
-                    className="flex items-center gap-2 transition-all duration-200 hover:text-text-primary"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    Reiniciar
-                  </button>
-                </div>
-              </div>
+            <div className="flex-1">
+              <PracticePanel />
             </div>
           </div>
         </section>

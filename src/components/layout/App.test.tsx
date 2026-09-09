@@ -18,7 +18,7 @@ describe('App', () => {
     localStorage.clear();
     useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });
     useMetronomeStore.setState({ bpm: 100, subdivision: 'quarter', isPlaying: false, currentPulse: 0 });
-    useUiStore.setState({ activeTab: 'practice' });
+    useUiStore.setState({ activeTab: 'practice', fretboardView: 'grid' });
   });
 
   it('renders the practice tab by default with the fretboard, play button, and metronome controls', () => {
@@ -51,10 +51,18 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: /casa 0$/ })).not.toBeInTheDocument();
   });
 
-  it('clears the selected notes when Reiniciar is clicked', () => {
+  it('clears the selected notes from the practice panel', () => {
     useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 1 }] });
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /reiniciar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /limpar sele[cç][aã]o/i }));
     expect(useFretboardStore.getState().selectedNotes).toEqual([]);
+  });
+
+  it('shows one practice panel per tab, never two at once', () => {
+    render(<App />);
+    expect(screen.getAllByRole('button', { name: /come[cç]ar/i })).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('tab', { name: /exerc[ií]cios/i }));
+    expect(screen.getAllByRole('button', { name: /come[cç]ar/i })).toHaveLength(1);
   });
 });
