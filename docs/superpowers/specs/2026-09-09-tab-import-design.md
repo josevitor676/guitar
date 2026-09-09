@@ -24,6 +24,30 @@ entra na figura rítmica corrente), acordes com notas simultâneas na
 mesma coluna, bends, hammer-ons, slides e demais articulações, e
 tablatura manuscrita.
 
+## 1.1 Limites Medidos
+
+Medição com o pipeline real contra folhas de exemplo com gabarito, em
+`exemplos/`:
+
+- **Tablatura gravada e densa: 100%.** Uma folha de 27 notas em três
+  sistemas, e uma de 9 notas com casas de dois dígitos, saem completas e
+  na ordem certa, com a pauta de cinco linhas ignorada.
+- **Sistema esparso: falha.** Um sistema com três ou quatro números
+  soltos e muito espaçados não é lido — o Tesseract não reconhece
+  caracteres isolados numa faixa larga e quase vazia. Testado com recorte
+  por linha, com quatro modos de segmentação de página e com fatiamento
+  horizontal; nenhum resolve. Sair disso exige segmentar os dígitos
+  antes do OCR, achando as manchas escuras entre as linhas e recortando
+  cada uma, o que é uma mudança de arquitetura e não um ajuste.
+- **Foto inclinada: falha na detecção.** Uma folha girada 1,6° já não
+  produz linhas horizontais escuras o bastante, e nenhum sistema é
+  encontrado. Corrigir isso exige endireitar a imagem antes, por exemplo
+  com transformada de Hough.
+
+Nos dois casos de falha o app diz o que houve, e as mensagens são
+diferentes: não achar as linhas é um arquivo errado, e achar as linhas
+sem ler os números é o mesmo arquivo que precisa de melhor digitalização.
+
 ## 2. O Problema Central
 
 Uma folha típica tem **duas pautas empilhadas**: a notação musical, com
@@ -149,6 +173,18 @@ pdf.js e Tesseract.js entram por `import()` dinâmico, para que nenhum dos
 dois pese no bundle inicial de quem nunca importar um arquivo.
 
 ## 8. OCR (`ocr.ts`)
+
+> **Revisado após medição.** A primeira versão entregava a página inteira ao
+> Tesseract. Medindo contra folhas de exemplo com gabarito, isso perdia a
+> maioria dos números: uma folha de 27 notas rendia 11, e uma de 9 notas em
+> três sistemas rendia zero. A análise de layout do Tesseract descarta dígitos
+> esparsos numa página alta. O pipeline passou a apontar o OCR para **um
+> sistema de cada vez**, recortado e ampliado 3×, com DPI declarado em 300 em
+> vez de estimado. A mesma folha de 27 notas passou a render 27.
+>
+> A geometria desse recorte já era conhecida: os sistemas precisam ser
+> localizados antes, para atribuir cada dígito a uma corda.
+
 
 `recognizeDigits(canvas: HTMLCanvasElement): Promise<OcrToken[]>`
 

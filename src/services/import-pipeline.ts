@@ -1,13 +1,24 @@
 import type { FretPosition } from '../domain/music-theory/tuning';
+import type { OcrToken } from '../domain/import/image.types';
 import { detectTabSystems } from '../domain/import/staff-detection';
 import { positionsFromTokens } from '../domain/import/tab-parser';
+import { bandForSystem, tokenToPageSpace } from '../domain/import/band';
 import { rasterizeFile } from './rasterize';
-import { recognizeDigits } from './ocr';
+import { withDigitReader } from './ocr';
+import { cropBand } from './crop';
 import { toGrayImage } from './grayscale';
 
 export const NO_TAB_FOUND_MESSAGE =
   'Não encontrei uma tablatura nesse arquivo. Tente uma imagem mais nítida, ' +
   'com as seis linhas da tablatura retas e bem visíveis.';
+
+export const DIGITS_UNREADABLE_MESSAGE =
+  'Achei as linhas da tablatura, mas não consegui ler os números das casas. ' +
+  'Tente uma imagem maior ou mais nítida — números pequenos ou poucos números ' +
+  'soltos na página costumam não ser reconhecidos.';
+
+/** Fret numbers are small; the OCR reads them far better enlarged. */
+const OCR_SCALE = 3;
 
 export interface ImportProgress {
   label: string;
@@ -25,8 +36,11 @@ function grayFromCanvas(canvas: HTMLCanvasElement) {
 /**
  * Reads an uploaded exercise into a playable sequence.
  *
- * Pages are concatenated in order, so a multi-page PDF reads as one sequence,
- * exactly as a student would play it.
+ * The OCR is pointed at one tablature system at a time rather than at the whole
+ * page. Handed a full sheet, Tesseract's layout analysis discards most of the
+ * fret numbers; handed a single cropped, enlarged system it reads them all. The
+ * geometry needed for that crop is already known, since the systems have to be
+ * located before the digits can be assigned to strings anyway.
  */
 export async function importTabFromFile(
   file: File,
@@ -36,25 +50,35 @@ export async function importTabFromFile(
   const pages = await rasterizeFile(file);
 
   const positions: FretPosition[] = [];
+  let systemsSeen = 0;
 
-  for (const [index, canvas] of pages.entries()) {
-    const pageLabel = pages.length > 1 ? ` (página ${index + 1} de ${pages.length})` : '';
-    onProgress?.({ label: `Lendo a tablatura${pageLabel}`, fraction: index / pages.length });
+  await withDigitReader(async (read) => {
+    for (const [pageIndex, canvas] of pages.entries()) {
+      const pageLabel = pages.length > 1 ? ` (página ${pageIndex + 1} de ${pages.length})` : '';
+      const systems = detectTabSystems(grayFromCanvas(canvas));
+      systemsSeen += systems.length;
 
-    const systems = detectTabSystems(grayFromCanvas(canvas));
-    if (systems.length === 0) continue;
+      const tokens: OcrToken[] = [];
+      for (const [systemIndex, system] of systems.entries()) {
+        onProgress?.({
+          label: `Lendo a tablatura${pageLabel}`,
+          fraction: (pageIndex + systemIndex / systems.length) / pages.length,
+        });
 
-    const tokens = await recognizeDigits(canvas, (fraction) =>
-      onProgress?.({
-        label: `Lendo a tablatura${pageLabel}`,
-        fraction: (index + fraction) / pages.length,
-      }),
-    );
+        const band = bandForSystem(system, canvas.height, OCR_SCALE);
+        const found = await read(cropBand(canvas, band));
+        tokens.push(...found.map((token) => tokenToPageSpace(token, band)));
+      }
 
-    positions.push(...positionsFromTokens(tokens, systems));
+      positions.push(...positionsFromTokens(tokens, systems));
+    }
+  });
+
+  if (positions.length === 0) {
+    // Which failure it was matters to the student: a page with no tablature is
+    // the wrong file, while unreadable digits is the same file, scanned better.
+    throw new Error(systemsSeen === 0 ? NO_TAB_FOUND_MESSAGE : DIGITS_UNREADABLE_MESSAGE);
   }
-
-  if (positions.length === 0) throw new Error(NO_TAB_FOUND_MESSAGE);
 
   onProgress?.({ label: 'Pronto', fraction: 1 });
   return positions;

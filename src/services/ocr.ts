@@ -1,44 +1,42 @@
 import type { OcrToken } from '../domain/import/image.types';
 
-export type OcrProgress = (fraction: number) => void;
+export type DigitReader = (canvas: HTMLCanvasElement) => Promise<OcrToken[]>;
 
 /**
- * Reads the fret numbers off a rendered page.
- *
- * Tesseract is restricted to digits and told to expect sparse text, which is
- * what a tablature is — scattered numbers, not prose. Everything else it might
- * hallucinate is filtered downstream by the parser's geometry checks.
+ * Runs `use` with a reader that recognizes fret numbers, then disposes the
+ * engine. The reader is reusable: a page holds several tablature systems and
+ * each is read separately, and spinning up a worker per strip would dominate
+ * the running time.
  */
-export async function recognizeDigits(
-  canvas: HTMLCanvasElement,
-  onProgress?: OcrProgress,
-): Promise<OcrToken[]> {
+export async function withDigitReader<T>(use: (read: DigitReader) => Promise<T>): Promise<T> {
   // Loaded on demand: Tesseract and its language data are large, and a student
   // who never imports a file should never pay for them.
   const { createWorker, PSM } = await import('tesseract.js');
 
-  const worker = await createWorker('eng', undefined, {
-    logger: (message) => {
-      if (message.status === 'recognizing text' && onProgress) onProgress(message.progress);
-    },
-  });
-
+  const worker = await createWorker('eng');
   try {
     await worker.setParameters({
       tessedit_char_whitelist: '0123456789',
       tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+      // Without a declared resolution Tesseract guesses one from the content,
+      // and on a mostly blank tablature strip it guesses badly and drops digits.
+      user_defined_dpi: '300',
     });
 
-    const { data } = await worker.recognize(canvas, undefined, { blocks: true });
-    const words = (data.blocks ?? []).flatMap((block) =>
-      block.paragraphs.flatMap((paragraph) => paragraph.lines.flatMap((line) => line.words)),
-    );
+    return await use(async (canvas) => {
+      const { data } = await worker.recognize(canvas, undefined, { blocks: true });
+      const words = (data.blocks ?? []).flatMap((block) =>
+        block.paragraphs.flatMap((paragraph) => paragraph.lines.flatMap((line) => line.words)),
+      );
 
-    return words.map((word) => ({
-      text: word.text.trim(),
-      x: (word.bbox.x0 + word.bbox.x1) / 2,
-      y: (word.bbox.y0 + word.bbox.y1) / 2,
-    }));
+      return words
+        .map((word) => ({
+          text: word.text.trim(),
+          x: (word.bbox.x0 + word.bbox.x1) / 2,
+          y: (word.bbox.y0 + word.bbox.y1) / 2,
+        }))
+        .filter((token) => token.text.length > 0);
+    });
   } finally {
     await worker.terminate();
   }
