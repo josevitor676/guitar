@@ -7,6 +7,8 @@ import { useNotePlayback } from '../../hooks/useNotePlayback';
 import { useMetronome } from '../../hooks/useMetronome';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useExerciseStore } from '../../state/exercise-store';
+import { usePlaybackStore } from '../../state/playback-store';
+import type { PlaybackDirection } from '../../domain/fretboard/fretboard-model';
 
 export function ControlBar() {
   const { play, stop, isPlaying } = useNotePlayback();
@@ -14,6 +16,9 @@ export function ControlBar() {
   const clearSelection = useFretboardStore((state) => state.clearSelection);
   const hasSelection = useFretboardStore((state) => state.selectedNotes.length > 0);
   const saveCurrentSelection = useExerciseStore((state) => state.saveCurrentSelection);
+
+  const direction = usePlaybackStore((state) => state.direction);
+  const setDirection = usePlaybackStore((state) => state.setDirection);
 
   const [isNaming, setIsNaming] = useState(false);
   const [name, setName] = useState('');
@@ -78,6 +83,19 @@ export function ControlBar() {
       >
         <BookmarkPlus className="h-4 w-4" />
       </IconButton>
+
+      <label className="flex items-center gap-2 text-sm text-text-secondary">
+        Direção
+        <select
+          value={direction}
+          onChange={(event) => setDirection(event.target.value as PlaybackDirection)}
+          className="rounded-full border border-white/[0.06] bg-surface px-2 py-1 text-text-primary transition-all duration-200"
+        >
+          <option value="up">Subindo</option>
+          <option value="down">Descendo</option>
+          <option value="upDown">Subindo e descendo</option>
+        </select>
+      </label>
 
       <MetronomeControls />
       </div>

@@ -57,4 +57,32 @@ describe('TimelineRoll', () => {
     rerender(<TimelineRoll timeline={timeline} currentIndex={2} />);
     expect(screen.getByTestId('timeline-playhead')).toHaveStyle({ left: '184px' });
   });
+
+  it('rules a divider on every note onset, so the roll reads in columns', () => {
+    render(<TimelineRoll timeline={timeline} currentIndex={null} />);
+
+    expect(screen.getByTestId('timeline-divider-0')).toBeInTheDocument();
+    expect(screen.getByTestId('timeline-divider-1')).toBeInTheDocument();
+    expect(screen.getByTestId('timeline-divider-2')).toBeInTheDocument();
+  });
+
+  it('marks the start of each bar more heavily than the beats inside it', () => {
+    render(<TimelineRoll timeline={timeline} currentIndex={null} />);
+
+    expect(screen.getByTestId('timeline-divider-0')).toHaveAttribute('data-bar', 'true');
+    expect(screen.getByTestId('timeline-divider-1')).toHaveAttribute('data-bar', 'false');
+  });
+
+  it('lines the dividers up with the notes they belong to', () => {
+    render(<TimelineRoll timeline={timeline} currentIndex={null} />);
+
+    const noteLeft = screen.getByTestId('timeline-note-1').style.left;
+    expect(screen.getByTestId('timeline-divider-1').style.left).toBe(noteLeft);
+  });
+
+  it('draws no dividers when there is nothing to divide', () => {
+    render(<TimelineRoll timeline={[]} currentIndex={null} />);
+
+    expect(screen.queryByTestId(/^timeline-divider-/)).not.toBeInTheDocument();
+  });
 });

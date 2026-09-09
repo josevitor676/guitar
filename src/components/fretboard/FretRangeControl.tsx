@@ -1,3 +1,6 @@
+/** The highest fret the window can be scrolled to, matching a 24-fret neck. */
+const HIGHEST_FRET = 24;
+
 interface FretRangeControlProps {
   minFret: number;
   maxFret: number;
@@ -6,35 +9,28 @@ interface FretRangeControlProps {
 
 export function FretRangeControl({ minFret, maxFret, onChange }: FretRangeControlProps) {
   const span = maxFret - minFret;
+  // The window keeps its width, so it can only start early enough to still fit.
+  const highestStart = Math.max(1, HIGHEST_FRET - span);
 
-  const goToPrevious = () => {
-    const nextMin = Math.max(1, minFret - 1);
-    onChange(nextMin, nextMin + span);
-  };
-
-  const goToNext = () => {
-    onChange(minFret + 1, maxFret + 1);
+  const moveTo = (start: number) => {
+    const clamped = Math.min(highestStart, Math.max(1, start));
+    onChange(clamped, clamped + span);
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1 text-xs font-medium">
-      <button
-        type="button"
-        onClick={goToPrevious}
-        className="text-text-secondary transition-all duration-200 hover:text-text-primary"
-      >
-        Anterior
-      </button>
-      <span className="text-text-primary">
+    <div className="flex items-center gap-3 rounded-full border border-white/[0.06] bg-surface px-3 py-1.5 text-xs font-medium">
+      <span className="whitespace-nowrap text-text-primary">
         Casas {minFret}-{maxFret}
       </span>
-      <button
-        type="button"
-        onClick={goToNext}
-        className="text-text-secondary transition-all duration-200 hover:text-text-primary"
-      >
-        Próximo
-      </button>
+      <input
+        type="range"
+        min={1}
+        max={highestStart}
+        value={Math.min(minFret, highestStart)}
+        aria-label="Primeira casa visível"
+        onChange={(event) => moveTo(Number(event.target.value))}
+        className="h-1 w-32 cursor-pointer appearance-none rounded-full bg-white/10 accent-accent"
+      />
     </div>
   );
 }

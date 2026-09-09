@@ -10,6 +10,8 @@ const PX_PER_BEAT = 72;
 const ROW_HEIGHT_PX = 48;
 const LABEL_WIDTH_PX = 40;
 const TRAILING_BEATS = 2;
+/** Beats per bar, which is where the heavier divider falls. */
+const BEATS_PER_BAR = 4;
 const SCROLL_MARGIN_PX = 120;
 
 interface TimelineRollProps {
@@ -25,8 +27,17 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeNote = currentIndex !== null ? timeline[currentIndex] : undefined;
   const playheadX = beatToX(activeNote ? activeNote.startBeat : 0);
-  const widthPx = beatToX(timelineLengthInBeats(timeline) + TRAILING_BEATS);
+  const lengthInBeats = timelineLengthInBeats(timeline);
+  const widthPx = beatToX(lengthInBeats + TRAILING_BEATS);
   const gridHeightPx = STRING_ORDER.length * ROW_HEIGHT_PX;
+
+  // A divider sits on every note onset, so sixteenths get four to a beat and
+  // quarters get one, matching whatever figure is being played.
+  const beatStep = timeline.length > 1 ? timeline[1].startBeat - timeline[0].startBeat : 1;
+  const dividerBeats = Array.from(
+    { length: Math.floor(lengthInBeats / Math.max(beatStep, 0.05)) + 1 },
+    (_, index) => index * beatStep,
+  );
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -50,6 +61,23 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
   return (
     <div ref={scrollRef} className="relative overflow-x-auto overflow-y-hidden pt-4">
       <div className="relative" style={{ width: `${widthPx}px`, height: `${gridHeightPx}px` }}>
+        {/*
+          One divider per beat, so the roll reads in columns the way tablature
+          does, with a heavier line opening each bar to make the pulse countable.
+        */}
+        {dividerBeats.map((beat) => (
+          <span
+            key={`divider-${beat}`}
+            data-testid={`timeline-divider-${beat}`}
+            data-bar={beat % BEATS_PER_BAR === 0}
+            aria-hidden="true"
+            className={`absolute top-0 w-px ${
+              beat % BEATS_PER_BAR === 0 ? 'bg-white/[0.18]' : 'bg-white/[0.07]'
+            }`}
+            style={{ left: `${beatToX(beat)}px`, height: `${gridHeightPx}px` }}
+          />
+        ))}
+
         {STRING_ORDER.map((string) => (
           <div
             key={string}

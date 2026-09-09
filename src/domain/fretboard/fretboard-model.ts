@@ -74,3 +74,29 @@ export function orderAlongNeck(positions: FretPosition[]): FretPosition[] {
     return a.fret - b.fret;
   });
 }
+
+/** Which way through the sequence the student wants to practise. */
+export type PlaybackDirection = 'up' | 'down' | 'upDown';
+
+/**
+ * Lays the sequence out in the direction being practised.
+ *
+ * A scale or arpeggio is practised both ways, and a round trip turns at the top
+ * without sounding the highest note twice, then finishes on the note it began
+ * on — which is what the ear waits for and how the pattern is drilled.
+ */
+export function applyDirection(
+  positions: FretPosition[],
+  direction: PlaybackDirection,
+): FretPosition[] {
+  if (positions.length < 2) return [...positions];
+
+  switch (direction) {
+    case 'down':
+      return [...positions].reverse();
+    case 'upDown':
+      return [...positions, ...[...positions].reverse().slice(1)];
+    default:
+      return [...positions];
+  }
+}

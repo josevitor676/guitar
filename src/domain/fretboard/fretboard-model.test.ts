@@ -3,6 +3,7 @@ import {
   isValidPosition,
   positionsEqual,
   orderAlongNeck,
+  applyDirection,
   fretSpanForWidth,
   windowStartToReveal,
   MAX_VISIBLE_FRETS,
@@ -149,5 +150,53 @@ describe('orderAlongNeck', () => {
 
   it('handles an empty selection', () => {
     expect(orderAlongNeck([])).toEqual([]);
+  });
+});
+
+describe('applyDirection', () => {
+  const ascending = [
+    { string: 6 as const, fret: 5 },
+    { string: 6 as const, fret: 8 },
+    { string: 5 as const, fret: 5 },
+  ];
+
+  it('leaves the sequence as it is when going up', () => {
+    expect(applyDirection(ascending, 'up')).toEqual(ascending);
+  });
+
+  it('reverses the sequence when going down', () => {
+    expect(applyDirection(ascending, 'down').map((position) => position.fret)).toEqual([5, 8, 5]);
+    expect(applyDirection(ascending, 'down')[0]).toEqual({ string: 5, fret: 5 });
+  });
+
+  it('climbs and comes back down, turning at the top without repeating it', () => {
+    const roundTrip = applyDirection(ascending, 'upDown');
+
+    expect(roundTrip).toHaveLength(5);
+    expect(roundTrip.map((position) => `${position.string}:${position.fret}`)).toEqual([
+      '6:5',
+      '6:8',
+      '5:5',
+      '6:8',
+      '6:5',
+    ]);
+  });
+
+  it('ends a round trip back where it started, which is where the ear expects it', () => {
+    const roundTrip = applyDirection(ascending, 'upDown');
+
+    expect(roundTrip[roundTrip.length - 1]).toEqual(ascending[0]);
+  });
+
+  it('does not double a single note into two', () => {
+    const one = [{ string: 6 as const, fret: 5 }];
+
+    expect(applyDirection(one, 'upDown')).toEqual(one);
+  });
+
+  it('handles an empty sequence in every direction', () => {
+    for (const direction of ['up', 'down', 'upDown'] as const) {
+      expect(applyDirection([], direction)).toEqual([]);
+    }
   });
 });
