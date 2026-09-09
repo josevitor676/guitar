@@ -21,8 +21,10 @@ export function ExerciseList() {
             onClick={() => selectExercise(exercise.id)}
             aria-pressed={exercise.id === activeExerciseId}
             className={[
-              'w-full rounded border bg-card px-3 py-3 text-left transition-all duration-200',
-              exercise.id === activeExerciseId ? 'border-white/30' : 'border-white/10 hover:border-white/20',
+              'w-full rounded-2xl border bg-card px-3 py-3 text-left transition-all duration-200',
+              exercise.id === activeExerciseId
+                ? 'border-accent bg-accent-dim'
+                : 'border-white/[0.06] hover:border-white/20',
             ].join(' ')}
           >
             <span className="block text-xs uppercase tracking-wide text-text-secondary">

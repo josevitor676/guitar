@@ -25,4 +25,15 @@ describe('ExerciseList', () => {
     expect(useFretboardStore.getState().selectedNotes).toEqual(first.positions);
     expect(useExerciseStore.getState().activeExerciseId).toBe(first.id);
   });
+
+  it('marks the active exercise with the accent border', () => {
+    render(<ExerciseList />);
+    const [first] = EXERCISE_CATALOG;
+
+    const button = screen.getByText(first.name).closest('button');
+
+    expect(button?.className).toContain('border-white/[0.06]');
+    fireEvent.click(screen.getByText(first.name));
+    expect(screen.getByText(first.name).closest('button')?.className).toContain('border-accent');
+  });
 });
