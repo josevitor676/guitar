@@ -3,6 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useMetronomeStore } from '../../state/metronome-store';
 import { useUiStore } from '../../state/ui-store';
+import { useExerciseStore } from '../../state/exercise-store';
+import { saveUserExercises } from '../../state/exercise-library';
 
 vi.mock('../../audio', () => ({
   sampler: { isLoaded: () => true, playNote: vi.fn() },
@@ -19,6 +21,7 @@ describe('App', () => {
     useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });
     useMetronomeStore.setState({ bpm: 100, subdivision: 'quarter', isPlaying: false, currentPulse: 0 });
     useUiStore.setState({ activeTab: 'practice', fretboardView: 'grid' });
+    useExerciseStore.setState({ activeExerciseId: null, userExercises: [] });
   });
 
   it('renders the practice tab by default with the fretboard, play button, and metronome controls', () => {
@@ -64,5 +67,24 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: /exerc[ií]cios/i }));
     expect(screen.getAllByRole('button', { name: /come[cç]ar/i })).toHaveLength(1);
+  });
+
+  it('hydrates the student library on mount and counts it in the tab badge', () => {
+    saveUserExercises([
+      {
+        id: 'user-1',
+        name: 'Meu aquecimento',
+        category: 'meu',
+        bpm: 80,
+        subdivision: 'quarter',
+        createdAt: 1_700_000_000_000,
+        positions: [{ string: 6, fret: 3 }],
+      },
+    ]);
+
+    render(<App />);
+
+    expect(useExerciseStore.getState().userExercises).toHaveLength(1);
+    expect(screen.getByText('05')).toBeInTheDocument();
   });
 });

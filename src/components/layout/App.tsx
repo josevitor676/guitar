@@ -7,20 +7,23 @@ import { loadPreferences, initPersistence } from '../../state/persistence';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useMetronomeStore } from '../../state/metronome-store';
 import { useUiStore } from '../../state/ui-store';
+import { useExerciseStore } from '../../state/exercise-store';
 import type { TabId } from '../../state/ui-store';
 import { EXERCISE_CATALOG } from '../../domain/exercises/exercise-catalog';
-
-const TABS: { id: TabId; label: string; badge?: number }[] = [
-  { id: 'practice', label: 'Prática / Fretboard Livre' },
-  { id: 'exercises', label: 'Exercícios', badge: EXERCISE_CATALOG.length },
-];
 
 export function App() {
   const samplerLoaded = useSamplerLoaded();
   const activeTab = useUiStore((state) => state.activeTab);
   const setActiveTab = useUiStore((state) => state.setActiveTab);
+  const userExerciseCount = useExerciseStore((state) => state.userExercises.length);
+
+  const tabs: { id: TabId; label: string; badge?: number }[] = [
+    { id: 'practice', label: 'Prática / Fretboard Livre' },
+    { id: 'exercises', label: 'Exercícios', badge: EXERCISE_CATALOG.length + userExerciseCount },
+  ];
 
   useEffect(() => {
+    useExerciseStore.getState().hydrateUserExercises();
     const preferences = loadPreferences();
     if (preferences) {
       useFretboardStore.getState().setFretRange(Math.max(1, preferences.minFret), preferences.maxFret);
@@ -42,7 +45,7 @@ export function App() {
         </div>
       </header>
 
-      <Tabs tabs={TABS} activeTabId={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
+      <Tabs tabs={tabs} activeTabId={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
 
       {!samplerLoaded && (
         <p className="mt-4 text-sm text-text-secondary" role="status">
