@@ -8,6 +8,7 @@ interface IconButtonProps {
   children: ReactNode;
   variant?: IconButtonVariant;
   className?: string;
+  disabled?: boolean;
 }
 
 const VARIANT_CLASSES: Record<IconButtonVariant, string> = {
@@ -16,14 +17,22 @@ const VARIANT_CLASSES: Record<IconButtonVariant, string> = {
   ghost: 'bg-transparent text-text-secondary hover:text-text-primary',
 };
 
-export function IconButton({ label, onClick, children, variant = 'secondary', className = '' }: IconButtonProps) {
+export function IconButton({
+  label,
+  onClick,
+  children,
+  variant = 'secondary',
+  className = '',
+  disabled = false,
+}: IconButtonProps) {
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={`flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 active:scale-95 ${VARIANT_CLASSES[variant]} ${className}`.trim()}
+      disabled={disabled}
+      className={`flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${VARIANT_CLASSES[variant]} ${className}`.trim()}
     >
       {children}
     </button>
