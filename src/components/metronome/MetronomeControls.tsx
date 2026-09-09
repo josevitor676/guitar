@@ -18,7 +18,7 @@ function SubdivisionSelect({ value, onChange }: { value: Subdivision; onChange: 
     <select
       value={value}
       onChange={(event) => onChange(event.target.value as Subdivision)}
-      className="rounded-full border border-white/10 bg-surface px-2 py-1 text-text-primary transition-all duration-200"
+      className="rounded-full border border-white/[0.06] bg-surface px-2 py-1 text-text-primary transition-all duration-200"
     >
       {Object.entries(SUBDIVISION_LABELS).map(([optionValue, label]) => (
         <option key={optionValue} value={optionValue}>
@@ -30,45 +30,19 @@ function SubdivisionSelect({ value, onChange }: { value: Subdivision; onChange: 
 }
 
 export function MetronomeControls() {
-  const {
-    bpm,
-    subdivision,
-    rhythmMode,
-    subdivisionByString,
-    setBpm,
-    setSubdivision,
-    setRhythmMode,
-    setStringSubdivision,
-  } = useMetronome();
+  const { subdivision, rhythmMode, subdivisionByString, setSubdivision, setRhythmMode, setStringSubdivision } =
+    useMetronome();
 
   return (
     <div className="flex flex-col gap-3 text-sm text-text-secondary">
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-surface px-3 py-1">
-          <button
-            type="button"
-            onClick={() => setBpm(bpm - 5)}
-            className="text-text-primary transition-all duration-200 hover:opacity-70"
-          >
-            -
-          </button>
-          <span className="text-text-primary">{bpm} BPM</span>
-          <button
-            type="button"
-            onClick={() => setBpm(bpm + 5)}
-            className="text-text-primary transition-all duration-200 hover:opacity-70"
-          >
-            +
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1 rounded-full border border-white/10 bg-surface p-1">
+        <div className="flex items-center gap-1 rounded-full border border-white/[0.06] bg-surface p-1">
           <button
             type="button"
             onClick={() => setRhythmMode('note')}
             aria-pressed={rhythmMode === 'note'}
             className={`rounded-full px-2 py-0.5 transition-all duration-200 ${
-              rhythmMode === 'note' ? 'bg-white/10 text-text-primary' : 'text-text-secondary'
+              rhythmMode === 'note' ? 'bg-accent text-body' : 'text-text-secondary'
             }`}
           >
             Por nota
@@ -78,7 +52,7 @@ export function MetronomeControls() {
             onClick={() => setRhythmMode('string')}
             aria-pressed={rhythmMode === 'string'}
             className={`rounded-full px-2 py-0.5 transition-all duration-200 ${
-              rhythmMode === 'string' ? 'bg-white/10 text-text-primary' : 'text-text-secondary'
+              rhythmMode === 'string' ? 'bg-accent text-body' : 'text-text-secondary'
             }`}
           >
             Por corda
