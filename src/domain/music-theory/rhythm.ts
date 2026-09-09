@@ -6,3 +6,10 @@ export const SUBDIVISION_DURATIONS: Record<Subdivision, string> = {
   triplet: '8t',
   sixteenth: '16n',
 };
+
+export const SUBDIVISION_BEATS: Record<Subdivision, number> = {
+  quarter: 1,
+  eighth: 0.5,
+  triplet: 1 / 3,
+  sixteenth: 0.25,
+};
