@@ -1,11 +1,13 @@
-import type { INoteSampler, IMetronome, ISequencePlayer } from './audio-engine.types';
+import type { INoteSampler, IMetronome, ISequencePlayer, IGlideVoice } from './audio-engine.types';
 import { ToneNoteSampler } from './sampler';
 import { ToneMetronome } from './metronome';
 import { ToneSequencePlayer } from './sequence-player';
+import { ToneGlideVoice } from './glide-voice';
 
 export { ensureAudioStarted } from './audio-context';
 export type { INoteSampler, IMetronome, ISequencePlayer } from './audio-engine.types';
 
 export const sampler: INoteSampler = new ToneNoteSampler();
 export const metronome: IMetronome = new ToneMetronome();
-export const sequencePlayer: ISequencePlayer = new ToneSequencePlayer(sampler);
+export const glideVoice: IGlideVoice = new ToneGlideVoice();
+export const sequencePlayer: ISequencePlayer = new ToneSequencePlayer(sampler, glideVoice);

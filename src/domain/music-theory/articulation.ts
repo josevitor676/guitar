@@ -1,5 +1,12 @@
 /** How a note is reached from the one before it in a sequence. */
-export type Articulation = 'hammerOn' | 'pullOff';
+export type Articulation = 'hammerOn' | 'pullOff' | 'slide' | 'bend';
+
+/** The articulations that reach their note by gliding the pitch, not by striking it. */
+export const GLIDING_ARTICULATIONS: ReadonlySet<Articulation> = new Set(['slide', 'bend']);
+
+export function isGliding(articulation: Articulation): boolean {
+  return GLIDING_ARTICULATIONS.has(articulation);
+}
 
 /**
  * The same slur played in the other direction.
@@ -9,18 +16,39 @@ export type Articulation = 'hammerOn' | 'pullOff';
  * them, or the exercise would ask for a technique the hand cannot perform.
  */
 export function invertArticulation(articulation: Articulation): Articulation {
-  return articulation === 'hammerOn' ? 'pullOff' : 'hammerOn';
+  if (articulation === 'hammerOn') return 'pullOff';
+  if (articulation === 'pullOff') return 'hammerOn';
+  // A slide and a bend take their direction from the pitches they join, so
+  // played backwards they are still a slide and still a bend.
+  return articulation;
 }
 
 export const ARTICULATION_SHORT_LABEL: Record<Articulation, string> = {
   hammerOn: 'h',
   pullOff: 'p',
+  slide: 'sl',
+  bend: 'b',
 };
 
 export const ARTICULATION_LABEL: Record<Articulation, string> = {
   hammerOn: 'hammer-on',
   pullOff: 'pull-off',
+  slide: 'slide',
+  bend: 'bend',
 };
+
+/**
+ * How long the pitch takes to travel, as a share of the note it lands on.
+ *
+ * A slide is a fast movement of the hand and arrives almost at once; a bend is
+ * expressive and takes most of the note to reach its target. Anything that is
+ * not a glide arrives instantly.
+ */
+export function glideSecondsFor(articulation: Articulation, noteSeconds: number): number {
+  if (articulation === 'slide') return Math.min(0.09, noteSeconds * 0.35);
+  if (articulation === 'bend') return noteSeconds * 0.55;
+  return 0;
+}
 
 /**
  * How hard a note is struck, from 0 to 1.

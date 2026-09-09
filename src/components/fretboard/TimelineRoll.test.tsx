@@ -165,4 +165,44 @@ describe('TimelineRoll', () => {
 
     expect(screen.queryByTestId(/^timeline-slur-/)).not.toBeInTheDocument();
   });
+
+  it('draws each technique with its own shape, not one shape for all', () => {
+    const mixed = buildTimeline(
+      [
+        { string: 6, fret: 3 },
+        { string: 6, fret: 5, articulation: 'hammerOn' },
+        { string: 6, fret: 9, articulation: 'slide' },
+        { string: 6, fret: 11, articulation: 'bend' },
+      ],
+      'quarter',
+      () => 'quarter',
+    );
+
+    render(<TimelineRoll timeline={mixed} currentIndex={null} />);
+
+    expect(screen.getByTestId('timeline-slur-1')).toHaveAttribute('data-articulation', 'hammerOn');
+    expect(screen.getByTestId('timeline-slur-2')).toHaveAttribute('data-articulation', 'slide');
+    expect(screen.getByTestId('timeline-slur-3')).toHaveAttribute('data-articulation', 'bend');
+
+    // Only the bend is drawn with an arrowhead, since only it rises to a target.
+    expect(screen.getByTestId('timeline-slur-3')).toHaveAttribute('marker-end');
+    expect(screen.getByTestId('timeline-slur-2')).not.toHaveAttribute('marker-end');
+  });
+
+  it('labels a slide and a bend with the marks tablature prints', () => {
+    const mixed = buildTimeline(
+      [
+        { string: 6, fret: 5 },
+        { string: 6, fret: 9, articulation: 'slide' },
+        { string: 6, fret: 11, articulation: 'bend' },
+      ],
+      'quarter',
+      () => 'quarter',
+    );
+
+    render(<TimelineRoll timeline={mixed} currentIndex={null} />);
+
+    expect(screen.getByTestId('timeline-slur-label-1')).toHaveTextContent('sl');
+    expect(screen.getByTestId('timeline-slur-label-2')).toHaveTextContent('b');
+  });
 });

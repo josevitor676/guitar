@@ -4,7 +4,7 @@ import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
 
 export const EXERCISES_STORAGE_KEY = 'guitar-teacher:exercises';
 
-const ARTICULATIONS = new Set(['hammerOn', 'pullOff']);
+const ARTICULATIONS = new Set(['hammerOn', 'pullOff', 'slide', 'bend']);
 
 function isValidPosition(value: unknown): value is FretPosition {
   if (!value || typeof value !== 'object') return false;

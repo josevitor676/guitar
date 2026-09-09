@@ -102,23 +102,43 @@ export function TimelineRoll({ timeline, currentIndex, metronomeOn = false }: Ti
           width={widthPx}
           height={gridHeightPx}
         >
+          <defs>
+            <marker id="timeline-bend-arrow" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 z" fill="currentColor" className="text-accent" />
+            </marker>
+          </defs>
+
           {timeline.map((note) => {
             const previous = timeline[note.index - 1];
-            if (!note.position.articulation || !previous) return null;
+            const articulation = note.position.articulation;
+            if (!articulation || !previous) return null;
 
             const fromX = beatToX(previous.startBeat);
             const toX = beatToX(note.startBeat);
+            const fromRow = STRING_ORDER.indexOf(previous.position.string) * ROW_HEIGHT_PX + ROW_HEIGHT_PX / 2;
             const rowY = STRING_ORDER.indexOf(note.position.string) * ROW_HEIGHT_PX + ROW_HEIGHT_PX / 2;
             const arcY = rowY - 22;
+
+            // Each technique draws the shape tablature already uses for it: a
+            // slur over the two notes, a straight line for a slide, an arrow
+            // for a bend rising to its target.
+            const shape =
+              articulation === 'slide'
+                ? `M ${fromX + 16} ${fromRow + 8} L ${toX - 16} ${rowY - 8}`
+                : articulation === 'bend'
+                  ? `M ${fromX + 14} ${arcY + 10} C ${fromX + 40} ${arcY + 10} ${toX - 22} ${arcY} ${toX - 14} ${arcY - 2}`
+                  : `M ${fromX + 14} ${arcY} Q ${(fromX + toX) / 2} ${arcY - 14} ${toX - 14} ${arcY}`;
 
             return (
               <path
                 key={`slur-${note.index}`}
                 data-testid={`timeline-slur-${note.index}`}
-                d={`M ${fromX + 14} ${arcY} Q ${(fromX + toX) / 2} ${arcY - 14} ${toX - 14} ${arcY}`}
+                data-articulation={articulation}
+                d={shape}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
+                markerEnd={articulation === 'bend' ? 'url(#timeline-bend-arrow)' : undefined}
                 className="text-accent"
               />
             );
@@ -138,7 +158,7 @@ export function TimelineRoll({ timeline, currentIndex, metronomeOn = false }: Ti
               data-testid={`timeline-slur-label-${note.index}`}
               title={ARTICULATION_LABEL[note.position.articulation]}
               className="absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent px-1.5 text-[10px] font-bold leading-4 text-body"
-              style={{ left: `${midX}px`, top: `${rowY - 38}px` }}
+              style={{ left: `${midX}px`, top: `${rowY - 40}px` }}
             >
               {ARTICULATION_SHORT_LABEL[note.position.articulation]}
             </span>

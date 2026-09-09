@@ -77,8 +77,11 @@ export async function importTabFromFile(
 
       /**
        * Re-reads a mark the digit pass rejected, cropped together with the
-       * marks either side of it. A lone slur letter is unreadable; inside
-       * "7p5" it is not.
+       * marks either side of it. A lone articulation mark is unreadable —
+       * measured, a bare "p" comes back empty and a bare "b" comes back as an
+       * "h", which would import a bend as a hammer-on. Inside "7p5" or "7b9"
+       * both are read correctly, because the digits either side give the
+       * classifier a baseline and a size.
        */
       const readSlurBetweenNeighbours = async (boxIndex: number) => {
         const before = boxes[boxIndex - 1];
@@ -94,7 +97,7 @@ export async function importTabFromFile(
         const letter = read
           .map((token) => token.text)
           .join('')
-          .match(/[hp]/i);
+          .match(/[hpbs/\\\\]/i);
         return letter ? letter[0].toLowerCase() : '';
       };
 

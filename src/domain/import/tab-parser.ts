@@ -23,13 +23,20 @@ interface PlacedMark {
   slur?: Articulation;
 }
 
-const SLUR_LETTERS: Record<string, Articulation> = {
+/** The marks tablature prints between two fret numbers. */
+const ARTICULATION_MARKS: Record<string, Articulation> = {
   h: 'hammerOn',
   p: 'pullOff',
+  // Tablature writes a slide up as "/" and a slide down as "\\"; which way it
+  // goes is already in the two fret numbers, so both mean the same thing here.
+  '/': 'slide',
+  '\\': 'slide',
+  s: 'slide',
+  b: 'bend',
 };
 
 function parseSlur(text: string): Articulation | null {
-  return SLUR_LETTERS[text.toLowerCase()] ?? null;
+  return ARTICULATION_MARKS[text.toLowerCase()] ?? null;
 }
 
 function parseFret(text: string): number | null {

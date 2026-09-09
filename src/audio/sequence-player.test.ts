@@ -34,6 +34,10 @@ vi.mock('tone', () => {
 import { ToneSequencePlayer } from './sequence-player';
 import * as Tone from 'tone';
 
+function createFakeGlideVoice() {
+  return { playGlide: vi.fn() };
+}
+
 function createFakeSampler(): INoteSampler {
   return {
     isLoaded: () => true,
@@ -52,7 +56,7 @@ describe('ToneSequencePlayer', () => {
 
   it('sets the transport BPM and schedules one event per note, using the spacing subdivision as the step interval', () => {
     const sampler = createFakeSampler();
-    const player = new ToneSequencePlayer(sampler);
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
     player.play(
       [
         { frequency: 220, duration: '8n' },
@@ -70,7 +74,7 @@ describe('ToneSequencePlayer', () => {
 
   it("plays each note with its own duration, independent of the sequence's spacing subdivision", () => {
     const sampler = createFakeSampler();
-    const player = new ToneSequencePlayer(sampler);
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
     // Spacing is 'quarter' (4n), but the second note carries its own '8n'
     // duration — proving playNote uses the note's duration, not the spacing.
     player.play(
@@ -88,7 +92,7 @@ describe('ToneSequencePlayer', () => {
 
   it('notifies note-change listeners with the current index', () => {
     const sampler = createFakeSampler();
-    const player = new ToneSequencePlayer(sampler);
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
     const onNoteChange = vi.fn();
     player.onNoteChange(onNoteChange);
     player.play([{ frequency: 220, duration: '4n' }], 100, 'quarter');
@@ -99,7 +103,7 @@ describe('ToneSequencePlayer', () => {
 
   it('disposes the previous sequence when stop is called', () => {
     const sampler = createFakeSampler();
-    const player = new ToneSequencePlayer(sampler);
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
     player.play([{ frequency: 220, duration: '4n' }], 100, 'quarter');
     player.stop();
     expect(sequenceDispose).toHaveBeenCalled();
@@ -107,7 +111,7 @@ describe('ToneSequencePlayer', () => {
 
   it('resets the transport position before starting, so a second play() always restarts from the beginning of the sequence', () => {
     const sampler = createFakeSampler();
-    const player = new ToneSequencePlayer(sampler);
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
 
     player.play(
       [
@@ -138,7 +142,7 @@ describe('ToneSequencePlayer', () => {
 
   it('sounds each note at the transport time it was scheduled for, not whenever the callback runs', () => {
     const sampler = createFakeSampler();
-    const player = new ToneSequencePlayer(sampler);
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
 
     player.play(
       [
@@ -161,7 +165,7 @@ describe('ToneSequencePlayer', () => {
 
   it('runs the sequence silently when the metronome is leading', () => {
     const sampler = createFakeSampler();
-    const player = new ToneSequencePlayer(sampler);
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
     const advanced: number[] = [];
     player.onNoteChange((index) => advanced.push(index));
 
@@ -175,7 +179,7 @@ describe('ToneSequencePlayer', () => {
 
   it('sounds the notes when no options are given at all', () => {
     const sampler = createFakeSampler();
-    const player = new ToneSequencePlayer(sampler);
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
 
     player.play([{ frequency: 110, duration: '4n' }], 120, 'quarter');
     capturedCallback?.(0, 0);
@@ -185,7 +189,7 @@ describe('ToneSequencePlayer', () => {
 
   it('sounds a slurred note softer than a picked one', () => {
     const sampler = createFakeSampler();
-    const player = new ToneSequencePlayer(sampler);
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
 
     player.play(
       [
@@ -200,5 +204,48 @@ describe('ToneSequencePlayer', () => {
 
     expect(sampler.playNote).toHaveBeenNthCalledWith(1, 110, '4n', 0, 1);
     expect(sampler.playNote).toHaveBeenNthCalledWith(2, 130, '4n', 0.5, 0.45);
+  });
+
+  it('hands a glided note to the voice that can move, not to the sampler', () => {
+    const sampler = createFakeSampler();
+    const glideVoice = createFakeGlideVoice();
+    const player = new ToneSequencePlayer(sampler, glideVoice);
+
+    player.play(
+      [
+        { frequency: 110, duration: '4n' },
+        { frequency: 130, duration: '4n', velocity: 0.45, glide: { fromHz: 110, seconds: 0.09 } },
+      ],
+      120,
+      'quarter',
+    );
+    capturedCallback?.(0, 0);
+    capturedCallback?.(0.5, 1);
+
+    expect(sampler.playNote).toHaveBeenCalledOnce();
+    expect(glideVoice.playGlide).toHaveBeenCalledWith({
+      fromHz: 110,
+      toHz: 130,
+      duration: '4n',
+      glideSeconds: 0.09,
+      time: 0.5,
+      velocity: 0.45,
+    });
+  });
+
+  it('keeps a glided note silent too when the metronome leads', () => {
+    const sampler = createFakeSampler();
+    const glideVoice = createFakeGlideVoice();
+    const player = new ToneSequencePlayer(sampler, glideVoice);
+
+    player.play(
+      [{ frequency: 130, duration: '4n', glide: { fromHz: 110, seconds: 0.09 } }],
+      120,
+      'quarter',
+      { silent: true },
+    );
+    capturedCallback?.(0, 0);
+
+    expect(glideVoice.playGlide).not.toHaveBeenCalled();
   });
 });

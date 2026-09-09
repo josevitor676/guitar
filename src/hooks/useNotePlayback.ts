@@ -4,8 +4,13 @@ import { usePlaybackSequence } from './usePlaybackSequence';
 import { usePlaybackStore } from '../state/playback-store';
 import { STANDARD_TUNING } from '../domain/music-theory/tuning';
 import { getNoteAt } from '../domain/music-theory/notes';
-import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
-import { SLURRED_VELOCITY, PLUCKED_VELOCITY } from '../domain/music-theory/articulation';
+import { SUBDIVISION_DURATIONS, SUBDIVISION_BEATS } from '../domain/music-theory/rhythm';
+import {
+  SLURRED_VELOCITY,
+  PLUCKED_VELOCITY,
+  isGliding,
+  glideSecondsFor,
+} from '../domain/music-theory/articulation';
 import { sequencePlayer, ensureAudioStarted } from '../audio';
 
 export function useNotePlayback() {
@@ -23,8 +28,12 @@ export function useNotePlayback() {
   const play = useCallback(async () => {
     setCurrentIndex(null);
     await ensureAudioStarted();
-    const notes = sequence.map((position) => {
+    const secondsPerNote = SUBDIVISION_BEATS[subdivision] * (60 / bpm);
+
+    const notes = sequence.map((position, index) => {
       const note = getNoteAt(STANDARD_TUNING, position);
+      const previous = sequence[index - 1];
+      const glides = !!position.articulation && isGliding(position.articulation) && !!previous;
       // A hammered or pulled note is not picked: it sounds because the finger
       // strikes or plucks a string that is already ringing, so it comes out
       // weaker than the note before it.
@@ -32,6 +41,14 @@ export function useNotePlayback() {
         frequency: note.frequency,
         duration: SUBDIVISION_DURATIONS[subdivision],
         velocity: position.articulation ? SLURRED_VELOCITY : PLUCKED_VELOCITY,
+        // A slide or a bend starts at the pitch before it and travels; the
+        // player hands those to the voice that can move.
+        glide: glides
+          ? {
+              fromHz: getNoteAt(STANDARD_TUNING, previous).frequency,
+              seconds: glideSecondsFor(position.articulation!, secondsPerNote),
+            }
+          : undefined,
       };
     });
     // With the metronome leading, the notes stay silent so the click is clear.

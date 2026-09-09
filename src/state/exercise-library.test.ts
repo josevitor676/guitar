@@ -87,6 +87,19 @@ describe('exercise-library', () => {
     expect(loadUserExercises()).toEqual([slurred]);
   });
 
+  it('keeps slides and bends, which it does know how to play', () => {
+    const glided = makeExercise({
+      positions: [
+        { string: 6, fret: 5 },
+        { string: 6, fret: 9, articulation: 'slide' },
+        { string: 6, fret: 11, articulation: 'bend' },
+      ],
+    });
+    saveUserExercises([glided]);
+
+    expect(loadUserExercises()).toEqual([glided]);
+  });
+
   it('rejects an articulation it does not know how to play', () => {
     saveUserExercises([
       makeExercise({ positions: [{ string: 6, fret: 3, articulation: 'tapping' as never }] }),

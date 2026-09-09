@@ -169,3 +169,41 @@ describe('positionsFromTokens with slurs', () => {
     ]);
   });
 });
+
+describe('positionsFromTokens with slides and bends', () => {
+  it('reads a forward slash as a slide', () => {
+    const positions = positionsFromTokens(
+      [token('5', 10, 70), token('/', 25, 70), token('9', 40, 70)],
+      [system],
+    );
+
+    expect(positions[1].articulation).toBe('slide');
+  });
+
+  it('reads a backslash as the same slide, going the other way', () => {
+    const positions = positionsFromTokens(
+      [token('9', 10, 70), token('\\', 25, 70), token('5', 40, 70)],
+      [system],
+    );
+
+    expect(positions[1]).toEqual({ string: 6, fret: 5, articulation: 'slide' });
+  });
+
+  it('reads a b as a bend', () => {
+    const positions = positionsFromTokens(
+      [token('7', 10, 70), token('b', 25, 70), token('9', 40, 70)],
+      [system],
+    );
+
+    expect(positions[1].articulation).toBe('bend');
+  });
+
+  it('does not mistake a bend for a hammer-on', () => {
+    const positions = positionsFromTokens(
+      [token('7', 10, 70), token('b', 25, 70), token('9', 40, 70)],
+      [system],
+    );
+
+    expect(positions[1].articulation).not.toBe('hammerOn');
+  });
+});

@@ -58,7 +58,7 @@ export async function withDigitReader<T>(use: (readers: TabReaders) => Promise<T
       // Kept to its own pass: letters in the digit whitelist cost accuracy on
       // the numbers, and the numbers are what must not be wrong. This pass runs
       // only on the handful of crops the digit pass could not read.
-      readSlurInContext: (canvas) => recognizeWith('0123456789hp', canvas),
+      readSlurInContext: (canvas) => recognizeWith('0123456789hpbs/\\', canvas),
     });
   } finally {
     await worker.terminate();

@@ -184,4 +184,40 @@ describe('useNotePlayback', () => {
     expect(notes[0].velocity).toBe(1);
     expect(notes[1].velocity).toBeLessThan(notes[0].velocity);
   });
+
+  it('gives a bent note the pitch it travels from and a slower glide than a slide', async () => {
+    useMetronomeStore.setState({ isPlaying: false, bpm: 60, subdivision: 'quarter' });
+    useUiStore.setState({ fretboardView: 'timeline' });
+    useFretboardStore.setState({
+      selectedNotes: [
+        { string: 6, fret: 7 },
+        { string: 6, fret: 9, articulation: 'bend' },
+        { string: 6, fret: 5 },
+        { string: 6, fret: 9, articulation: 'slide' },
+      ],
+    });
+
+    const { result } = renderHook(() => useNotePlayback());
+    await act(async () => {
+      await result.current.play();
+    });
+
+    const [notes] = play.mock.calls[0];
+    expect(notes[0].glide).toBeUndefined();
+    expect(notes[1].glide.fromHz).toBeCloseTo(notes[0].frequency, 5);
+    expect(notes[3].glide.seconds).toBeLessThan(notes[1].glide.seconds);
+  });
+
+  it('never glides the first note, which has no pitch to travel from', async () => {
+    useMetronomeStore.setState({ isPlaying: false });
+    useUiStore.setState({ fretboardView: 'timeline' });
+    useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 9, articulation: 'slide' }] });
+
+    const { result } = renderHook(() => useNotePlayback());
+    await act(async () => {
+      await result.current.play();
+    });
+
+    expect(play.mock.calls[0][0][0].glide).toBeUndefined();
+  });
 });
