@@ -15,24 +15,31 @@ vi.mock('./rasterize', async () => {
 });
 vi.mock('./ocr', () => ({ withDigitReader }));
 vi.mock('./crop', () => ({
-  // The stub records the band it was asked for, so the pipeline's cropping is observable.
-  cropBand: (page: { width: number }, band: { top: number; height: number; scale: number }) => ({
-    width: page.width * band.scale,
-    height: band.height * band.scale,
-    __band: band,
-  }),
+  // The stub records the box it was asked for, so the pipeline's cropping is observable.
+  cropDigit: (_page: unknown, box: { x0: number; y0: number; x1: number; y1: number }) => ({ __box: box }),
 }));
 
 import { importTabFromFile, NO_TAB_FOUND_MESSAGE, DIGITS_UNREADABLE_MESSAGE } from './import-pipeline';
 
-/** A canvas stub whose pixels are a white page with six dark lines at y=20..70. */
-function pageCanvas(width = 200, height = 120, lineYs = [20, 30, 40, 50, 60, 70]) {
+/**
+ * A canvas stub: a white page with six dark tablature lines, plus a digit-sized
+ * blob of ink for each `digits` entry so the segmenter has something to find.
+ */
+function pageCanvas(
+  width = 200,
+  height = 120,
+  lineYs = [20, 30, 40, 50, 60, 70],
+  digits: { x: number; y: number }[] = [{ x: 30, y: 70 }],
+) {
   const data = new Uint8ClampedArray(width * height * 4).fill(255);
-  for (const y of lineYs) {
-    for (let x = 0; x < width; x += 1) {
-      const offset = (y * width + x) * 4;
-      data[offset] = data[offset + 1] = data[offset + 2] = 0;
-    }
+  const ink = (x: number, y: number) => {
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
+    const offset = (y * width + x) * 4;
+    data[offset] = data[offset + 1] = data[offset + 2] = 0;
+  };
+  for (const y of lineYs) for (let x = 0; x < width; x += 1) ink(x, y);
+  for (const digit of digits) {
+    for (let dy = -3; dy <= 3; dy += 1) for (let dx = -2; dx <= 2; dx += 1) ink(digit.x + dx, digit.y + dy);
   }
   return {
     width,
@@ -50,25 +57,33 @@ describe('importTabFromFile', () => {
     withDigitReader.mockClear();
   });
 
-  it('reads each tablature system from its own cropped strip, not the whole page', async () => {
-    // Two systems on one page: y=20..70 and y=220..270.
+  it('sends one tight crop per digit, not one image per system', async () => {
+    // Two systems, each carrying two digits.
     rasterizeFile.mockResolvedValue([
-      pageCanvas(200, 320, [20, 30, 40, 50, 60, 70, 220, 230, 240, 250, 260, 270]),
+      pageCanvas(
+        200,
+        320,
+        [20, 30, 40, 50, 60, 70, 220, 230, 240, 250, 260, 270],
+        [
+          { x: 30, y: 70 },
+          { x: 90, y: 70 },
+          { x: 30, y: 270 },
+          { x: 90, y: 270 },
+        ],
+      ),
     ]);
     read.mockResolvedValue([]);
 
     await importTabFromFile(file).catch(() => {});
 
-    expect(read).toHaveBeenCalledTimes(2);
-    const bands = read.mock.calls.map(([strip]) => (strip as { __band: { top: number } }).__band.top);
-    expect(bands).toEqual([15, 215]);
+    expect(read).toHaveBeenCalledTimes(4);
   });
 
-  it('puts tokens read from a strip back into page coordinates before parsing', async () => {
+  it('places each digit where its box sits on the page, not where the OCR reports it', async () => {
     rasterizeFile.mockResolvedValue([pageCanvas()]);
-    // The strip starts at y=15 and is scaled 3x, so the bottom line (y=70)
-    // sits at (70-15)*3 = 165 inside the strip.
-    read.mockResolvedValue([{ text: '3', x: 30, y: 165 }]);
+    // The reader returns a position inside the tiny crop; the pipeline must
+    // ignore it and use the box the crop was cut from.
+    read.mockResolvedValue([{ text: '3', x: 999, y: 999 }]);
 
     const positions = await importTabFromFile(file);
 
@@ -78,8 +93,8 @@ describe('importTabFromFile', () => {
   it('concatenates pages in order, so a two-page PDF reads as one sequence', async () => {
     rasterizeFile.mockResolvedValue([pageCanvas(), pageCanvas()]);
     read
-      .mockResolvedValueOnce([{ text: '1', x: 30, y: 15 }])
-      .mockResolvedValueOnce([{ text: '2', x: 30, y: 15 }]);
+      .mockResolvedValueOnce([{ text: '1', x: 0, y: 0 }])
+      .mockResolvedValueOnce([{ text: '2', x: 0, y: 0 }]);
 
     const positions = await importTabFromFile(file);
 
@@ -87,7 +102,7 @@ describe('importTabFromFile', () => {
   });
 
   it('says no tablature was found when the page holds no six-line system', async () => {
-    rasterizeFile.mockResolvedValue([pageCanvas(200, 120, [20, 30, 40, 50, 60])]);
+    rasterizeFile.mockResolvedValue([pageCanvas(200, 120, [20, 30, 40, 50, 60], [])]);
     read.mockResolvedValue([]);
 
     await expect(importTabFromFile(file)).rejects.toThrow(NO_TAB_FOUND_MESSAGE);
@@ -102,7 +117,7 @@ describe('importTabFromFile', () => {
 
   it('reports progress through preparing and reading', async () => {
     rasterizeFile.mockResolvedValue([pageCanvas()]);
-    read.mockResolvedValue([{ text: '3', x: 30, y: 165 }]);
+    read.mockResolvedValue([{ text: '3', x: 0, y: 0 }]);
     const steps: string[] = [];
 
     await importTabFromFile(file, (step) => steps.push(step.label));

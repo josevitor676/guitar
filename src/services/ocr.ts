@@ -17,7 +17,12 @@ export async function withDigitReader<T>(use: (read: DigitReader) => Promise<T>)
   try {
     await worker.setParameters({
       tessedit_char_whitelist: '0123456789',
-      tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+      // Every image handed to this reader is one fret number, already cropped
+      // to its own box. SPARSE_TEXT hunts for scattered text across a page and
+      // returns nothing for a lone character; SINGLE_WORD reads the crop as the
+      // one word it is, which keeps a two-digit fret like "12" intact where
+      // SINGLE_CHAR would truncate it.
+      tessedit_pageseg_mode: PSM.SINGLE_WORD,
       // Without a declared resolution Tesseract guesses one from the content,
       // and on a mostly blank tablature strip it guesses badly and drops digits.
       user_defined_dpi: '300',

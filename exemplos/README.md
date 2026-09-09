@@ -8,7 +8,7 @@ traz, para cada arquivo, a lista de notas esperadas no formato
 | --- | --- | --- |
 | `exemplo-1-tercas-repetidas.png` | 3 sistemas, 9 notas cada, padrões repetidos em tercinas, com pauta acima | caso realista denso, parecido com uma folha de estudo |
 | `exemplo-2-escala-casas-altas.png` | 1 sistema, casas de dois dígitos (10, 11, 12) | prova que números de dois dígitos são lidos inteiros |
-| `exemplo-3-uma-corda-por-sistema.png` | 3 sistemas, só 3 notas cada | caso esparso — hoje o OCR não dá conta |
+| `exemplo-3-uma-corda-por-sistema.png` | 3 sistemas, só 3 notas cada | caso esparso, que exigiu segmentar os dígitos antes do OCR |
 | `exemplo-4-foto-inclinada.jpg` | mesma folha girada 1,6°, fundo amarelado, ruído e compressão JPEG | caso difícil de propósito: foto de celular |
 | `exemplo-5-duas-paginas.pdf` | PDF de 2 páginas, 1 sistema por página, 4 notas cada | prova o caminho do pdf.js e a concatenação de páginas |
 
@@ -25,10 +25,14 @@ gabarito:
 | --- | --- | --- | --- |
 | exemplo-1 | 27 | 27 | 100% |
 | exemplo-2 | 9 | 9 | 100% |
-| exemplo-3 | 9 | 0 | 0% |
+| exemplo-3 | 9 | 9 | 100% |
 | exemplo-4 | 6 | 0 | 0% |
-| exemplo-5 | 8 | 1 | 13% |
+| exemplo-5 | 8 | 8 | 100% |
 
-Os dois primeiros são o caso de uso real — tablatura gravada, limpa e densa.
-Os três últimos são limites conhecidos, descritos em
+Tudo que não está girado sai completo e na ordem certa. O único que falha é
+o exemplo-4, girado 1,6° de propósito: a detecção depende de linhas
+horizontais escuras, e a inclinação as dissolve. Está descrito em
 `docs/superpowers/specs/2026-09-09-tab-import-design.md`.
+
+Para refazer a medição, gere os arquivos e rode o app contra eles comparando
+com `gabarito.json`.

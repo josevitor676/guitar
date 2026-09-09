@@ -32,13 +32,9 @@ Medição com o pipeline real contra folhas de exemplo com gabarito, em
 - **Tablatura gravada e densa: 100%.** Uma folha de 27 notas em três
   sistemas, e uma de 9 notas com casas de dois dígitos, saem completas e
   na ordem certa, com a pauta de cinco linhas ignorada.
-- **Sistema esparso: falha.** Um sistema com três ou quatro números
-  soltos e muito espaçados não é lido — o Tesseract não reconhece
-  caracteres isolados numa faixa larga e quase vazia. Testado com recorte
-  por linha, com quatro modos de segmentação de página e com fatiamento
-  horizontal; nenhum resolve. Sair disso exige segmentar os dígitos
-  antes do OCR, achando as manchas escuras entre as linhas e recortando
-  cada uma, o que é uma mudança de arquitetura e não um ajuste.
+- **Sistema esparso: 100%,** depois da segmentação de dígitos descrita na
+  seção 8.1. Antes dela um sistema com três ou quatro números soltos era
+  lido como vazio.
 - **Foto inclinada: falha na detecção.** Uma folha girada 1,6° já não
   produz linhas horizontais escuras o bastante, e nenhum sistema é
   encontrado. Corrigir isso exige endireitar a imagem antes, por exemplo
@@ -174,16 +170,43 @@ dois pese no bundle inicial de quem nunca importar um arquivo.
 
 ## 8. OCR (`ocr.ts`)
 
-> **Revisado após medição.** A primeira versão entregava a página inteira ao
-> Tesseract. Medindo contra folhas de exemplo com gabarito, isso perdia a
-> maioria dos números: uma folha de 27 notas rendia 11, e uma de 9 notas em
-> três sistemas rendia zero. A análise de layout do Tesseract descarta dígitos
-> esparsos numa página alta. O pipeline passou a apontar o OCR para **um
-> sistema de cada vez**, recortado e ampliado 3×, com DPI declarado em 300 em
-> vez de estimado. A mesma folha de 27 notas passou a render 27.
->
-> A geometria desse recorte já era conhecida: os sistemas precisam ser
-> localizados antes, para atribuir cada dígito a uma corda.
+> **Revisado duas vezes após medição.** A primeira versão entregava a página
+> inteira ao Tesseract, e isso perdia a maioria dos números: uma folha de 27
+> notas rendia 11 e uma de 9 notas em três sistemas rendia zero. Recortar um
+> sistema por vez levou a folha densa a 27 de 27, mas o caso esparso seguia em
+> zero. O que resolveu os dois foi segmentar os dígitos (seção 8.1).
+
+## 8.1 Segmentação dos Dígitos
+
+O OCR nunca recebe uma página nem um sistema: recebe **um número de casa por
+vez**, já recortado. `findDigitBoxes` localiza cada um antes, e é puro:
+
+1. **Apagar as linhas.** Cada linha atravessa a página inteira e soldaria
+   todos os dígitos dela num borrão só. Apagar as fileiras inteiras, porém,
+   cortaria ao meio qualquer dígito que a linha cruza — então um pixel na
+   fileira da linha sobrevive quando há tinta logo acima ou logo abaixo, no
+   mesmo x, porque essa tinta é de um símbolo e não da linha.
+2. **Rotular componentes conexos** na tinta restante, com preenchimento
+   iterativo (recursão estoura em manchas grandes, como uma barra de compasso).
+3. **Filtrar por tamanho** plausível de dígito, em proporção ao espaçamento
+   entre cordas. É isso que descarta poeira e barras de compasso.
+4. **Fundir vizinhos**: duas manchas lado a lado, com sobreposição vertical e
+   separadas por menos de 35% do espaçamento, são os dois algarismos de um
+   número como "12".
+
+Cada caixa é então recortada e **normalizada para 110 px de altura**. Um
+multiplicador fixo não serve: o PDF é rasterizado em 2×, então o mesmo dígito
+impresso chega com o dobro da altura, e a escala que serve para uma origem
+estoura a outra. Medindo, o multiplicador fixo deixava a folha densa em 93% ou
+o PDF em 38%, conforme o valor escolhido; a normalização por altura põe os
+dois em 100%.
+
+O modo de segmentação do Tesseract é `SINGLE_WORD`. `SPARSE_TEXT` procura
+texto espalhado por uma página e devolve vazio para um caractere isolado —
+com ele, só os números de dois dígitos eram lidos. `SINGLE_CHAR` truncaria
+justamente esses.
+
+## 8.2 Configuração do OCR
 
 
 `recognizeDigits(canvas: HTMLCanvasElement): Promise<OcrToken[]>`
