@@ -1,12 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useExerciseStore } from './exercise-store';
 import { useFretboardStore } from './fretboard-store';
 import { EXERCISE_CATALOG } from '../domain/exercises/exercise-catalog';
+import { useMetronomeStore } from './metronome-store';
 
 describe('useExerciseStore', () => {
   beforeEach(() => {
-    useExerciseStore.setState({ activeExerciseId: null });
+    localStorage.clear();
+    useExerciseStore.setState({ activeExerciseId: null, userExercises: [] });
     useFretboardStore.setState({ selectedNotes: [], minFret: 1, maxFret: 7 });
+    useMetronomeStore.setState({ bpm: 100, subdivision: 'quarter' });
   });
 
   it('starts with no active exercise', () => {
@@ -50,5 +53,130 @@ describe('useExerciseStore', () => {
     useExerciseStore.getState().selectExercise('does-not-exist');
     expect(useExerciseStore.getState().activeExerciseId).toBeNull();
     expect(useFretboardStore.getState().selectedNotes).toEqual([]);
+  });
+
+  describe('the student library', () => {
+    it('refuses to save an empty selection', () => {
+      expect(useExerciseStore.getState().saveCurrentSelection('Nada')).toBeNull();
+      expect(useExerciseStore.getState().userExercises).toEqual([]);
+    });
+
+    it('refuses to save under a name that is only whitespace', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+
+      expect(useExerciseStore.getState().saveCurrentSelection('   ')).toBeNull();
+      expect(useExerciseStore.getState().userExercises).toEqual([]);
+    });
+
+    it('captures the selection with the tempo and rhythm figure in force', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+      useMetronomeStore.setState({ bpm: 76, subdivision: 'triplet' });
+
+      const saved = useExerciseStore.getState().saveCurrentSelection('  Aquecimento meu  ');
+
+      expect(saved).toMatchObject({
+        name: 'Aquecimento meu',
+        category: 'meu',
+        bpm: 76,
+        subdivision: 'triplet',
+        positions: [{ string: 6, fret: 3 }],
+      });
+      expect(useExerciseStore.getState().userExercises).toHaveLength(1);
+    });
+
+    it('makes the newly saved exercise the active one', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+
+      const saved = useExerciseStore.getState().saveCurrentSelection('Meu');
+
+      expect(useExerciseStore.getState().activeExerciseId).toBe(saved!.id);
+    });
+
+    it('keeps the newest exercise first', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+      useExerciseStore.getState().saveCurrentSelection('Primeiro');
+      useExerciseStore.getState().saveCurrentSelection('Segundo');
+
+      expect(useExerciseStore.getState().userExercises.map((item) => item.name)).toEqual([
+        'Segundo',
+        'Primeiro',
+      ]);
+    });
+
+    it('gives two exercises saved in the same millisecond different ids', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+      vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
+
+      const first = useExerciseStore.getState().saveCurrentSelection('Um');
+      const second = useExerciseStore.getState().saveCurrentSelection('Dois');
+
+      expect(first!.id).not.toBe(second!.id);
+      vi.restoreAllMocks();
+    });
+
+    it('survives a reload through hydrateUserExercises', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+      useExerciseStore.getState().saveCurrentSelection('Persistido');
+
+      useExerciseStore.setState({ userExercises: [] });
+      useExerciseStore.getState().hydrateUserExercises();
+
+      expect(useExerciseStore.getState().userExercises.map((item) => item.name)).toEqual(['Persistido']);
+    });
+
+    it('restores the saved tempo and rhythm figure when the exercise is selected', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 7 }] });
+      useMetronomeStore.setState({ bpm: 76, subdivision: 'triplet' });
+      const saved = useExerciseStore.getState().saveCurrentSelection('Meu');
+
+      useMetronomeStore.setState({ bpm: 120, subdivision: 'quarter' });
+      useFretboardStore.setState({ selectedNotes: [] });
+
+      useExerciseStore.getState().selectExercise(saved!.id);
+
+      expect(useFretboardStore.getState().selectedNotes).toEqual([{ string: 6, fret: 7 }]);
+      expect(useMetronomeStore.getState().bpm).toBe(76);
+      expect(useMetronomeStore.getState().subdivision).toBe('triplet');
+    });
+
+    it('widens the fret range for a student exercise too', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 12 }] });
+      const saved = useExerciseStore.getState().saveCurrentSelection('Alto');
+
+      useFretboardStore.setState({ minFret: 1, maxFret: 7 });
+      useExerciseStore.getState().selectExercise(saved!.id);
+
+      expect(useFretboardStore.getState().maxFret).toBeGreaterThanOrEqual(12);
+    });
+
+    it('removes an exercise from the store and from storage', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+      const saved = useExerciseStore.getState().saveCurrentSelection('Descartável');
+
+      useExerciseStore.getState().deleteUserExercise(saved!.id);
+
+      expect(useExerciseStore.getState().userExercises).toEqual([]);
+      useExerciseStore.getState().hydrateUserExercises();
+      expect(useExerciseStore.getState().userExercises).toEqual([]);
+    });
+
+    it('clears the active exercise when that exercise is the one removed', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+      const saved = useExerciseStore.getState().saveCurrentSelection('Ativo');
+
+      useExerciseStore.getState().deleteUserExercise(saved!.id);
+
+      expect(useExerciseStore.getState().activeExerciseId).toBeNull();
+    });
+
+    it('leaves a different active exercise alone when removing one', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+      const doomed = useExerciseStore.getState().saveCurrentSelection('Some');
+      const kept = useExerciseStore.getState().saveCurrentSelection('Fica');
+
+      useExerciseStore.getState().deleteUserExercise(doomed!.id);
+
+      expect(useExerciseStore.getState().activeExerciseId).toBe(kept!.id);
+    });
   });
 });
