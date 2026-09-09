@@ -44,6 +44,15 @@ describe('ToneNoteSampler', () => {
     const sampler = new ToneNoteSampler();
     capturedOnload?.();
     sampler.playNote(440, 0.5);
-    expect(triggerAttackRelease).toHaveBeenCalledWith(440, 0.5);
+    expect(triggerAttackRelease).toHaveBeenCalledWith(440, 0.5, undefined);
+  });
+
+  it('passes a scheduled transport time straight through to the sampler', () => {
+    const sampler = new ToneNoteSampler();
+    capturedOnload?.();
+
+    sampler.playNote(440, '4n', 1.75);
+
+    expect(triggerAttackRelease).toHaveBeenCalledWith(440, '4n', 1.75);
   });
 });

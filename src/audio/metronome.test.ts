@@ -13,12 +13,13 @@ let lastLoopInstance: { interval: string } | undefined;
 
 vi.mock('tone', () => {
   return {
-    MembraneSynth: function() {
+    Synth: function() {
       return {
         toDestination: vi.fn().mockReturnThis(),
         triggerAttackRelease,
       };
     },
+    Draw: { schedule: (callback: () => void) => callback() },
     Loop: function(callback: (time: number) => void, interval: string) {
       capturedLoopCallback = callback;
       capturedLoopInterval = interval;
@@ -95,5 +96,32 @@ describe('ToneMetronome', () => {
     metronome.stop();
     expect(loopStop).toHaveBeenCalled();
     expect(transportStop).not.toHaveBeenCalled();
+  });
+
+  it('accents the downbeat and ticks the rest of the bar, both at the scheduled time', () => {
+    const metronome = new ToneMetronome();
+    metronome.start();
+    triggerAttackRelease.mockClear();
+
+    for (let pulse = 0; pulse < 5; pulse += 1) capturedLoopCallback?.(pulse * 0.5);
+
+    const pitches = triggerAttackRelease.mock.calls.map(([pitch]) => pitch);
+    expect(pitches[0]).not.toBe(pitches[1]);
+    expect(pitches[4]).toBe(pitches[0]);
+    expect(pitches[1]).toBe(pitches[2]);
+
+    // Every click carries the transport time it was scheduled for.
+    expect(triggerAttackRelease.mock.calls.map(([, , time]) => time)).toEqual([0, 0.5, 1, 1.5, 2]);
+  });
+
+  it('makes a click, not a drum: the envelope decays almost immediately', () => {
+    const metronome = new ToneMetronome();
+    metronome.start();
+    triggerAttackRelease.mockClear();
+
+    capturedLoopCallback?.(0);
+
+    const [, length] = triggerAttackRelease.mock.calls[0];
+    expect(length).toBeLessThan(0.05);
   });
 });

@@ -2,7 +2,7 @@ import type { Subdivision } from '../domain/music-theory/rhythm';
 
 export interface INoteSampler {
   isLoaded(): boolean;
-  playNote(frequencyHz: number, duration: number | string): void;
+  playNote(frequencyHz: number, duration: number | string, time?: number): void;
 }
 
 export interface IMetronome {

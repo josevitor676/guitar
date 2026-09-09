@@ -83,7 +83,7 @@ describe('ToneSequencePlayer', () => {
     );
 
     capturedCallback?.(0, 1);
-    expect(sampler.playNote).toHaveBeenCalledWith(440, '8n');
+    expect(sampler.playNote).toHaveBeenCalledWith(440, '8n', expect.anything());
   });
 
   it('notifies note-change listeners with the current index', () => {
@@ -134,5 +134,28 @@ describe('ToneSequencePlayer', () => {
     const stopOrder = transportStop.mock.invocationCallOrder[0];
     const startOrder = transportStart.mock.invocationCallOrder[0];
     expect(stopOrder).toBeLessThan(startOrder);
+  });
+
+  it('sounds each note at the transport time it was scheduled for, not whenever the callback runs', () => {
+    const sampler = createFakeSampler();
+    const player = new ToneSequencePlayer(sampler);
+
+    player.play(
+      [
+        { frequency: 110, duration: '4n' },
+        { frequency: 220, duration: '4n' },
+      ],
+      120,
+      'quarter',
+    );
+
+    // Tone schedules callbacks ahead of the audio clock and hands them the beat
+    // they belong to. Dropping that argument is what pulled the notes out of
+    // step with the metronome, which does pass it.
+    capturedCallback?.(1.5, 0);
+    capturedCallback?.(2.0, 1);
+
+    expect(sampler.playNote).toHaveBeenNthCalledWith(1, 110, '4n', 1.5);
+    expect(sampler.playNote).toHaveBeenNthCalledWith(2, 220, '4n', 2.0);
   });
 });

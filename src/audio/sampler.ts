@@ -32,8 +32,14 @@ export class ToneNoteSampler implements INoteSampler {
     return this.loaded;
   }
 
-  playNote(frequencyHz: number, duration: number | string): void {
+  /**
+   * `time` is the transport time the note was scheduled for. Passing it through
+   * is what keeps a sequence in step with the metronome: without it the note
+   * sounds at whatever moment the callback happens to run, while the click
+   * sounds at the scheduled beat, and the two drift audibly apart.
+   */
+  playNote(frequencyHz: number, duration: number | string, time?: number): void {
     if (!this.loaded) return;
-    this.sampler.triggerAttackRelease(frequencyHz, duration);
+    this.sampler.triggerAttackRelease(frequencyHz, duration, time);
   }
 }
