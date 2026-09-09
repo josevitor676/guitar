@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { PracticePanel } from '../practice/PracticePanel';
 import { ExerciseList } from '../exercises/ExerciseList';
+import { ImportPanel } from '../import/ImportPanel';
 import { Tabs } from './Tabs';
 import { useSamplerLoaded } from '../../hooks/useSamplerLoaded';
 import { loadPreferences, initPersistence } from '../../state/persistence';
@@ -20,6 +21,7 @@ export function App() {
   const tabs: { id: TabId; label: string; badge?: number }[] = [
     { id: 'practice', label: 'Prática / Fretboard Livre' },
     { id: 'exercises', label: 'Exercícios', badge: EXERCISE_CATALOG.length + userExerciseCount },
+    { id: 'import', label: 'Importar' },
   ];
 
   useEffect(() => {
@@ -63,6 +65,20 @@ export function App() {
 
           <div className="mt-6">
             <PracticePanel />
+          </div>
+        </section>
+      )}
+
+      {activeTab === 'import' && (
+        <section className="mt-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Do seu arquivo</p>
+          <h2 className="mt-1 text-3xl font-bold">Traga um exercício de fora.</h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            Suba a tablatura que você achou e eu monto ela no braço para você praticar.
+          </p>
+
+          <div className="mt-6">
+            <ImportPanel />
           </div>
         </section>
       )}

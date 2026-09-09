@@ -87,4 +87,13 @@ describe('App', () => {
     expect(useExerciseStore.getState().userExercises).toHaveLength(1);
     expect(screen.getByText('05')).toBeInTheDocument();
   });
+
+  it('opens the import tab and asks for a tablature file', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /importar/i }));
+
+    expect(screen.getByLabelText(/arquivo da tablatura/i)).toBeInTheDocument();
+    expect(screen.queryByText(/explore o bra[cç]o/i)).not.toBeInTheDocument();
+  });
 });
