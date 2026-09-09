@@ -58,12 +58,10 @@ describe('TimelineRoll', () => {
     expect(screen.getByTestId('timeline-playhead')).toHaveStyle({ left: '184px' });
   });
 
-  it('rules a divider on every note onset, so the roll reads in columns', () => {
+  it('closes every note into its own cell, so three notes get four boundaries', () => {
     render(<TimelineRoll timeline={timeline} currentIndex={null} />);
 
-    expect(screen.getByTestId('timeline-divider-0')).toBeInTheDocument();
-    expect(screen.getByTestId('timeline-divider-1')).toBeInTheDocument();
-    expect(screen.getByTestId('timeline-divider-2')).toBeInTheDocument();
+    expect(screen.getAllByTestId(/^timeline-divider-/)).toHaveLength(timeline.length + 1);
   });
 
   it('marks the start of each bar more heavily than the beats inside it', () => {
@@ -73,11 +71,25 @@ describe('TimelineRoll', () => {
     expect(screen.getByTestId('timeline-divider-1')).toHaveAttribute('data-bar', 'false');
   });
 
-  it('lines the dividers up with the notes they belong to', () => {
+  it('puts the dividers between the notes rather than through them', () => {
     render(<TimelineRoll timeline={timeline} currentIndex={null} />);
 
-    const noteLeft = screen.getByTestId('timeline-note-1').style.left;
-    expect(screen.getByTestId('timeline-divider-1').style.left).toBe(noteLeft);
+    const noteLeft = Number.parseFloat(screen.getByTestId('timeline-note-1').style.left);
+    const before = Number.parseFloat(screen.getByTestId('timeline-divider-1').style.left);
+    const after = Number.parseFloat(screen.getByTestId('timeline-divider-2').style.left);
+
+    expect(before).toBeLessThan(noteLeft);
+    expect(after).toBeGreaterThan(noteLeft);
+  });
+
+  it('centers each note in its cell', () => {
+    render(<TimelineRoll timeline={timeline} currentIndex={null} />);
+
+    const noteLeft = Number.parseFloat(screen.getByTestId('timeline-note-1').style.left);
+    const before = Number.parseFloat(screen.getByTestId('timeline-divider-1').style.left);
+    const after = Number.parseFloat(screen.getByTestId('timeline-divider-2').style.left);
+
+    expect((before + after) / 2).toBeCloseTo(noteLeft, 5);
   });
 
   it('draws no dividers when there is nothing to divide', () => {

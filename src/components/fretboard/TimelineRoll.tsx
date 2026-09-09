@@ -31,13 +31,16 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
   const widthPx = beatToX(lengthInBeats + TRAILING_BEATS);
   const gridHeightPx = STRING_ORDER.length * ROW_HEIGHT_PX;
 
-  // A divider sits on every note onset, so sixteenths get four to a beat and
-  // quarters get one, matching whatever figure is being played.
+  // Dividers fall *between* notes, not through them, so each note sits inside
+  // its own cell exactly as it sits between two frets on the neck. Boundary k
+  // is the one just before note k, and it opens a bar when that note lands on
+  // a downbeat.
   const beatStep = timeline.length > 1 ? timeline[1].startBeat - timeline[0].startBeat : 1;
-  const dividerBeats = Array.from(
-    { length: Math.floor(lengthInBeats / Math.max(beatStep, 0.05)) + 1 },
-    (_, index) => index * beatStep,
-  );
+  const cellBoundaries = Array.from({ length: timeline.length + 1 }, (_, index) => ({
+    index,
+    beat: index * beatStep - beatStep / 2,
+    opensBar: Math.abs((index * beatStep) % BEATS_PER_BAR) < 1e-6,
+  }));
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -65,15 +68,13 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
           One divider per beat, so the roll reads in columns the way tablature
           does, with a heavier line opening each bar to make the pulse countable.
         */}
-        {dividerBeats.map((beat) => (
+        {cellBoundaries.map(({ index, beat, opensBar }) => (
           <span
-            key={`divider-${beat}`}
-            data-testid={`timeline-divider-${beat}`}
-            data-bar={beat % BEATS_PER_BAR === 0}
+            key={`divider-${index}`}
+            data-testid={`timeline-divider-${index}`}
+            data-bar={opensBar}
             aria-hidden="true"
-            className={`absolute top-0 w-px ${
-              beat % BEATS_PER_BAR === 0 ? 'bg-white/[0.18]' : 'bg-white/[0.07]'
-            }`}
+            className={`absolute top-0 w-px ${opensBar ? 'bg-white/[0.18]' : 'bg-white/[0.07]'}`}
             style={{ left: `${beatToX(beat)}px`, height: `${gridHeightPx}px` }}
           />
         ))}
