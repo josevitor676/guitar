@@ -48,7 +48,7 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
   }
 
   return (
-    <div ref={scrollRef} className="relative overflow-x-auto pt-4">
+    <div ref={scrollRef} className="relative overflow-x-auto overflow-y-hidden pt-4">
       <div className="relative" style={{ width: `${widthPx}px`, height: `${gridHeightPx}px` }}>
         {STRING_ORDER.map((string) => (
           <div

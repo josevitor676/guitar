@@ -23,8 +23,6 @@ describe('useMetronome', () => {
     useMetronomeStore.setState({
       bpm: 100,
       subdivision: 'quarter',
-      rhythmMode: 'note',
-      subdivisionByString: { 1: 'quarter', 2: 'quarter', 3: 'quarter', 4: 'quarter', 5: 'quarter', 6: 'quarter' },
       isPlaying: false,
       currentPulse: 0,
     });
@@ -55,25 +53,4 @@ describe('useMetronome', () => {
     expect(setBpm).toHaveBeenCalledWith(140);
   });
 
-  it('exposes rhythmMode from the store, with setRhythmMode updating it', () => {
-    const { result } = renderHook(() => useMetronome());
-    expect(result.current.rhythmMode).toBe('note');
-
-    act(() => {
-      result.current.setRhythmMode('string');
-    });
-
-    expect(result.current.rhythmMode).toBe('string');
-  });
-
-  it('updates only the targeted string via setStringSubdivision', () => {
-    const { result } = renderHook(() => useMetronome());
-
-    act(() => {
-      result.current.setStringSubdivision(6, 'eighth');
-    });
-
-    expect(result.current.subdivisionByString[6]).toBe('eighth');
-    expect(result.current.subdivisionByString[1]).toBe('quarter');
-  });
 });

@@ -22,8 +22,6 @@ describe('useTimeline', () => {
     });
     useMetronomeStore.setState({
       subdivision: 'quarter',
-      rhythmMode: 'note',
-      subdivisionByString: { 1: 'quarter', 2: 'quarter', 3: 'quarter', 4: 'quarter', 5: 'quarter', 6: 'quarter' },
     });
   });
 
@@ -41,15 +39,4 @@ describe('useTimeline', () => {
     expect(result.current.map((note) => note.durationBeats)).toEqual([1, 1]);
   });
 
-  it('resolves each note duration from its own string in string mode', () => {
-    useMetronomeStore.setState({
-      rhythmMode: 'string',
-      subdivisionByString: { 1: 'sixteenth', 2: 'quarter', 3: 'quarter', 4: 'quarter', 5: 'quarter', 6: 'eighth' },
-    });
-
-    const { result } = renderHook(() => useTimeline());
-
-    expect(result.current.map((note) => note.durationBeats)).toEqual([0.5, 0.25]);
-    expect(result.current.map((note) => note.startBeat)).toEqual([0, 1]);
-  });
 });

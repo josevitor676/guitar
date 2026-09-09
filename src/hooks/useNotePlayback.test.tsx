@@ -27,8 +27,6 @@ describe('useNotePlayback', () => {
     useMetronomeStore.setState({
       bpm: 100,
       subdivision: 'quarter',
-      rhythmMode: 'note',
-      subdivisionByString: { 1: 'quarter', 2: 'quarter', 3: 'quarter', 4: 'quarter', 5: 'quarter', 6: 'quarter' },
     });
     usePlaybackStore.setState({ isPlaying: false, currentIndex: null });
     play.mockClear();
@@ -117,30 +115,5 @@ describe('useNotePlayback', () => {
     });
 
     expect(indexDuringPlayCall).toBeNull();
-  });
-
-  it('uses the per-string subdivision duration when rhythmMode is "string"', async () => {
-    useFretboardStore.setState({
-      selectedNotes: [
-        { string: 6, fret: 0 },
-        { string: 1, fret: 0 },
-      ],
-    });
-    useMetronomeStore.setState({
-      bpm: 100,
-      subdivision: 'quarter',
-      rhythmMode: 'string',
-      subdivisionByString: { 1: 'sixteenth', 2: 'quarter', 3: 'quarter', 4: 'quarter', 5: 'quarter', 6: 'eighth' },
-    });
-
-    const { result } = renderHook(() => useNotePlayback());
-    await act(async () => {
-      await result.current.play();
-    });
-
-    const [notes, , spacingSubdivision] = play.mock.calls[0];
-    expect(notes[0].duration).toBe('8n');
-    expect(notes[1].duration).toBe('16n');
-    expect(spacingSubdivision).toBe('quarter');
   });
 });

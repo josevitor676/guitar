@@ -69,11 +69,10 @@ describe('ControlBar', () => {
     expect(useMetronomeStore.getState().bpm).toBe(100);
   });
 
-  it('keeps the rhythm figure controls available', () => {
+  it('keeps the rhythm figure control available', () => {
     render(<ControlBar />);
 
-    expect(screen.getByRole('button', { name: /por nota/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /por corda/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/figura r[ií]tmica/i)).toBeInTheDocument();
   });
 
   describe('saving the current sequence', () => {
