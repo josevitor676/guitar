@@ -50,12 +50,13 @@ describe('Fretboard', () => {
     expect(screen.queryByTestId('inlay-fret-2')).not.toBeInTheDocument();
   });
 
-  it('renders a hollow white outline (no fill) for a selected fret marker', () => {
+  it('renders a hollow outline (no accent fill) for a selected fret marker', () => {
     useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [{ string: 6, fret: 1 }] });
     render(<Fretboard currentIndex={null} />);
     const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
     const circle = cell.querySelector('span');
-    expect(circle?.className).toMatch(/border-white\/40/);
+    expect(circle?.className).toMatch(/border-white\/20/);
+    expect(circle?.className).not.toMatch(/bg-accent/);
   });
 
   it('fills the currently highlighted marker with the accent color during playback', () => {
@@ -64,6 +65,7 @@ describe('Fretboard', () => {
     const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
     const circle = cell.querySelector('span');
     expect(circle?.className).toMatch(/bg-accent/);
+    expect(circle?.className).toMatch(/ring-accent-dim/);
   });
 
   it('renders the fret marker as a circular button', () => {
@@ -98,4 +100,5 @@ describe('Fretboard', () => {
     expect(screen.getByTestId('fret-number-1')).toHaveTextContent('1');
     expect(screen.getByTestId('fret-number-7')).toHaveTextContent('7');
   });
+
 });

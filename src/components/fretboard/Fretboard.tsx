@@ -23,7 +23,7 @@ export function Fretboard({ currentIndex }: FretboardProps) {
 
   return (
     <div className="relative inline-block">
-      <div className="flex items-center border-b border-white/10 pb-1 text-xs text-text-secondary">
+      <div className="flex items-center border-b border-white/[0.06] pb-1 text-xs text-text-secondary">
         <span className="w-10" />
         {frets.map((fret) => (
           <span key={fret} data-testid={`fret-number-${fret}`} className="flex w-14 items-center justify-center">
@@ -55,7 +55,7 @@ export function Fretboard({ currentIndex }: FretboardProps) {
               <span
                 data-testid={`string-line-${string}`}
                 aria-hidden="true"
-                className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/10"
+                className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/[0.06]"
               />
               <span className="relative z-10 w-10 text-center text-sm text-text-secondary">
                 {getPitchClass(STANDARD_TUNING[string])}
@@ -66,7 +66,7 @@ export function Fretboard({ currentIndex }: FretboardProps) {
                 const highlighted = !!highlightedPosition && positionsEqual(highlightedPosition, position);
                 const note = getNoteAt(STANDARD_TUNING, position);
                 return (
-                  <div key={fret} className="relative z-10 border-r border-white/10">
+                  <div key={fret} className="relative z-10 border-r border-white/[0.06]">
                     <FretMarker
                       string={string}
                       fret={fret}

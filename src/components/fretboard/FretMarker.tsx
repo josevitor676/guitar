@@ -9,9 +9,9 @@ interface FretMarkerProps {
 
 export function FretMarker({ string, fret, selected, highlighted, noteLabel, onClick }: FretMarkerProps) {
   const circleClasses = highlighted
-    ? 'border border-accent bg-accent text-body'
+    ? 'bg-accent text-body ring-4 ring-accent-dim'
     : selected
-      ? 'border border-white/40 text-text-primary'
+      ? 'border border-white/20 bg-body text-text-primary'
       : 'border border-transparent text-transparent group-hover:border-white/20';
 
   return (

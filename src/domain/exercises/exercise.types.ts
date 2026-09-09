@@ -1,10 +1,19 @@
 import type { FretPosition } from '../music-theory/tuning';
+import type { Subdivision } from '../music-theory/rhythm';
 
-export type ExerciseCategory = 'aquecimento' | 'digitacao' | 'escala' | 'arpejo';
+export type ExerciseCategory = 'aquecimento' | 'digitacao' | 'escala' | 'arpejo' | 'meu';
 
 export interface Exercise {
   id: string;
   name: string;
   category: ExerciseCategory;
   positions: FretPosition[];
+}
+
+/** An exercise the student built and saved, as opposed to one from the fixed catalog. */
+export interface UserExercise extends Exercise {
+  category: 'meu';
+  bpm: number;
+  subdivision: Subdivision;
+  createdAt: number;
 }
