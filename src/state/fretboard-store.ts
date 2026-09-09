@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { FretPosition } from '../domain/music-theory/tuning';
-import { positionsEqual } from '../domain/fretboard/fretboard-model';
+import { positionsEqual, rangeToReveal } from '../domain/fretboard/fretboard-model';
 
 interface FretboardState {
   minFret: number;
@@ -27,5 +27,11 @@ export const useFretboardStore = create<FretboardState>((set) => ({
       };
     }),
   clearSelection: () => set({ selectedNotes: [] }),
-  loadSequence: (positions) => set({ selectedNotes: positions }),
+  // Loading also reveals: a sequence outside the visible frets would otherwise
+  // play while the neck looks empty.
+  loadSequence: (positions) =>
+    set((state) => ({
+      selectedNotes: positions,
+      ...rangeToReveal(positions, { minFret: state.minFret, maxFret: state.maxFret }),
+    })),
 }));

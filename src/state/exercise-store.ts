@@ -14,20 +14,6 @@ interface ExerciseState {
   hydrateUserExercises: () => void;
 }
 
-/** Widens the visible fret range just enough to show every position of an exercise. */
-function revealPositions(exercise: Exercise): void {
-  const frets = exercise.positions.map((position) => position.fret);
-  const exerciseMinFret = Math.max(1, Math.min(...frets));
-  const exerciseMaxFret = Math.max(...frets);
-  const { minFret, maxFret } = useFretboardStore.getState();
-
-  if (exerciseMinFret < minFret || exerciseMaxFret > maxFret) {
-    useFretboardStore
-      .getState()
-      .setFretRange(Math.max(1, Math.min(minFret, exerciseMinFret)), Math.max(maxFret, exerciseMaxFret));
-  }
-}
-
 function isUserExercise(exercise: Exercise): exercise is UserExercise {
   return exercise.category === 'meu';
 }
@@ -43,8 +29,8 @@ export const useExerciseStore = create<ExerciseState>((set, get) => ({
       EXERCISE_CATALOG.find((item) => item.id === id) ?? get().userExercises.find((item) => item.id === id);
     if (!exercise) return;
 
+    // loadSequence widens the visible fret range on its own.
     useFretboardStore.getState().loadSequence(exercise.positions);
-    revealPositions(exercise);
 
     // A student exercise carries the tempo and feel it was saved with.
     if (isUserExercise(exercise)) {

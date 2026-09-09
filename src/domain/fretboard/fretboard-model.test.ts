@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidPosition, positionsEqual } from './fretboard-model';
+import { isValidPosition, positionsEqual, rangeToReveal } from './fretboard-model';
 
 describe('isValidPosition', () => {
   it('accepts a position within string 1-6 and the given fret range', () => {
@@ -31,5 +31,39 @@ describe('positionsEqual', () => {
 
   it('returns false when fret differs', () => {
     expect(positionsEqual({ string: 3, fret: 5 }, { string: 3, fret: 6 })).toBe(false);
+  });
+});
+
+describe('rangeToReveal', () => {
+  const current = { minFret: 1, maxFret: 7 };
+
+  it('leaves the range alone when every position already fits', () => {
+    expect(rangeToReveal([{ string: 6, fret: 3 }], current)).toEqual(current);
+  });
+
+  it('widens upward to reach a position past the last visible fret', () => {
+    expect(rangeToReveal([{ string: 6, fret: 12 }], current)).toEqual({ minFret: 1, maxFret: 12 });
+  });
+
+  it('widens downward to reach a position below the first visible fret', () => {
+    expect(rangeToReveal([{ string: 6, fret: 2 }], { minFret: 5, maxFret: 10 })).toEqual({
+      minFret: 2,
+      maxFret: 10,
+    });
+  });
+
+  it('never reveals a fret below the first, since fret 0 is the open string', () => {
+    expect(rangeToReveal([{ string: 6, fret: 0 }], current).minFret).toBe(1);
+  });
+
+  it('covers the whole span when positions fall on both sides', () => {
+    expect(rangeToReveal([{ string: 6, fret: 2 }, { string: 1, fret: 14 }], { minFret: 5, maxFret: 10 })).toEqual({
+      minFret: 2,
+      maxFret: 14,
+    });
+  });
+
+  it('leaves the range alone for an empty sequence', () => {
+    expect(rangeToReveal([], current)).toEqual(current);
   });
 });

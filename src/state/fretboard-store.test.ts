@@ -71,4 +71,28 @@ describe('useFretboardStore', () => {
       { string: 1, fret: 2 },
     ]);
   });
+
+  describe('loadSequence', () => {
+    it('brings the loaded positions into view instead of leaving them hidden', () => {
+      useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });
+
+      useFretboardStore.getState().loadSequence([
+        { string: 6, fret: 8 },
+        { string: 5, fret: 12 },
+      ]);
+
+      const { minFret, maxFret, selectedNotes } = useFretboardStore.getState();
+      expect(selectedNotes).toHaveLength(2);
+      expect(minFret).toBe(1);
+      expect(maxFret).toBeGreaterThanOrEqual(12);
+    });
+
+    it('leaves the visible range alone when the sequence already fits', () => {
+      useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });
+
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 3 }]);
+
+      expect(useFretboardStore.getState().maxFret).toBe(7);
+    });
+  });
 });

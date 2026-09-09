@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Play, BookmarkPlus } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { ProgressBar } from '../ui/ProgressBar';
 import { TimelineRoll } from '../fretboard/TimelineRoll';
@@ -23,6 +23,7 @@ export function ImportPanel() {
   const [stage, setStage] = useState<Stage>({ kind: 'idle' });
   const [positions, setPositions] = useState<FretPosition[]>([]);
   const [name, setName] = useState('');
+  const [nameMissing, setNameMissing] = useState(false);
 
   const loadSequence = useFretboardStore((state) => state.loadSequence);
   const saveCurrentSelection = useExerciseStore((state) => state.saveCurrentSelection);
@@ -46,10 +47,18 @@ export function ImportPanel() {
     }
   };
 
-  const save = () => {
-    // saveCurrentSelection returns null for a blank name, and the panel stays
-    // put so the student can name the exercise before leaving.
-    if (saveCurrentSelection(name)) setActiveTab('exercises');
+  // Practising is never gated behind saving: the sequence is already on the
+  // fretboard, so this only moves the student to where they can play it.
+  const practiceNow = () => setActiveTab('practice');
+
+  // Saving is optional. It needs a name only because the library lists
+  // exercises by name, so a missing one is explained rather than ignored.
+  const saveToLibrary = () => {
+    if (saveCurrentSelection(name)) {
+      setActiveTab('exercises');
+      return;
+    }
+    setNameMissing(true);
   };
 
   const noteCountLabel = `${positions.length} ${positions.length === 1 ? 'nota encontrada' : 'notas encontradas'}`;
@@ -119,6 +128,20 @@ export function ImportPanel() {
             ))}
           </ul>
 
+          <div className="flex flex-wrap items-center gap-3 border-t border-white/[0.06] pt-4">
+            <button
+              type="button"
+              onClick={practiceNow}
+              className="flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-body transition-all duration-200 hover:bg-accent-soft active:scale-95"
+            >
+              <Play className="h-4 w-4" />
+              Praticar agora
+            </button>
+            <span className="text-xs text-text-secondary">
+              Já está no braço — é só tocar. Salvar é opcional, para achar de novo depois.
+            </span>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="imported-name" className="text-xs text-text-secondary">
               Nome do exercício
@@ -126,16 +149,26 @@ export function ImportPanel() {
             <input
               id="imported-name"
               value={name}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => {
+                setName(event.target.value);
+                setNameMissing(false);
+              }}
+              placeholder="opcional"
               className="rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-sm text-text-primary outline-none transition-all duration-200 focus:border-accent"
             />
             <button
               type="button"
-              onClick={save}
-              className="rounded-full bg-accent px-4 py-1.5 text-xs font-semibold text-body transition-all duration-200 hover:bg-accent-soft"
+              onClick={saveToLibrary}
+              className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-surface px-4 py-1.5 text-xs font-semibold text-text-primary transition-all duration-200 hover:bg-white/10"
             >
-              Salvar exercício
+              <BookmarkPlus className="h-3.5 w-3.5" />
+              Salvar na biblioteca
             </button>
+            {nameMissing && (
+              <span role="status" className="text-xs text-accent">
+                Dê um nome para guardar na biblioteca.
+              </span>
+            )}
           </div>
         </div>
       )}

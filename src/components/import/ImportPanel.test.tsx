@@ -43,7 +43,7 @@ describe('ImportPanel', () => {
     render(<ImportPanel />);
 
     expect(screen.getByText(/imagem ou PDF/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /salvar exerc[ií]cio/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /praticar agora/i })).not.toBeInTheDocument();
   });
 
   it('reports what it is doing while the file is processed', async () => {
@@ -101,6 +101,46 @@ describe('ImportPanel', () => {
     );
   });
 
+  it('lets the student practice the imported sequence without saving it first', async () => {
+    importTabFromFile.mockResolvedValue([
+      { string: 6, fret: 3 },
+      { string: 5, fret: 5 },
+    ]);
+
+    render(<ImportPanel />);
+    dropFile();
+    await waitFor(() => expect(screen.getByText(/2 notas encontradas/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /praticar agora/i }));
+
+    expect(useUiStore.getState().activeTab).toBe('practice');
+    expect(useFretboardStore.getState().selectedNotes).toEqual([
+      { string: 6, fret: 3 },
+      { string: 5, fret: 5 },
+    ]);
+    expect(useExerciseStore.getState().userExercises).toEqual([]);
+  });
+
+  it('offers practice without ever requiring a name', async () => {
+    importTabFromFile.mockResolvedValue([{ string: 6, fret: 3 }]);
+
+    render(<ImportPanel />);
+    dropFile();
+    await waitFor(() => expect(screen.getByText(/1 nota encontrada/i)).toBeInTheDocument());
+
+    expect(screen.getByRole('button', { name: /praticar agora/i })).toBeEnabled();
+  });
+
+  it('marks saving as the optional step it is', async () => {
+    importTabFromFile.mockResolvedValue([{ string: 6, fret: 3 }]);
+
+    render(<ImportPanel />);
+    dropFile();
+    await waitFor(() => expect(screen.getByText(/1 nota encontrada/i)).toBeInTheDocument());
+
+    expect(screen.getByText(/opcional/i)).toBeInTheDocument();
+  });
+
   it('saves the reviewed sequence into the student library and opens the exercises tab', async () => {
     importTabFromFile.mockResolvedValue([{ string: 6, fret: 3 }]);
 
@@ -109,22 +149,23 @@ describe('ImportPanel', () => {
     await waitFor(() => expect(screen.getByText(/1 nota encontrada/i)).toBeInTheDocument());
 
     fireEvent.change(screen.getByLabelText(/nome do exerc[ií]cio/i), { target: { value: 'Czardas' } });
-    fireEvent.click(screen.getByRole('button', { name: /salvar exerc[ií]cio/i }));
+    fireEvent.click(screen.getByRole('button', { name: /salvar na biblioteca/i }));
 
     expect(useExerciseStore.getState().userExercises.map((item) => item.name)).toEqual(['Czardas']);
     expect(useUiStore.getState().activeTab).toBe('exercises');
   });
 
-  it('refuses to save before the exercise has a name', async () => {
+  it('does not save a nameless exercise, and says so instead of failing silently', async () => {
     importTabFromFile.mockResolvedValue([{ string: 6, fret: 3 }]);
 
     render(<ImportPanel />);
     dropFile();
     await waitFor(() => expect(screen.getByText(/1 nota encontrada/i)).toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('button', { name: /salvar exerc[ií]cio/i }));
+    fireEvent.click(screen.getByRole('button', { name: /salvar na biblioteca/i }));
 
     expect(useExerciseStore.getState().userExercises).toEqual([]);
     expect(useUiStore.getState().activeTab).toBe('import');
+    expect(screen.getByText(/d[êe] um nome/i)).toBeInTheDocument();
   });
 });
