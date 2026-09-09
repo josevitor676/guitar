@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useFretboardStore } from '../state/fretboard-store';
 import { useMetronomeStore } from '../state/metronome-store';
 import { usePlaybackStore } from '../state/playback-store';
+import { useUiStore } from '../state/ui-store';
 import { getNoteAt } from '../domain/music-theory/notes';
 import { STANDARD_TUNING, type FretPosition } from '../domain/music-theory/tuning';
 import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
@@ -80,7 +81,8 @@ describe('useNotePlayback', () => {
     expect(a.result.current.isPlaying).toBe(false);
   });
 
-  it('preserves the exact click order the user selected (F#, C, F#, G, C#, B), without sorting by string/fret and without deduping repeated note names', async () => {
+  it('plays the timeline in the exact click order, without deduping repeated note names', async () => {
+    useUiStore.setState({ fretboardView: 'timeline' });
     const clickOrder: FretPosition[] = [
       { string: 6, fret: 2 }, // F#2
       { string: 2, fret: 1 }, // C4
@@ -99,6 +101,28 @@ describe('useNotePlayback', () => {
     const [notes] = play.mock.calls[0];
     const expectedFrequencies = clickOrder.map((position) => getNoteAt(STANDARD_TUNING, position).frequency);
     expect(notes.map((note: { frequency: number }) => note.frequency)).toEqual(expectedFrequencies);
+  });
+
+  it('plays the grid along the neck, starting on the lowest string however it was clicked', async () => {
+    useUiStore.setState({ fretboardView: 'grid' });
+    useFretboardStore.setState({
+      selectedNotes: [
+        { string: 5, fret: 3 },
+        { string: 6, fret: 1 },
+      ],
+    });
+
+    const { result } = renderHook(() => useNotePlayback());
+    await act(async () => {
+      await result.current.play();
+    });
+
+    const [notes] = play.mock.calls[0];
+    const neckOrder = [
+      { string: 6, fret: 1 } as FretPosition,
+      { string: 5, fret: 3 } as FretPosition,
+    ].map((position) => getNoteAt(STANDARD_TUNING, position).frequency);
+    expect(notes.map((note: { frequency: number }) => note.frequency)).toEqual(neckOrder);
   });
 
   it('resets currentIndex before starting a new sequence, clearing any stale highlight', async () => {

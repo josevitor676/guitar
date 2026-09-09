@@ -55,3 +55,22 @@ export function windowStartToReveal(
   const alreadyVisible = lowest >= minFret && highest <= minFret + span - 1;
   return alreadyVisible ? minFret : lowest;
 }
+
+/**
+ * The selection in the order the neck reads: lowest string first, and each
+ * string walked from the nut upward.
+ *
+ * The grid has no time axis — it is a map of the neck, not a sequence — so
+ * playing it back in the order the student happened to click would be
+ * arbitrary. Marking the A string before the low E and hearing the A first is
+ * what makes it feel wrong. The timeline is the opposite case: there the
+ * horizontal axis *is* time, so the marking order is the sequence and must be
+ * kept.
+ */
+export function orderAlongNeck(positions: FretPosition[]): FretPosition[] {
+  return [...positions].sort((a, b) => {
+    // String 6 is the lowest in pitch and the first to be played.
+    if (a.string !== b.string) return b.string - a.string;
+    return a.fret - b.fret;
+  });
+}

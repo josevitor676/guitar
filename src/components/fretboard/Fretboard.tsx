@@ -1,4 +1,5 @@
 import { useFretboardSelection } from '../../hooks/useFretboardSelection';
+import { usePlaybackSequence } from '../../hooks/usePlaybackSequence';
 import { STANDARD_TUNING } from '../../domain/music-theory/tuning';
 import type { StringNumber } from '../../domain/music-theory/tuning';
 import { getNoteAt, getPitchClass } from '../../domain/music-theory/notes';
@@ -17,8 +18,11 @@ interface FretboardProps {
 
 export function Fretboard({ currentIndex }: FretboardProps) {
   const { minFret, maxFret, selectedNotes, toggleNote } = useFretboardSelection();
+  // currentIndex counts through the played order, which is not the order the
+  // notes were marked in.
+  const sequence = usePlaybackSequence();
   const frets = Array.from({ length: maxFret - minFret + 1 }, (_, i) => minFret + i);
-  const highlightedPosition = currentIndex !== null ? selectedNotes[currentIndex] : undefined;
+  const highlightedPosition = currentIndex !== null ? sequence[currentIndex] : undefined;
   const gridHeightPx = STRING_ORDER.length * ROW_HEIGHT_PX;
 
   return (

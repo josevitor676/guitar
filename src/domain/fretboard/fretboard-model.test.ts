@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isValidPosition,
   positionsEqual,
+  orderAlongNeck,
   fretSpanForWidth,
   windowStartToReveal,
   MAX_VISIBLE_FRETS,
@@ -93,5 +94,60 @@ describe('windowStartToReveal', () => {
 
   it('leaves the window alone for an empty sequence', () => {
     expect(windowStartToReveal([], 4, 7)).toBe(4);
+  });
+});
+
+describe('orderAlongNeck', () => {
+  it('starts on the lowest string, whatever order the notes were marked in', () => {
+    const marked = [
+      { string: 5 as const, fret: 3 },
+      { string: 6 as const, fret: 1 },
+    ];
+
+    expect(orderAlongNeck(marked)).toEqual([
+      { string: 6, fret: 1 },
+      { string: 5, fret: 3 },
+    ]);
+  });
+
+  it('walks each string from the lowest fret upward', () => {
+    const marked = [
+      { string: 6 as const, fret: 7 },
+      { string: 6 as const, fret: 3 },
+      { string: 6 as const, fret: 5 },
+    ];
+
+    expect(orderAlongNeck(marked).map((position) => position.fret)).toEqual([3, 5, 7]);
+  });
+
+  it('finishes a string before moving to the next one', () => {
+    const marked = [
+      { string: 5 as const, fret: 2 },
+      { string: 6 as const, fret: 9 },
+      { string: 5 as const, fret: 4 },
+      { string: 6 as const, fret: 1 },
+    ];
+
+    expect(orderAlongNeck(marked)).toEqual([
+      { string: 6, fret: 1 },
+      { string: 6, fret: 9 },
+      { string: 5, fret: 2 },
+      { string: 5, fret: 4 },
+    ]);
+  });
+
+  it('leaves the caller\'s array untouched', () => {
+    const marked = [
+      { string: 5 as const, fret: 3 },
+      { string: 6 as const, fret: 1 },
+    ];
+
+    orderAlongNeck(marked);
+
+    expect(marked[0]).toEqual({ string: 5, fret: 3 });
+  });
+
+  it('handles an empty selection', () => {
+    expect(orderAlongNeck([])).toEqual([]);
   });
 });

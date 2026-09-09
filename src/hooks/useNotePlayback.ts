@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
-import { useFretboardStore } from '../state/fretboard-store';
 import { useMetronomeStore } from '../state/metronome-store';
+import { usePlaybackSequence } from './usePlaybackSequence';
 import { usePlaybackStore } from '../state/playback-store';
 import { STANDARD_TUNING } from '../domain/music-theory/tuning';
 import { getNoteAt } from '../domain/music-theory/notes';
@@ -8,7 +8,7 @@ import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
 import { sequencePlayer, ensureAudioStarted } from '../audio';
 
 export function useNotePlayback() {
-  const selectedNotes = useFretboardStore((state) => state.selectedNotes);
+  const sequence = usePlaybackSequence();
   const bpm = useMetronomeStore((state) => state.bpm);
   const subdivision = useMetronomeStore((state) => state.subdivision);
   const currentIndex = usePlaybackStore((state) => state.currentIndex);
@@ -21,13 +21,13 @@ export function useNotePlayback() {
   const play = useCallback(async () => {
     setCurrentIndex(null);
     await ensureAudioStarted();
-    const notes = selectedNotes.map((position) => {
+    const notes = sequence.map((position) => {
       const note = getNoteAt(STANDARD_TUNING, position);
       return { frequency: note.frequency, duration: SUBDIVISION_DURATIONS[subdivision] };
     });
     sequencePlayer.play(notes, bpm, subdivision);
     setIsPlaying(true);
-  }, [selectedNotes, bpm, subdivision, setIsPlaying, setCurrentIndex]);
+  }, [sequence, bpm, subdivision, setIsPlaying, setCurrentIndex]);
 
   const stop = useCallback(() => {
     sequencePlayer.stop();
