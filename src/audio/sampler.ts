@@ -38,8 +38,8 @@ export class ToneNoteSampler implements INoteSampler {
    * sounds at whatever moment the callback happens to run, while the click
    * sounds at the scheduled beat, and the two drift audibly apart.
    */
-  playNote(frequencyHz: number, duration: number | string, time?: number): void {
+  playNote(frequencyHz: number, duration: number | string, time?: number, velocity?: number): void {
     if (!this.loaded) return;
-    this.sampler.triggerAttackRelease(frequencyHz, duration, time);
+    this.sampler.triggerAttackRelease(frequencyHz, duration, time, velocity);
   }
 }

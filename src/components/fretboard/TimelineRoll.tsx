@@ -4,6 +4,7 @@ import { timelineLengthInBeats, isOnBeatHead } from '../../domain/playback/timel
 import { STANDARD_TUNING } from '../../domain/music-theory/tuning';
 import type { StringNumber } from '../../domain/music-theory/tuning';
 import { getNoteAt, getPitchClass } from '../../domain/music-theory/notes';
+import { ARTICULATION_SHORT_LABEL, ARTICULATION_LABEL } from '../../domain/music-theory/articulation';
 
 const STRING_ORDER: StringNumber[] = [1, 2, 3, 4, 5, 6];
 /**
@@ -90,6 +91,59 @@ export function TimelineRoll({ timeline, currentIndex, metronomeOn = false }: Ti
             style={{ left: `${beatToX(beat)}px`, height: `${gridHeightPx}px` }}
           />
         ))}
+
+        {/*
+          Slurs are drawn under the notes: an arc from the note before to the
+          note reached, carrying the letter tablature already prints.
+        */}
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10 overflow-visible"
+          width={widthPx}
+          height={gridHeightPx}
+        >
+          {timeline.map((note) => {
+            const previous = timeline[note.index - 1];
+            if (!note.position.articulation || !previous) return null;
+
+            const fromX = beatToX(previous.startBeat);
+            const toX = beatToX(note.startBeat);
+            const rowY = STRING_ORDER.indexOf(note.position.string) * ROW_HEIGHT_PX + ROW_HEIGHT_PX / 2;
+            const arcY = rowY - 22;
+
+            return (
+              <path
+                key={`slur-${note.index}`}
+                data-testid={`timeline-slur-${note.index}`}
+                d={`M ${fromX + 14} ${arcY} Q ${(fromX + toX) / 2} ${arcY - 14} ${toX - 14} ${arcY}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                className="text-accent"
+              />
+            );
+          })}
+        </svg>
+
+        {timeline.map((note) => {
+          const previous = timeline[note.index - 1];
+          if (!note.position.articulation || !previous) return null;
+
+          const midX = (beatToX(previous.startBeat) + beatToX(note.startBeat)) / 2;
+          const rowY = STRING_ORDER.indexOf(note.position.string) * ROW_HEIGHT_PX + ROW_HEIGHT_PX / 2;
+
+          return (
+            <span
+              key={`slur-label-${note.index}`}
+              data-testid={`timeline-slur-label-${note.index}`}
+              title={ARTICULATION_LABEL[note.position.articulation]}
+              className="absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent px-1.5 text-[10px] font-bold leading-4 text-body"
+              style={{ left: `${midX}px`, top: `${rowY - 38}px` }}
+            >
+              {ARTICULATION_SHORT_LABEL[note.position.articulation]}
+            </span>
+          );
+        })}
 
         {STRING_ORDER.map((string) => (
           <div

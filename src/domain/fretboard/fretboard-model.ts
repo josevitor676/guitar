@@ -1,4 +1,5 @@
 import type { FretPosition } from '../music-theory/tuning';
+import { invertArticulation } from '../music-theory/articulation';
 
 export function isValidPosition(
   position: FretPosition,
@@ -68,10 +69,33 @@ export function windowStartToReveal(
  * kept.
  */
 export function orderAlongNeck(positions: FretPosition[]): FretPosition[] {
-  return [...positions].sort((a, b) => {
-    // String 6 is the lowest in pitch and the first to be played.
-    if (a.string !== b.string) return b.string - a.string;
-    return a.fret - b.fret;
+  return [...positions]
+    .sort((a, b) => {
+      // String 6 is the lowest in pitch and the first to be played.
+      if (a.string !== b.string) return b.string - a.string;
+      return a.fret - b.fret;
+    })
+    // A slur joins two notes that were next to each other. Reordering breaks
+    // that adjacency, so keeping the slurs would claim a technique between
+    // notes that no longer touch.
+    .map(({ string, fret }) => ({ string, fret }));
+}
+
+/**
+ * Plays a sequence backwards, moving each slur to the note it now arrives at
+ * and swapping its direction: what was a hammer-on climbing is a pull-off
+ * coming back down.
+ */
+function reverseWithArticulations(positions: FretPosition[]): FretPosition[] {
+  const reversed = [...positions].reverse();
+
+  return reversed.map((position, index) => {
+    const { string, fret } = position;
+    // Boundary k in the reversal is the boundary that led *into* the note that
+    // now follows it, so its articulation comes from one place further along.
+    const incoming = positions[positions.length - index]?.articulation;
+    if (index === 0 || !incoming) return { string, fret };
+    return { string, fret, articulation: invertArticulation(incoming) };
   });
 }
 
@@ -100,9 +124,9 @@ export function applyDirection(
 
   switch (direction) {
     case 'firstToSixth':
-      return [...positions].reverse();
+      return reverseWithArticulations(positions);
     case 'roundTrip':
-      return [...positions, ...[...positions].reverse().slice(1)];
+      return [...positions, ...reverseWithArticulations(positions).slice(1)];
     default:
       return [...positions];
   }

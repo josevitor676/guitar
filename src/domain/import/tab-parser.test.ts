@@ -79,3 +79,93 @@ describe('positionsFromTokens', () => {
     expect(positionsFromTokens([token('8', 10, 42)], [system])).toEqual([{ string: 3, fret: 8 }]);
   });
 });
+
+describe('positionsFromTokens with slurs', () => {
+  it('reads an h between two digits on one string as a hammer-on', () => {
+    const positions = positionsFromTokens(
+      [token('3', 10, 70), token('h', 25, 70), token('5', 40, 70)],
+      [system],
+    );
+
+    expect(positions).toEqual([
+      { string: 6, fret: 3 },
+      { string: 6, fret: 5, articulation: 'hammerOn' },
+    ]);
+  });
+
+  it('reads a p as a pull-off', () => {
+    const positions = positionsFromTokens(
+      [token('7', 10, 70), token('p', 25, 70), token('5', 40, 70)],
+      [system],
+    );
+
+    expect(positions[1].articulation).toBe('pullOff');
+  });
+
+  it('accepts the capital H an OCR sometimes returns', () => {
+    const positions = positionsFromTokens(
+      [token('3', 10, 70), token('H', 25, 70), token('5', 40, 70)],
+      [system],
+    );
+
+    expect(positions[1].articulation).toBe('hammerOn');
+  });
+
+  it('leaves notes unslurred when no letter sits between them', () => {
+    const positions = positionsFromTokens([token('3', 10, 70), token('5', 40, 70)], [system]);
+
+    expect(positions[1].articulation).toBeUndefined();
+  });
+
+  it('discards a letter with no note after it', () => {
+    const positions = positionsFromTokens([token('3', 10, 70), token('h', 25, 70)], [system]);
+
+    expect(positions).toEqual([{ string: 6, fret: 3 }]);
+  });
+
+  it('discards a letter that opens a system, having nothing to slur from', () => {
+    const positions = positionsFromTokens([token('h', 10, 70), token('5', 40, 70)], [system]);
+
+    expect(positions).toEqual([{ string: 6, fret: 5 }]);
+  });
+
+  it('discards a slur between different strings, which is out of scope', () => {
+    const positions = positionsFromTokens(
+      [token('3', 10, 70), token('h', 25, 60), token('5', 40, 50)],
+      [system],
+    );
+
+    expect(positions.every((p) => p.articulation === undefined)).toBe(true);
+    expect(positions).toHaveLength(2);
+  });
+
+  it('ignores a letter that is not a slur marking', () => {
+    const positions = positionsFromTokens(
+      [token('3', 10, 70), token('x', 25, 70), token('5', 40, 70)],
+      [system],
+    );
+
+    expect(positions[1].articulation).toBeUndefined();
+  });
+
+  it('slurs several pairs across one line independently', () => {
+    const positions = positionsFromTokens(
+      [
+        token('3', 10, 70),
+        token('h', 25, 70),
+        token('5', 40, 70),
+        token('7', 80, 70),
+        token('p', 95, 70),
+        token('5', 110, 70),
+      ],
+      [system],
+    );
+
+    expect(positions.map((p) => p.articulation)).toEqual([
+      undefined,
+      'hammerOn',
+      undefined,
+      'pullOff',
+    ]);
+  });
+});

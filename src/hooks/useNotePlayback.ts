@@ -5,6 +5,7 @@ import { usePlaybackStore } from '../state/playback-store';
 import { STANDARD_TUNING } from '../domain/music-theory/tuning';
 import { getNoteAt } from '../domain/music-theory/notes';
 import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
+import { SLURRED_VELOCITY, PLUCKED_VELOCITY } from '../domain/music-theory/articulation';
 import { sequencePlayer, ensureAudioStarted } from '../audio';
 
 export function useNotePlayback() {
@@ -24,7 +25,14 @@ export function useNotePlayback() {
     await ensureAudioStarted();
     const notes = sequence.map((position) => {
       const note = getNoteAt(STANDARD_TUNING, position);
-      return { frequency: note.frequency, duration: SUBDIVISION_DURATIONS[subdivision] };
+      // A hammered or pulled note is not picked: it sounds because the finger
+      // strikes or plucks a string that is already ringing, so it comes out
+      // weaker than the note before it.
+      return {
+        frequency: note.frequency,
+        duration: SUBDIVISION_DURATIONS[subdivision],
+        velocity: position.articulation ? SLURRED_VELOCITY : PLUCKED_VELOCITY,
+      };
     });
     // With the metronome leading, the notes stay silent so the click is clear.
     sequencePlayer.play(notes, bpm, subdivision, { silent: metronomeOn });

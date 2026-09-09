@@ -44,7 +44,7 @@ describe('ToneNoteSampler', () => {
     const sampler = new ToneNoteSampler();
     capturedOnload?.();
     sampler.playNote(440, 0.5);
-    expect(triggerAttackRelease).toHaveBeenCalledWith(440, 0.5, undefined);
+    expect(triggerAttackRelease).toHaveBeenCalledWith(440, 0.5, undefined, undefined);
   });
 
   it('passes a scheduled transport time straight through to the sampler', () => {
@@ -53,6 +53,15 @@ describe('ToneNoteSampler', () => {
 
     sampler.playNote(440, '4n', 1.75);
 
-    expect(triggerAttackRelease).toHaveBeenCalledWith(440, '4n', 1.75);
+    expect(triggerAttackRelease).toHaveBeenCalledWith(440, '4n', 1.75, undefined);
+  });
+
+  it('passes the velocity through, which is how a slurred note is softened', () => {
+    const sampler = new ToneNoteSampler();
+    capturedOnload?.();
+
+    sampler.playNote(440, '4n', 1, 0.45);
+
+    expect(triggerAttackRelease).toHaveBeenCalledWith(440, '4n', 1, 0.45);
   });
 });

@@ -4,10 +4,17 @@ import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
 
 export const EXERCISES_STORAGE_KEY = 'guitar-teacher:exercises';
 
+const ARTICULATIONS = new Set(['hammerOn', 'pullOff']);
+
 function isValidPosition(value: unknown): value is FretPosition {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Record<string, unknown>;
+  // Absent is fine: exercises saved before slurs existed simply have no field.
+  const articulationOk =
+    candidate.articulation === undefined ||
+    (typeof candidate.articulation === 'string' && ARTICULATIONS.has(candidate.articulation));
   return (
+    articulationOk &&
     typeof candidate.string === 'number' &&
     Number.isInteger(candidate.string) &&
     candidate.string >= 1 &&

@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { rasterizeFile, withDigitReader, read } = vi.hoisted(() => {
+const { rasterizeFile, withDigitReader, read, readSlurs } = vi.hoisted(() => {
   const read = vi.fn();
+  const readSlurs = vi.fn<(canvas: unknown) => Promise<{ text: string; x: number; y: number }[]>>();
   return {
     read,
+    readSlurs,
     rasterizeFile: vi.fn(),
-    withDigitReader: vi.fn(async (use: (r: unknown) => Promise<unknown>) => use(read)),
+    withDigitReader: vi.fn(async (use: (r: unknown) => Promise<unknown>) =>
+      use({ readDigits: read, readSlurInContext: readSlurs }),
+    ),
   };
 });
 
@@ -54,6 +58,9 @@ describe('importTabFromFile', () => {
   beforeEach(() => {
     rasterizeFile.mockReset();
     read.mockReset();
+    readSlurs.mockReset();
+    readSlurs.mockResolvedValue([]);
+
     withDigitReader.mockClear();
   });
 
@@ -124,5 +131,61 @@ describe('importTabFromFile', () => {
 
     expect(steps[0]).toMatch(/preparando/i);
     expect(steps.some((label) => /lendo a tablatura/i.test(label))).toBe(true);
+  });
+
+  it('only pays for the slur pass on crops the digit pass could not read', async () => {
+    rasterizeFile.mockResolvedValue([
+      pageCanvas(200, 120, [20, 30, 40, 50, 60, 70], [
+        { x: 30, y: 70 },
+        { x: 60, y: 70 },
+        { x: 90, y: 70 },
+      ]),
+    ]);
+    read
+      .mockResolvedValueOnce([{ text: '3', x: 0, y: 0 }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ text: '5', x: 0, y: 0 }]);
+
+    await importTabFromFile(file);
+
+    expect(read).toHaveBeenCalledTimes(3);
+    expect(readSlurs).toHaveBeenCalledTimes(1);
+  });
+
+  it('never asks for a slur on the first or last mark, which have no pair to sit between', async () => {
+    rasterizeFile.mockResolvedValue([
+      pageCanvas(200, 120, [20, 30, 40, 50, 60, 70], [
+        { x: 30, y: 70 },
+        { x: 60, y: 70 },
+      ]),
+    ]);
+    read.mockResolvedValue([]);
+
+    await importTabFromFile(file).catch(() => {});
+
+    expect(readSlurs).not.toHaveBeenCalled();
+  });
+
+  it('turns a letter the slur pass reads into an articulation on the next note', async () => {
+    rasterizeFile.mockResolvedValue([
+      pageCanvas(200, 120, [20, 30, 40, 50, 60, 70], [
+        { x: 30, y: 70 },
+        { x: 60, y: 70 },
+        { x: 90, y: 70 },
+      ]),
+    ]);
+    read
+      .mockResolvedValueOnce([{ text: '3', x: 0, y: 0 }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ text: '5', x: 0, y: 0 }]);
+    // The context pass reads the whole run, letter and digits together.
+    readSlurs.mockResolvedValue([{ text: '3h5', x: 0, y: 0 }]);
+
+    const positions = await importTabFromFile(file);
+
+    expect(positions).toEqual([
+      { string: 6, fret: 3 },
+      { string: 6, fret: 5, articulation: 'hammerOn' },
+    ]);
   });
 });

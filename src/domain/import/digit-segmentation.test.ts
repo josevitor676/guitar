@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findDigitBoxes, scaleForBox } from './digit-segmentation';
+import { findDigitBoxes, scaleForBox, mergeBoxes, boxesShareRow } from './digit-segmentation';
 import type { GrayImage, TabSystem } from './image.types';
 
 const WIDTH = 400;
@@ -150,5 +150,33 @@ describe('scaleForBox', () => {
 
   it('falls back to the minimum for a degenerate zero-height box', () => {
     expect(scaleForBox(box(0), 100)).toBeGreaterThan(0);
+  });
+});
+
+describe('mergeBoxes', () => {
+  it('spans every box it is given', () => {
+    const merged = mergeBoxes([
+      { x0: 10, y0: 20, x1: 20, y1: 36 },
+      { x0: 30, y0: 18, x1: 38, y1: 34 },
+      { x0: 46, y0: 21, x1: 56, y1: 37 },
+    ]);
+
+    expect(merged).toEqual({ x0: 10, y0: 18, x1: 56, y1: 37 });
+  });
+
+  it('returns the box itself when given only one', () => {
+    const only = { x0: 4, y0: 5, x1: 9, y1: 12 };
+
+    expect(mergeBoxes([only])).toEqual(only);
+  });
+});
+
+describe('boxesShareRow', () => {
+  it('is true for marks printed on the same string', () => {
+    expect(boxesShareRow({ x0: 0, y0: 20, x1: 8, y1: 36 }, { x0: 20, y0: 22, x1: 28, y1: 38 })).toBe(true);
+  });
+
+  it('is false for marks on different strings', () => {
+    expect(boxesShareRow({ x0: 0, y0: 20, x1: 8, y1: 34 }, { x0: 20, y0: 60, x1: 28, y1: 74 })).toBe(false);
   });
 });

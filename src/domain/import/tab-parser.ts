@@ -1,4 +1,5 @@
 import type { FretPosition, StringNumber } from '../music-theory/tuning';
+import type { Articulation } from '../music-theory/articulation';
 import type { OcrToken, TabSystem } from './image.types';
 
 /** No common guitar neck goes past the 24th fret, so anything higher is noise. */
@@ -13,10 +14,22 @@ const MAX_LINE_DISTANCE_RATIO = 0.35;
 /** Digits closer than this in x, in spacings, are one chord rather than two notes. */
 const CHORD_X_RATIO = 0.4;
 
-interface PlacedNote {
+interface PlacedMark {
   systemIndex: number;
   x: number;
-  position: FretPosition;
+  string: StringNumber;
+  /** A fret number, or the slur letter printed between two of them. */
+  note?: FretPosition;
+  slur?: Articulation;
+}
+
+const SLUR_LETTERS: Record<string, Articulation> = {
+  h: 'hammerOn',
+  p: 'pullOff',
+};
+
+function parseSlur(text: string): Articulation | null {
+  return SLUR_LETTERS[text.toLowerCase()] ?? null;
 }
 
 function parseFret(text: string): number | null {
@@ -56,11 +69,12 @@ function stringForY(system: TabSystem, y: number): StringNumber | null {
  * printed on the musical staff are excluded without ever being interpreted.
  */
 export function positionsFromTokens(tokens: OcrToken[], systems: TabSystem[]): FretPosition[] {
-  const placed: PlacedNote[] = [];
+  const placed: PlacedMark[] = [];
 
   for (const token of tokens) {
     const fret = parseFret(token.text);
-    if (fret === null) continue;
+    const slur = fret === null ? parseSlur(token.text) : null;
+    if (fret === null && slur === null) continue;
 
     const systemIndex = systems.findIndex((system) => token.y >= system.top && token.y <= system.bottom);
     if (systemIndex === -1) continue;
@@ -68,7 +82,13 @@ export function positionsFromTokens(tokens: OcrToken[], systems: TabSystem[]): F
     const string = stringForY(systems[systemIndex], token.y);
     if (string === null) continue;
 
-    placed.push({ systemIndex, x: token.x, position: { string, fret } });
+    placed.push({
+      systemIndex,
+      x: token.x,
+      string,
+      note: fret === null ? undefined : { string, fret },
+      slur: slur ?? undefined,
+    });
   }
 
   placed.sort((a, b) => {
@@ -78,11 +98,35 @@ export function positionsFromTokens(tokens: OcrToken[], systems: TabSystem[]): F
     // rolled from the lowest string up rather than dropped.
     const spacing = spacingOf(systems[a.systemIndex]);
     if (Math.abs(a.x - b.x) <= spacing * CHORD_X_RATIO) {
-      return b.position.string - a.position.string;
+      return b.string - a.string;
     }
 
     return a.x - b.x;
   });
 
-  return placed.map((note) => note.position);
+  // A slur letter binds the note before it to the note after it, and only when
+  // both sit on the same string: a ligature across strings is not playable and
+  // is far likelier to be noise than music.
+  const sequence: FretPosition[] = [];
+  let pendingSlur: { articulation: Articulation; string: StringNumber } | null = null;
+
+  for (const mark of placed) {
+    if (mark.slur) {
+      pendingSlur = sequence.length === 0 ? null : { articulation: mark.slur, string: mark.string };
+      continue;
+    }
+    if (!mark.note) continue;
+
+    const previous = sequence[sequence.length - 1];
+    const joins =
+      pendingSlur !== null &&
+      previous !== undefined &&
+      previous.string === mark.note.string &&
+      pendingSlur.string === mark.note.string;
+
+    sequence.push(joins ? { ...mark.note, articulation: pendingSlur!.articulation } : mark.note);
+    pendingSlur = null;
+  }
+
+  return sequence;
 }

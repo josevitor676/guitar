@@ -83,7 +83,7 @@ describe('ToneSequencePlayer', () => {
     );
 
     capturedCallback?.(0, 1);
-    expect(sampler.playNote).toHaveBeenCalledWith(440, '8n', expect.anything());
+    expect(sampler.playNote).toHaveBeenCalledWith(440, '8n', expect.anything(), undefined);
   });
 
   it('notifies note-change listeners with the current index', () => {
@@ -155,8 +155,8 @@ describe('ToneSequencePlayer', () => {
     capturedCallback?.(1.5, 0);
     capturedCallback?.(2.0, 1);
 
-    expect(sampler.playNote).toHaveBeenNthCalledWith(1, 110, '4n', 1.5);
-    expect(sampler.playNote).toHaveBeenNthCalledWith(2, 220, '4n', 2.0);
+    expect(sampler.playNote).toHaveBeenNthCalledWith(1, 110, '4n', 1.5, undefined);
+    expect(sampler.playNote).toHaveBeenNthCalledWith(2, 220, '4n', 2.0, undefined);
   });
 
   it('runs the sequence silently when the metronome is leading', () => {
@@ -181,5 +181,24 @@ describe('ToneSequencePlayer', () => {
     capturedCallback?.(0, 0);
 
     expect(sampler.playNote).toHaveBeenCalledOnce();
+  });
+
+  it('sounds a slurred note softer than a picked one', () => {
+    const sampler = createFakeSampler();
+    const player = new ToneSequencePlayer(sampler);
+
+    player.play(
+      [
+        { frequency: 110, duration: '4n', velocity: 1 },
+        { frequency: 130, duration: '4n', velocity: 0.45 },
+      ],
+      120,
+      'quarter',
+    );
+    capturedCallback?.(0, 0);
+    capturedCallback?.(0.5, 1);
+
+    expect(sampler.playNote).toHaveBeenNthCalledWith(1, 110, '4n', 0, 1);
+    expect(sampler.playNote).toHaveBeenNthCalledWith(2, 130, '4n', 0.5, 0.45);
   });
 });

@@ -1,8 +1,17 @@
+import type { Articulation } from './articulation';
+
 export type StringNumber = 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface FretPosition {
   string: StringNumber;
   fret: number;
+  /**
+   * How this note is reached from the one before it in a sequence. Only
+   * meaningful inside an ordered sequence — a position produced outside one,
+   * such as by the scale generator, simply leaves it unset. Comparisons ignore
+   * it: two positions are equal when they name the same string and fret.
+   */
+  articulation?: Articulation;
 }
 
 export type Tuning = Record<StringNumber, string>;

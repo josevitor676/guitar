@@ -2,7 +2,12 @@ import type { FretPosition } from '../domain/music-theory/tuning';
 import type { OcrToken } from '../domain/import/image.types';
 import { detectTabSystems } from '../domain/import/staff-detection';
 import { positionsFromTokens } from '../domain/import/tab-parser';
-import { findDigitBoxes, scaleForBox } from '../domain/import/digit-segmentation';
+import {
+  findDigitBoxes,
+  scaleForBox,
+  mergeBoxes,
+  boxesShareRow,
+} from '../domain/import/digit-segmentation';
 import { rasterizeFile } from './rasterize';
 import { withDigitReader } from './ocr';
 import { cropDigit } from './crop';
@@ -57,7 +62,7 @@ export async function importTabFromFile(
   const positions: FretPosition[] = [];
   let systemsSeen = 0;
 
-  await withDigitReader(async (read) => {
+  await withDigitReader(async ({ readDigits, readSlurInContext }) => {
     for (const [pageIndex, canvas] of pages.entries()) {
       const pageLabel = pages.length > 1 ? ` (página ${pageIndex + 1} de ${pages.length})` : '';
       const gray = grayFromCanvas(canvas);
@@ -69,18 +74,47 @@ export async function importTabFromFile(
       );
 
       const tokens: OcrToken[] = [];
+
+      /**
+       * Re-reads a mark the digit pass rejected, cropped together with the
+       * marks either side of it. A lone slur letter is unreadable; inside
+       * "7p5" it is not.
+       */
+      const readSlurBetweenNeighbours = async (boxIndex: number) => {
+        const before = boxes[boxIndex - 1];
+        const after = boxes[boxIndex + 1];
+        const middle = boxes[boxIndex].box;
+        if (!before || !after) return '';
+        if (!boxesShareRow(before.box, middle) || !boxesShareRow(after.box, middle)) return '';
+
+        const span = mergeBoxes([before.box, middle, after.box]);
+        const read = await readSlurInContext(
+          cropDigit(canvas, span, scaleForBox(span, OCR_TARGET_DIGIT_HEIGHT), OCR_PADDING),
+        );
+        const letter = read
+          .map((token) => token.text)
+          .join('')
+          .match(/[hp]/i);
+        return letter ? letter[0].toLowerCase() : '';
+      };
+
       for (const [boxIndex, { box }] of boxes.entries()) {
         onProgress?.({
           label: `Lendo a tablatura${pageLabel}`,
           fraction: (pageIndex + boxIndex / Math.max(1, boxes.length)) / pages.length,
         });
 
-        const found = await read(
-          cropDigit(canvas, box, scaleForBox(box, OCR_TARGET_DIGIT_HEIGHT), OCR_PADDING),
-        );
-        // The crop holds exactly one number, so its text is whatever came back,
-        // and its position on the page is the box it was cut from.
-        const text = found.map((token) => token.text).join('');
+        const crop = cropDigit(canvas, box, scaleForBox(box, OCR_TARGET_DIGIT_HEIGHT), OCR_PADDING);
+
+        // The crop holds exactly one mark, so its text is whatever came back,
+        // and its position on the page is the box it was cut from. A crop the
+        // digit pass could not read is a candidate slur letter, and only those
+        // few pay for the second pass.
+        const asDigits = await readDigits(crop);
+        const text =
+          asDigits.length > 0
+            ? asDigits.map((token) => token.text).join('')
+            : await readSlurBetweenNeighbours(boxIndex);
         if (text) {
           tokens.push({ text, x: (box.x0 + box.x1) / 2, y: (box.y0 + box.y1) / 2 });
         }

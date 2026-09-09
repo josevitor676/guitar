@@ -74,4 +74,31 @@ describe('exercise-library', () => {
     saveUserExercises([makeExercise({ name: '   ' })]);
     expect(loadUserExercises()).toEqual([]);
   });
+
+  it('keeps an exercise whose notes carry slurs', () => {
+    const slurred = makeExercise({
+      positions: [
+        { string: 6, fret: 3 },
+        { string: 6, fret: 5, articulation: 'hammerOn' },
+      ],
+    });
+    saveUserExercises([slurred]);
+
+    expect(loadUserExercises()).toEqual([slurred]);
+  });
+
+  it('rejects an articulation it does not know how to play', () => {
+    saveUserExercises([
+      makeExercise({ positions: [{ string: 6, fret: 3, articulation: 'tapping' as never }] }),
+    ]);
+
+    expect(loadUserExercises()).toEqual([]);
+  });
+
+  it('still accepts exercises saved before slurs existed', () => {
+    const older = makeExercise({ positions: [{ string: 6, fret: 3 }] });
+    saveUserExercises([older]);
+
+    expect(loadUserExercises()[0].positions[0]).not.toHaveProperty('articulation');
+  });
 });

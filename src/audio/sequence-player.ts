@@ -18,7 +18,7 @@ export class ToneSequencePlayer implements ISequencePlayer {
    * guitar underneath the click only muddies the beat.
    */
   play(
-    notes: { frequency: number; duration: string }[],
+    notes: { frequency: number; duration: string; velocity?: number }[],
     bpm: number,
     spacingSubdivision: Subdivision,
     options: { silent?: boolean } = {},
@@ -30,7 +30,7 @@ export class ToneSequencePlayer implements ISequencePlayer {
     this.sequence = new Tone.Sequence(
       (time, index: number) => {
         const note = notes[index];
-        if (!options.silent) this.sampler.playNote(note.frequency, note.duration, time);
+        if (!options.silent) this.sampler.playNote(note.frequency, note.duration, time, note.velocity);
         this.listeners.forEach((listener) => listener(index));
       },
       notes.map((_, index) => index),

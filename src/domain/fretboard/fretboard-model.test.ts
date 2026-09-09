@@ -200,3 +200,49 @@ describe('applyDirection', () => {
     }
   });
 });
+
+describe('articulations under reordering', () => {
+  const slurred = [
+    { string: 6 as const, fret: 3 },
+    { string: 6 as const, fret: 5, articulation: 'hammerOn' as const },
+    { string: 5 as const, fret: 4 },
+  ];
+
+  it('drops articulations when the grid reorders along the neck', () => {
+    // The neighbours a slur joined no longer sit next to each other.
+    const reordered = orderAlongNeck([
+      { string: 5, fret: 4 },
+      { string: 6, fret: 3 },
+      { string: 6, fret: 5, articulation: 'hammerOn' },
+    ]);
+
+    expect(reordered.every((position) => position.articulation === undefined)).toBe(true);
+  });
+
+  it('keeps articulations untouched running from the sixth string to the first', () => {
+    expect(applyDirection(slurred, 'sixthToFirst')[1].articulation).toBe('hammerOn');
+  });
+
+  it('turns a hammer-on into a pull-off when the sequence is reversed', () => {
+    const reversed = applyDirection(slurred, 'firstToSixth');
+
+    // Reversed order is 5:4, 6:5, 6:3 — the slur now lands on the note reached.
+    expect(reversed.map((p) => `${p.string}:${p.fret}`)).toEqual(['5:4', '6:5', '6:3']);
+    expect(reversed[2].articulation).toBe('pullOff');
+    expect(reversed[1].articulation).toBeUndefined();
+  });
+
+  it('never gives the first note an articulation, since nothing precedes it', () => {
+    for (const direction of ['sixthToFirst', 'firstToSixth', 'roundTrip'] as const) {
+      expect(applyDirection(slurred, direction)[0].articulation).toBeUndefined();
+    }
+  });
+
+  it('slurs the return leg of a round trip the other way round', () => {
+    const roundTrip = applyDirection(slurred, 'roundTrip');
+
+    expect(roundTrip.map((p) => `${p.string}:${p.fret}`)).toEqual(['6:3', '6:5', '5:4', '6:5', '6:3']);
+    expect(roundTrip[1].articulation).toBe('hammerOn');
+    expect(roundTrip[4].articulation).toBe('pullOff');
+  });
+});

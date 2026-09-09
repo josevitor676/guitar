@@ -6,6 +6,7 @@ import { TimelineRoll } from '../fretboard/TimelineRoll';
 import type { FretPosition } from '../../domain/music-theory/tuning';
 import { STANDARD_TUNING } from '../../domain/music-theory/tuning';
 import { getNoteAt } from '../../domain/music-theory/notes';
+import { ARTICULATION_LABEL } from '../../domain/music-theory/articulation';
 import { buildTimeline } from '../../domain/playback/timeline-model';
 import { importTabFromFile } from '../../services/import-pipeline';
 import type { ImportProgress } from '../../services/import-pipeline';
@@ -115,6 +116,9 @@ export function ImportPanel() {
                 <span className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-xs text-text-primary">
                   {position.fret} · corda {position.string} ·{' '}
                   {getNoteAt(STANDARD_TUNING, position).pitchClass}
+                  {position.articulation && (
+                    <span className="text-accent">· {ARTICULATION_LABEL[position.articulation]}</span>
+                  )}
                   <button
                     type="button"
                     aria-label={`Remover nota ${index + 1}`}

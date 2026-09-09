@@ -182,3 +182,25 @@ export function scaleForBox(box: DigitBox, targetHeight: number): number {
 
   return Math.min(MAX_OCR_SCALE, Math.max(MIN_OCR_SCALE, targetHeight / height));
 }
+
+/** Whether two boxes sit on the same line of tablature. */
+export function boxesShareRow(a: DigitBox, b: DigitBox): boolean {
+  return Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0) > 0;
+}
+
+/**
+ * The smallest box containing all of them.
+ *
+ * Used to re-read a mark together with its neighbours: Tesseract cannot
+ * classify a lone slur letter — a bare "p" comes back as a quote mark or as
+ * nothing — but reads it reliably inside a word like "7p5", where the digits
+ * either side give it a baseline and a size to measure against.
+ */
+export function mergeBoxes(boxes: DigitBox[]): DigitBox {
+  return {
+    x0: Math.min(...boxes.map((box) => box.x0)),
+    y0: Math.min(...boxes.map((box) => box.y0)),
+    x1: Math.max(...boxes.map((box) => box.x1)),
+    y1: Math.max(...boxes.map((box) => box.y1)),
+  };
+}

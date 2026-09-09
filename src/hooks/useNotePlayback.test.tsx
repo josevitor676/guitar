@@ -164,4 +164,24 @@ describe('useNotePlayback', () => {
 
     expect(play.mock.calls[0][3]).toMatchObject({ silent: false });
   });
+
+  it('marks a slurred note to sound softer than the picked note before it', async () => {
+    useMetronomeStore.setState({ isPlaying: false });
+    useUiStore.setState({ fretboardView: 'timeline' });
+    useFretboardStore.setState({
+      selectedNotes: [
+        { string: 6, fret: 3 },
+        { string: 6, fret: 5, articulation: 'hammerOn' },
+      ],
+    });
+
+    const { result } = renderHook(() => useNotePlayback());
+    await act(async () => {
+      await result.current.play();
+    });
+
+    const [notes] = play.mock.calls[0];
+    expect(notes[0].velocity).toBe(1);
+    expect(notes[1].velocity).toBeLessThan(notes[0].velocity);
+  });
 });

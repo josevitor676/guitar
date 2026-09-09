@@ -126,4 +126,43 @@ describe('TimelineRoll', () => {
     render(<TimelineRoll timeline={timeline} currentIndex={null} />);
     expect(screen.getAllByTestId('timeline-note-0')[1]).toHaveAttribute('data-on-beat', 'false');
   });
+
+  it('draws a slur only where one note is reached from the last', () => {
+    const slurred = buildTimeline(
+      [
+        { string: 6, fret: 3 },
+        { string: 6, fret: 5, articulation: 'hammerOn' },
+        { string: 6, fret: 7 },
+      ],
+      'quarter',
+      () => 'quarter',
+    );
+
+    render(<TimelineRoll timeline={slurred} currentIndex={null} />);
+
+    expect(screen.getByTestId('timeline-slur-1')).toBeInTheDocument();
+    expect(screen.queryByTestId('timeline-slur-0')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('timeline-slur-2')).not.toBeInTheDocument();
+  });
+
+  it('labels the slur with the letter tablature prints', () => {
+    const slurred = buildTimeline(
+      [
+        { string: 6, fret: 7 },
+        { string: 6, fret: 5, articulation: 'pullOff' },
+      ],
+      'quarter',
+      () => 'quarter',
+    );
+
+    render(<TimelineRoll timeline={slurred} currentIndex={null} />);
+
+    expect(screen.getByTestId('timeline-slur-label-1')).toHaveTextContent('p');
+  });
+
+  it('draws no slurs at all for a plainly picked sequence', () => {
+    render(<TimelineRoll timeline={timeline} currentIndex={null} />);
+
+    expect(screen.queryByTestId(/^timeline-slur-/)).not.toBeInTheDocument();
+  });
 });
