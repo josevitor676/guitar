@@ -48,7 +48,7 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
   }
 
   return (
-    <div ref={scrollRef} className="relative overflow-x-auto">
+    <div ref={scrollRef} className="relative overflow-x-auto pt-4">
       <div className="relative" style={{ width: `${widthPx}px`, height: `${gridHeightPx}px` }}>
         {STRING_ORDER.map((string) => (
           <div
@@ -67,7 +67,7 @@ export function TimelineRoll({ timeline, currentIndex }: TimelineRollProps) {
         <div
           data-testid="timeline-playhead"
           aria-hidden="true"
-          className="absolute top-0 z-20 w-px bg-accent transition-all duration-100"
+          className="absolute top-0 z-20 w-0.5 -translate-x-1/2 bg-accent transition-all duration-100"
           style={{ left: `${playheadX}px`, height: `${gridHeightPx}px` }}
         >
           <span className="absolute -bottom-1 left-1/2 h-0 w-0 -translate-x-1/2 border-x-4 border-b-[6px] border-x-transparent border-b-accent" />
