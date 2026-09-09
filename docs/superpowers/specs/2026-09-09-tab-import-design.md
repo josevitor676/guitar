@@ -122,8 +122,11 @@ puros:
   sistema.
 - Dentro do sistema, a corda é a linha mais próxima em y: a primeira
   linha é a corda 1 (a mais aguda, no topo), a sexta é a corda 6. Se a
-  distância até a linha mais próxima passar de 60% do espaçamento, o
-  token é descartado como ruído entre linhas.
+  distância até a linha mais próxima passar de 35% do espaçamento, o
+  token é descartado como ruído entre linhas. O limite precisa ficar
+  abaixo de 50%: entre linhas igualmente espaçadas, a maior distância
+  possível até a mais próxima é meio espaçamento, então qualquer valor de
+  50% para cima aceitaria tudo e a checagem nunca rejeitaria nada.
 - A ordem final é: sistema de cima para baixo, e dentro dele x crescente.
   É a ordem de leitura da tablatura, e é a ordem em que as notas serão
   tocadas.
