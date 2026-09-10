@@ -9,6 +9,8 @@ import { useCountIn } from '../../hooks/useCountIn';
 import { useMetronome } from '../../hooks/useMetronome';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useExerciseStore, findExercise } from '../../state/exercise-store';
+import { canTranspose } from '../../domain/fretboard/transpose';
+import { sequencesEqual } from '../../domain/fretboard/fretboard-model';
 import { usePlaybackStore } from '../../state/playback-store';
 import { useSpeedTrainerStore } from '../../state/speed-trainer-store';
 import { useSpeedTrainer } from '../../hooks/useSpeedTrainer';
@@ -29,6 +31,7 @@ export function ControlBar() {
   const trainerOn = useSpeedTrainerStore((state) => state.enabled);
   const setTrainerOn = useSpeedTrainerStore((state) => state.setEnabled);
   const activeExerciseId = useExerciseStore((state) => state.activeExerciseId);
+  const selectExercise = useExerciseStore((state) => state.selectExercise);
 
   const direction = usePlaybackStore((state) => state.direction);
   const setDirection = usePlaybackStore((state) => state.setDirection);
@@ -50,6 +53,16 @@ export function ControlBar() {
   // be handed to someone who will play it, not to describe the neck.
   const sequence = usePlaybackSequence();
   const userExercises = useExerciseStore((state) => state.userExercises);
+  const selectedNotes = useFretboardStore((state) => state.selectedNotes);
+  const transposeSelection = useFretboardStore((state) => state.transposeSelection);
+
+  // Whether the neck still holds what the exercise was saved with. Comparing
+  // is better than tracking a flag: the flag would have to be cleared from
+  // every path that changes notes, and one missed path leaves a false alarm
+  // on screen for good.
+  const openExercise = findExercise(activeExerciseId, userExercises);
+  const changed = !!openExercise && !sequencesEqual(openExercise.positions, selectedNotes);
+  const isOwn = openExercise?.category === 'meu';
   const subdivision = useMetronomeStore((state) => state.subdivision);
 
   const download = (save: (sheet: {
@@ -154,6 +167,28 @@ export function ControlBar() {
         <Gauge className="h-4 w-4" />
       </IconButton>
 
+      <Chip>
+        <button
+          type="button"
+          aria-label="Uma casa para trás"
+          disabled={!canTranspose(selectedNotes, -1)}
+          onClick={() => transposeSelection(-1)}
+          className="text-text-primary transition-all duration-200 hover:opacity-70 disabled:opacity-30"
+        >
+          −
+        </button>
+        <span className="text-text-secondary">casa</span>
+        <button
+          type="button"
+          aria-label="Uma casa para frente"
+          disabled={!canTranspose(selectedNotes, 1)}
+          onClick={() => transposeSelection(1)}
+          className="text-text-primary transition-all duration-200 hover:opacity-70 disabled:opacity-30"
+        >
+          +
+        </button>
+      </Chip>
+
       <IconButton
         label="Baixar tablatura"
         onClick={() => setIsDownloading(!isDownloading)}
@@ -176,7 +211,7 @@ export function ControlBar() {
         <select
           value={direction}
           onChange={(event) => setDirection(event.target.value as PlaybackDirection)}
-          className="rounded-full border border-white/[0.06] bg-surface px-2 py-1 text-text-primary transition-all duration-200"
+          className="rounded-full border border-edge bg-surface px-2 py-1 text-text-primary transition-all duration-200"
         >
           <option value="sixthToFirst">Descendo</option>
           <option value="firstToSixth">Subindo</option>
@@ -189,20 +224,55 @@ export function ControlBar() {
 
       {trainerOn && <SpeedTrainerSettings />}
 
+      {/*
+        Moving an exercise along the neck leaves the library's copy behind, so
+        the student is asked what to do with the version in front of them. A
+        catalogue exercise is the app's, so the only way to keep a change to
+        one is to make it an exercise of their own.
+      */}
+      {changed && (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+          Exercício alterado.
+          {isOwn && (
+            <button
+              type="button"
+              onClick={() => useExerciseStore.getState().updateActiveUserExercise()}
+              className="rounded-full border border-accent bg-accent-dim px-3 py-1 text-text-primary transition-all duration-200 hover:bg-accent hover:text-body"
+            >
+              Salvar alterações
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsNaming(true)}
+            className="rounded-full border border-edge bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
+          >
+            Salvar como novo
+          </button>
+          <button
+            type="button"
+            onClick={() => activeExerciseId && selectExercise(activeExerciseId)}
+            className="rounded-full border border-edge bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
+          >
+            Desfazer
+          </button>
+        </div>
+      )}
+
       {isDownloading && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
           Baixar como
           <button
             type="button"
             onClick={() => download(downloadTabImage)}
-            className="rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
+            className="rounded-full border border-edge bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
           >
             Imagem (PNG)
           </button>
           <button
             type="button"
             onClick={() => download(downloadTabPdf)}
-            className="rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
+            className="rounded-full border border-edge bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
           >
             PDF
           </button>
@@ -226,7 +296,7 @@ export function ControlBar() {
             value={name}
             autoFocus
             onChange={(event) => setName(event.target.value)}
-            className="rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-sm text-text-primary outline-none transition-all duration-200 focus:border-accent"
+            className="rounded-full border border-edge bg-surface px-3 py-1 text-sm text-text-primary outline-none transition-all duration-200 focus:border-accent"
           />
           <button
             type="submit"

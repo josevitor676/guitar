@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { FretPosition } from '../domain/music-theory/tuning';
 import { positionsEqual, windowStartToReveal } from '../domain/fretboard/fretboard-model';
+import { canTranspose, transpose } from '../domain/fretboard/transpose';
 
 interface FretboardState {
   minFret: number;
@@ -11,6 +12,8 @@ interface FretboardState {
   toggleNote: (position: FretPosition) => void;
   appendNote: (position: FretPosition) => void;
   removeAt: (index: number) => void;
+  /** Moves the whole sequence `delta` frets along the neck. */
+  transposeSelection: (delta: number) => void;
   clearSelection: () => void;
   loadSequence: (positions: FretPosition[]) => void;
 }
@@ -41,6 +44,17 @@ export const useFretboardStore = create<FretboardState>((set) => ({
     set((state) => ({ selectedNotes: [...state.selectedNotes, position] })),
   removeAt: (index) =>
     set((state) => ({ selectedNotes: state.selectedNotes.filter((_, at) => at !== index) })),
+
+  // Reuses loadSequence so the visible window follows the notes; a shape
+  // moved up four frets is no use if the neck keeps showing where it was.
+  transposeSelection: (delta) =>
+    set((state) => {
+      if (!canTranspose(state.selectedNotes, delta)) return {};
+      const moved = transpose(state.selectedNotes, delta);
+      const span = state.maxFret - state.minFret + 1;
+      const minFret = windowStartToReveal(moved, state.minFret, span);
+      return { selectedNotes: moved, minFret, maxFret: minFret + span - 1 };
+    }),
 
   clearSelection: () => set({ selectedNotes: [] }),
   // Loading also reveals: a sequence outside the visible frets would otherwise

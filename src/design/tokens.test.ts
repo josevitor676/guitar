@@ -1,28 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import { COLORS, FONT_STACK } from './tokens';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { COLORS, COLOR_TOKENS, FONT_STACK } from './tokens';
+
+// The stylesheet is the source of the theme values, so the test reads the real
+// file rather than a copy of them that could drift. It cannot be imported:
+// Vitest stubs CSS imports to an empty string unless CSS processing is on.
+const stylesheet = readFileSync(join(process.cwd(), 'src/index.css'), 'utf8');
+
+
+function variablesIn(selector: string): Set<string> {
+  const block = stylesheet.slice(stylesheet.indexOf(selector) + selector.length);
+  const body = block.slice(0, block.indexOf('}'));
+  return new Set([...body.matchAll(/--color-([a-z-]+):/g)].map((match) => match[1]));
+}
 
 describe('COLORS', () => {
-  it('uses neutral near-blacks, with the card lifted off the ground', () => {
-    expect(COLORS.body).toBe('#121212');
-    expect(COLORS.card).toBe('#1B1B1B');
-    expect(COLORS.surface).toBe('#262626');
-    // The card has to differ from the ground or it stops reading as a card.
-    expect(COLORS.card).not.toBe(COLORS.body);
+  it('addresses every colour through a custom property, so a theme can swap it', () => {
+    expect(COLORS.card).toBe('var(--color-card)');
+    expect(COLORS['text-primary']).toBe('var(--color-text-primary)');
+  });
+});
+
+describe('the themes', () => {
+  it('defines every token in the dark theme, which is the default', () => {
+    expect(variablesIn(':root {')).toEqual(new Set(COLOR_TOKENS));
   });
 
-  it('uses pale steel as the accent, with a darker press state and a dim halo', () => {
-    expect(COLORS.accent).toBe('#D8DEE4');
-    expect(COLORS['accent-soft']).toBe('#B9C2CB');
-    expect(COLORS['accent-dim']).toBe('rgba(216, 222, 228, 0.13)');
+  // A token defined for one theme and forgotten in the other is the classic
+  // theming bug: the app looks right until someone switches, and then one
+  // colour is left behind from the theme they came from.
+  it('defines every one of them again in the light theme', () => {
+    expect(variablesIn(":root[data-theme='light'] {")).toEqual(new Set(COLOR_TOKENS));
   });
 
-  it('keeps the accent distinct from plain text, so it still marks what matters', () => {
-    expect(COLORS.accent).not.toBe(COLORS['text-primary']);
-  });
-
-  it('keeps a neutral secondary text colour', () => {
-    expect(COLORS['text-primary']).toBe('#FAFAFA');
-    expect(COLORS['text-secondary']).toBe('#8B9096');
+  it('leaves the app dark before any script has run', () => {
+    expect(stylesheet.indexOf(':root {')).toBeLessThan(stylesheet.indexOf("[data-theme='light']"));
   });
 });
 

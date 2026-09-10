@@ -15,7 +15,7 @@ interface IconButtonProps {
 
 const VARIANT_CLASSES: Record<IconButtonVariant, string> = {
   primary: 'bg-accent text-body hover:bg-accent-soft',
-  secondary: 'bg-surface text-text-primary hover:bg-white/10',
+  secondary: 'bg-surface text-text-primary hover:bg-edge-soft',
   ghost: 'bg-transparent text-text-secondary hover:text-text-primary',
 };
 

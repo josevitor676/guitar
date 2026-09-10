@@ -2,6 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  The two themes, as one set of names with two sets of values. Dark is the
+  default and sits on the bare :root, so the app is dark before a single line
+  of JavaScript runs; choosing light stamps the root and swaps the values.
+
+  The accent is the ground's opposite in both: pale steel on near-black, dark
+  steel on paper. That is what lets `text-body` stay the ink written on top of
+  the accent in either theme, rather than needing a token of its own.
+*/
+:root {
+  --color-body: #121212;
+  --color-card: #1b1b1b;
+  --color-surface: #262626;
+  --color-accent: #d8dee4;
+  --color-accent-soft: #b9c2cb;
+  --color-accent-dim: rgba(216, 222, 228, 0.13);
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #8b9096;
+  --color-edge: rgba(255, 255, 255, 0.07);
+  --color-edge-soft: rgba(255, 255, 255, 0.1);
+  --color-edge-strong: rgba(255, 255, 255, 0.22);
+
+  --scrollbar-thumb: rgba(255, 255, 255, 0.14);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --color-body: #eceef0;
+  --color-card: #ffffff;
+  --color-surface: #e2e5e9;
+  --color-accent: #2f3a44;
+  --color-accent-soft: #47555f;
+  --color-accent-dim: rgba(47, 58, 68, 0.12);
+  --color-text-primary: #14181c;
+  --color-text-secondary: #5a626a;
+  /* Ink at low alpha, not white: on paper a white hairline is no hairline. */
+  --color-edge: rgba(20, 24, 28, 0.14);
+  --color-edge-soft: rgba(20, 24, 28, 0.16);
+  --color-edge-strong: rgba(20, 24, 28, 0.38);
+
+  --scrollbar-thumb: rgba(20, 24, 28, 0.22);
+  color-scheme: light;
+}
+
+@layer base {
+  /*
+    The page's own ground, not just the app shell's. Without it the browser
+    paints white behind everything, which shows through as a flash on load
+    and anywhere the layout does not reach.
+  */
+  body {
+    background-color: var(--color-body);
+  }
+}
+
 @layer components {
   /*
     Where something scrolls inside the page — the timeline sideways, the
@@ -12,7 +67,7 @@
   */
   .subtle-scroll {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
 
   .subtle-scroll::-webkit-scrollbar {
@@ -26,7 +81,7 @@
 
   .subtle-scroll::-webkit-scrollbar-thumb {
     /* Surface over card is too close in tone to find; this reads without shouting. */
-    background-color: rgba(255, 255, 255, 0.14);
+    background-color: var(--scrollbar-thumb);
     border-radius: 9999px;
   }
 

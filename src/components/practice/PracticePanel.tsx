@@ -74,7 +74,7 @@ export function PracticePanel() {
         data-testid="practice-toolbar"
         className="mb-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3"
       >
-        <div className="flex items-center gap-1 rounded-full border border-white/[0.06] bg-surface p-1 text-xs font-medium">
+        <div className="flex items-center gap-1 rounded-full border border-edge bg-surface p-1 text-xs font-medium">
           {VIEW_LABELS.map((view) => (
             <button
               key={view.id}
@@ -107,7 +107,7 @@ export function PracticePanel() {
       {howTo && (
         <p
           data-testid="exercise-how-to"
-          className="mb-4 rounded-2xl border border-white/[0.06] bg-body px-4 py-3 text-sm leading-relaxed text-text-secondary"
+          className="mb-4 rounded-2xl border border-edge bg-body px-4 py-3 text-sm leading-relaxed text-text-secondary"
         >
           {howTo}
         </p>

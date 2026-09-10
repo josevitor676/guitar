@@ -4,7 +4,10 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    "types": ["vite/client"],
+    // "node" is here for the tests only: one of them reads index.css off disk,
+    // because the stylesheet is the source of the theme values and a copy of
+    // them in TypeScript could drift from it.
+    "types": ["vite/client", "node"],
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 

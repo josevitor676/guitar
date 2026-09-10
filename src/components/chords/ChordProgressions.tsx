@@ -46,7 +46,7 @@ export function ChordProgressions({ chord, onPick }: ChordProgressionsProps) {
               className={`flex flex-col items-center rounded-xl border px-3 py-1.5 transition-all duration-200 ${
                 isCurrent(candidate)
                   ? 'border-accent bg-accent-dim'
-                  : 'border-white/[0.06] bg-surface hover:border-white/20'
+                  : 'border-edge bg-surface hover:border-edge-strong'
               }`}
             >
               <span className="text-sm font-semibold text-text-primary">
@@ -76,7 +76,7 @@ export function ChordProgressions({ chord, onPick }: ChordProgressionsProps) {
                     className={`rounded-lg border px-2.5 py-1 text-sm font-semibold transition-all duration-200 ${
                       isCurrent(candidate)
                         ? 'border-accent bg-accent-dim text-text-primary'
-                        : 'border-white/[0.06] bg-surface text-text-primary hover:border-white/20'
+                        : 'border-edge bg-surface text-text-primary hover:border-edge-strong'
                     }`}
                   >
                     {candidate.root}

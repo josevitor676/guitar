@@ -4,12 +4,14 @@ import { useFretboardStore } from './fretboard-store';
 import { EXERCISE_CATALOG } from '../domain/exercises/exercise-catalog';
 import { useMetronomeStore } from './metronome-store';
 import { useUiStore } from './ui-store';
+import { useSpeedTrainerStore } from './speed-trainer-store';
 
 describe('useExerciseStore', () => {
   beforeEach(() => {
     localStorage.clear();
     useExerciseStore.setState({ activeExerciseId: null, userExercises: [] });
     useFretboardStore.setState({ selectedNotes: [], minFret: 1, maxFret: 7 });
+    useSpeedTrainerStore.setState({ lastResult: null, session: null });
     useMetronomeStore.setState({ bpm: 100, subdivision: 'quarter' });
     useUiStore.setState({ fretboardView: 'grid' });
   });
@@ -200,6 +202,102 @@ describe('useExerciseStore', () => {
       useExerciseStore.getState().selectExercise('warmup-1234-low-e');
 
       expect(useUiStore.getState().fretboardView).toBe('grid');
+    });
+  });
+
+  describe('leaveExercise', () => {
+    it('takes the exercise and its notes off the neck', () => {
+      useExerciseStore.getState().selectExercise('warmup-1234-low-e');
+
+      useExerciseStore.getState().leaveExercise();
+
+      expect(useExerciseStore.getState().activeExerciseId).toBeNull();
+      expect(useFretboardStore.getState().selectedNotes).toEqual([]);
+    });
+
+    // Free practice is the student's own scratch space. Wiping it because they
+    // looked at the chord tab and came back would throw away their work.
+    it('leaves free practice alone, since no exercise was open', () => {
+      useExerciseStore.setState({ activeExerciseId: null });
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 3 }]);
+
+      useExerciseStore.getState().leaveExercise();
+
+      expect(useFretboardStore.getState().selectedNotes).toHaveLength(1);
+    });
+
+    it('clears the speed-training result, which belonged to the exercise', () => {
+      useExerciseStore.getState().selectExercise('warmup-1234-low-e');
+      useSpeedTrainerStore.setState({ lastResult: { startBpm: 80, bpm: 120 } });
+
+      useExerciseStore.getState().leaveExercise();
+
+      expect(useSpeedTrainerStore.getState().lastResult).toBeNull();
+    });
+  });
+
+  it('clears the speed-training result when another exercise is opened', () => {
+    useSpeedTrainerStore.setState({ lastResult: { startBpm: 80, bpm: 120 } });
+
+    useExerciseStore.getState().selectExercise('warmup-1234-low-e');
+
+    expect(useSpeedTrainerStore.getState().lastResult).toBeNull();
+  });
+
+  describe('updateActiveUserExercise', () => {
+    function saveOne() {
+      useFretboardStore.getState().loadSequence([
+        { string: 6, fret: 3 },
+        { string: 6, fret: 5 },
+      ]);
+      return useExerciseStore.getState().saveCurrentSelection('Exercício X');
+    }
+
+    it('writes the notes now on the neck over the exercise that is open', () => {
+      const saved = saveOne();
+      useFretboardStore.getState().transposeSelection(1);
+
+      useExerciseStore.getState().updateActiveUserExercise();
+
+      const updated = useExerciseStore.getState().userExercises.find((e) => e.id === saved!.id);
+      expect(updated!.positions.map((p) => p.fret)).toEqual([4, 6]);
+    });
+
+    it('keeps the change after a reload, or it was never saved at all', () => {
+      saveOne();
+      useFretboardStore.getState().transposeSelection(2);
+      useExerciseStore.getState().updateActiveUserExercise();
+
+      useExerciseStore.setState({ userExercises: [] });
+      useExerciseStore.getState().hydrateUserExercises();
+
+      expect(useExerciseStore.getState().userExercises[0].positions[0].fret).toBe(5);
+    });
+
+    it('takes the tempo the student is working at now', () => {
+      saveOne();
+      useMetronomeStore.getState().setBpm(144);
+
+      useExerciseStore.getState().updateActiveUserExercise();
+
+      expect(useExerciseStore.getState().userExercises[0].bpm).toBe(144);
+    });
+
+    // The catalogue is the app's, not the student's; a change to one of those
+    // has to become an exercise of their own.
+    it('refuses to overwrite a catalogue exercise', () => {
+      useExerciseStore.getState().selectExercise('warmup-1234-low-e');
+      useFretboardStore.getState().transposeSelection(1);
+
+      expect(useExerciseStore.getState().updateActiveUserExercise()).toBeNull();
+      expect(useExerciseStore.getState().userExercises).toEqual([]);
+    });
+
+    it('does nothing with an empty neck', () => {
+      saveOne();
+      useFretboardStore.getState().clearSelection();
+
+      expect(useExerciseStore.getState().updateActiveUserExercise()).toBeNull();
     });
   });
 });

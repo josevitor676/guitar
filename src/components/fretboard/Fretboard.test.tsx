@@ -55,7 +55,7 @@ describe('Fretboard', () => {
     render(<Fretboard currentIndex={null} />);
     const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
     const circle = cell.querySelector('span');
-    expect(circle?.className).toMatch(/border-white\/20/);
+    expect(circle?.className).toMatch(/border-edge-strong/);
     expect(circle?.className).not.toMatch(/bg-accent/);
   });
 

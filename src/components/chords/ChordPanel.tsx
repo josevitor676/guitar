@@ -120,7 +120,7 @@ export function ChordPanel() {
                       aria-label={`Usar ${named?.displayName ?? chord.displayName} nesta posição`}
                       onClick={() => loadVoicing(suggestion)}
                       className={`flex w-full flex-col items-center gap-2 rounded-2xl border p-3 transition-all duration-200 ${
-                        key === currentKey ? 'border-accent bg-accent-dim' : 'border-white/[0.06] hover:border-white/20'
+                        key === currentKey ? 'border-accent bg-accent-dim' : 'border-edge hover:border-edge-strong'
                       }`}
                     >
                       <span className="text-sm font-semibold text-accent">

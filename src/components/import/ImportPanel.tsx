@@ -68,7 +68,7 @@ export function ImportPanel() {
     <Card>
       <label
         htmlFor="tab-file"
-        className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/20 px-6 py-10 text-center transition-all duration-200 hover:border-accent"
+        className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-edge-strong px-6 py-10 text-center transition-all duration-200 hover:border-accent"
       >
         <Upload className="h-6 w-6 text-text-secondary" />
         <span className="text-sm font-semibold text-text-primary">
@@ -113,7 +113,7 @@ export function ImportPanel() {
           <ul className="flex flex-wrap gap-2">
             {positions.map((position, index) => (
               <li key={`${position.string}-${position.fret}-${index}`}>
-                <span className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-xs text-text-primary">
+                <span className="flex items-center gap-2 rounded-full border border-edge bg-surface px-3 py-1 text-xs text-text-primary">
                   {position.fret} · corda {position.string} ·{' '}
                   {getNoteAt(STANDARD_TUNING, position).pitchClass}
                   {position.articulation && (
@@ -132,7 +132,7 @@ export function ImportPanel() {
             ))}
           </ul>
 
-          <div className="flex flex-wrap items-center gap-3 border-t border-white/[0.06] pt-4">
+          <div className="flex flex-wrap items-center gap-3 border-t border-edge pt-4">
             <button
               type="button"
               onClick={practiceNow}
@@ -158,12 +158,12 @@ export function ImportPanel() {
                 setNameMissing(false);
               }}
               placeholder="opcional"
-              className="rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-sm text-text-primary outline-none transition-all duration-200 focus:border-accent"
+              className="rounded-full border border-edge bg-surface px-3 py-1 text-sm text-text-primary outline-none transition-all duration-200 focus:border-accent"
             />
             <button
               type="button"
               onClick={saveToLibrary}
-              className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-surface px-4 py-1.5 text-xs font-semibold text-text-primary transition-all duration-200 hover:bg-white/10"
+              className="flex items-center gap-2 rounded-full border border-edge bg-surface px-4 py-1.5 text-xs font-semibold text-text-primary transition-all duration-200 hover:bg-edge-soft"
             >
               <BookmarkPlus className="h-3.5 w-3.5" />
               Salvar na biblioteca

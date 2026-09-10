@@ -11,7 +11,7 @@ export function MetronomeControls() {
       <select
         value={subdivision}
         onChange={(event) => setSubdivision(event.target.value as Subdivision)}
-        className="rounded-full border border-white/[0.06] bg-surface px-2 py-1 text-text-primary transition-all duration-200"
+        className="rounded-full border border-edge bg-surface px-2 py-1 text-text-primary transition-all duration-200"
       >
         {Object.entries(SUBDIVISION_LABELS).map(([optionValue, label]) => (
           <option key={optionValue} value={optionValue}>

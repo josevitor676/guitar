@@ -3,6 +3,7 @@ import {
   isValidPosition,
   positionsEqual,
   orderAlongNeck,
+  sequencesEqual,
   applyDirection,
   fretSpanForWidth,
   windowStartToReveal,
@@ -95,6 +96,29 @@ describe('windowStartToReveal', () => {
 
   it('leaves the window alone for an empty sequence', () => {
     expect(windowStartToReveal([], 4, 7)).toBe(4);
+  });
+});
+
+describe('sequencesEqual', () => {
+  const riff = [
+    { string: 6 as const, fret: 3 },
+    { string: 6 as const, fret: 5, articulation: 'hammerOn' as const },
+  ];
+
+  it('sees the same notes in the same order as the same sequence', () => {
+    expect(sequencesEqual(riff, [...riff])).toBe(true);
+  });
+
+  it('sees a moved fret as a change', () => {
+    expect(sequencesEqual(riff, [riff[0], { ...riff[1], fret: 6 }])).toBe(false);
+  });
+
+  it('sees a lost articulation as a change, since the technique is the exercise', () => {
+    expect(sequencesEqual(riff, [riff[0], { string: 6, fret: 5 }])).toBe(false);
+  });
+
+  it('sees a different length as a change', () => {
+    expect(sequencesEqual(riff, [riff[0]])).toBe(false);
   });
 });
 

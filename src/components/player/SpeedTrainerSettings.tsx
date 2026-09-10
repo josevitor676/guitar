@@ -12,7 +12,7 @@ interface NumberFieldProps {
 
 function NumberField({ label, value, suffix, onChange }: NumberFieldProps) {
   return (
-    <label className="flex items-center gap-2 text-xs text-text-secondary">
+    <label className="flex items-center gap-2 text-sm text-text-secondary">
       {label}
       <input
         type="number"
@@ -20,7 +20,7 @@ function NumberField({ label, value, suffix, onChange }: NumberFieldProps) {
         value={value}
         min={1}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="w-16 rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-center text-xs text-text-primary tabular-nums"
+        className="w-20 rounded-full border border-edge bg-surface px-3 py-1.5 text-center text-sm text-text-primary tabular-nums"
       />
       {suffix}
     </label>
@@ -44,7 +44,7 @@ export function SpeedTrainerSettings() {
   const impossible = !isValidTraining(training);
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
       <NumberField label="Começar em" value={training.startBpm} suffix="BPM"
         onChange={(startBpm) => change({ startBpm })} />
       <NumberField label="Subir" value={training.stepBpm} suffix="BPM"
@@ -60,7 +60,7 @@ export function SpeedTrainerSettings() {
         the app is in no position to know which.
       */}
       {record !== undefined && (
-        <span className="flex items-center gap-2 text-xs text-text-secondary">
+        <span className="flex items-center gap-2 text-sm text-text-secondary">
           Seu recorde: <strong className="text-text-primary tabular-nums">{record} BPM</strong>
           {training.startBpm !== record && (
             <button
@@ -72,7 +72,7 @@ export function SpeedTrainerSettings() {
                   targetBpm: Math.max(training.targetBpm, record),
                 })
               }
-              className="rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
+              className="rounded-full border border-edge bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
             >
               Começar dele
             </button>
@@ -90,7 +90,7 @@ export function SpeedTrainerSettings() {
         <button
           type="button"
           onClick={() => useSpeedTrainerStore.getState().hold()}
-          className="rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-xs text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
+          className="rounded-full border border-edge bg-surface px-3 py-1 text-xs text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
         >
           Segurar aqui
         </button>

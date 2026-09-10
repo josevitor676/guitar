@@ -14,6 +14,18 @@ export function positionsEqual(a: FretPosition, b: FretPosition): boolean {
   return a.string === b.string && a.fret === b.fret;
 }
 
+/** Whether two sequences are the same notes, in the same order. */
+export function sequencesEqual(a: FretPosition[], b: FretPosition[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every(
+      (position, index) =>
+        positionsEqual(position, b[index]) &&
+        position.articulation === b[index].articulation,
+    )
+  );
+}
+
 /** Whether any string and fret is played more than once in the sequence. */
 export function hasRepeatedPosition(positions: FretPosition[]): boolean {
   const seen = new Set<string>();

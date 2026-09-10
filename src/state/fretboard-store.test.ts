@@ -114,6 +114,38 @@ describe('useFretboardStore', () => {
     });
   });
 
+  describe('transposeSelection', () => {
+    it('moves the whole sequence along the neck', () => {
+      useFretboardStore.getState().loadSequence([
+        { string: 6, fret: 3 },
+        { string: 5, fret: 5 },
+      ]);
+
+      useFretboardStore.getState().transposeSelection(1);
+
+      expect(useFretboardStore.getState().selectedNotes.map((note) => note.fret)).toEqual([4, 6]);
+    });
+
+    it('refuses a move that would push a note off the neck, rather than bending the shape', () => {
+      useFretboardStore.getState().loadSequence([{ string: 1, fret: 0 }]);
+
+      useFretboardStore.getState().transposeSelection(-1);
+
+      expect(useFretboardStore.getState().selectedNotes).toEqual([{ string: 1, fret: 0 }]);
+    });
+
+    it('brings the window with it, so the sequence does not move out of sight', () => {
+      useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 7 }]);
+
+      useFretboardStore.getState().transposeSelection(1);
+
+      const { minFret, maxFret } = useFretboardStore.getState();
+      expect(8).toBeGreaterThanOrEqual(minFret);
+      expect(8).toBeLessThanOrEqual(maxFret);
+    });
+  });
+
   describe('loadSequence', () => {
     it('slides the window onto the loaded positions instead of leaving them hidden', () => {
       useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });

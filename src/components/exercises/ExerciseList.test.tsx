@@ -33,7 +33,7 @@ describe('ExerciseList', () => {
 
     const button = screen.getByText(first.name).closest('button');
 
-    expect(button?.className).toContain('border-white/[0.06]');
+    expect(button?.className).toContain('border-edge');
     fireEvent.click(screen.getByText(first.name));
     expect(screen.getByText(first.name).closest('button')?.className).toContain('border-accent');
   });

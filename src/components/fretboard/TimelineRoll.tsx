@@ -107,7 +107,7 @@ export function TimelineRoll({
             data-testid={`timeline-divider-${index}`}
             data-bar={opensBar}
             aria-hidden="true"
-            className={`absolute top-0 w-px ${opensBar ? 'bg-white/[0.18]' : 'bg-white/[0.07]'}`}
+            className={`absolute top-0 w-px ${opensBar ? 'bg-edge-strong' : 'bg-edge'}`}
             style={{ left: `${beatToX(beat)}px`, height: `${gridHeightPx}px` }}
           />
         ))}
@@ -192,7 +192,7 @@ export function TimelineRoll({
             className="relative flex items-center"
             style={{ height: `${ROW_HEIGHT_PX}px` }}
           >
-            <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/[0.06]" />
+            <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-edge" />
             <span className="relative z-10 w-10 text-center text-sm text-text-secondary">
               {getPitchClass(STANDARD_TUNING[string])}
             </span>
@@ -246,7 +246,7 @@ export function TimelineRoll({
                     ? 'bg-accent text-body ring-4 ring-accent-dim'
                     : onBeatHead
                       ? 'border-2 border-accent bg-body text-accent'
-                      : 'border border-white/20 bg-body text-text-primary'
+                      : 'border border-edge-strong bg-body text-text-primary'
                 } ${removable ? 'group-hover:border-accent group-hover:text-accent' : ''}`}
               >
                 <span className={removable ? 'group-hover:hidden' : ''}>{note.position.fret}</span>

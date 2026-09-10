@@ -12,7 +12,7 @@ interface TabsProps {
 
 export function Tabs({ tabs, activeTabId, onChange }: TabsProps) {
   return (
-    <div role="tablist" className="flex items-center gap-8 border-b border-white/[0.06] pb-3">
+    <div role="tablist" className="flex items-center gap-8 border-b border-edge pb-3">
       {tabs.map((tab) => (
         <button
           key={tab.id}

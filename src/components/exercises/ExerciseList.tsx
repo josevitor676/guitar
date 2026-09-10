@@ -34,7 +34,7 @@ function ExerciseCard({ exercise, active, onSelect, meta, onDelete }: ExerciseCa
         aria-pressed={active}
         className={[
           'w-full rounded-2xl border bg-card px-3 py-3 pr-10 text-left transition-all duration-200',
-          active ? 'border-accent bg-accent-dim' : 'border-white/[0.06] hover:border-white/20',
+          active ? 'border-accent bg-accent-dim' : 'border-edge hover:border-edge-strong',
         ].join(' ')}
       >
         <span className="block text-xs uppercase tracking-wide text-text-secondary">

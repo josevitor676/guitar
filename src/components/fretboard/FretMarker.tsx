@@ -29,8 +29,8 @@ export function FretMarker({
     : selected
       ? onBeatHead
         ? 'border-2 border-accent bg-body text-accent'
-        : 'border border-white/20 bg-body text-text-primary'
-      : 'border border-transparent text-transparent group-hover:border-white/20';
+        : 'border border-edge-strong bg-body text-text-primary'
+      : 'border border-transparent text-transparent group-hover:border-edge-strong';
 
   return (
     <button
