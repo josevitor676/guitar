@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { FretPosition } from '../domain/music-theory/tuning';
 import { positionsEqual, windowStartToReveal } from '../domain/fretboard/fretboard-model';
-import { canTranspose, transpose } from '../domain/fretboard/transpose';
+import { extendedSequence, canExtend, canShrink } from '../domain/fretboard/neck-pattern';
 
 interface FretboardState {
   minFret: number;
@@ -12,8 +12,15 @@ interface FretboardState {
   toggleNote: (position: FretPosition) => void;
   appendNote: (position: FretPosition) => void;
   removeAt: (index: number) => void;
-  /** Moves the whole sequence `delta` frets along the neck. */
-  transposeSelection: (delta: number) => void;
+  /**
+   * The shape the repetitions are built from. It is whatever was last put on
+   * the neck deliberately — loaded, or edited by hand — and never includes
+   * the repetitions themselves.
+   */
+  patternBase: FretPosition[];
+  patternExtensions: number;
+  /** Adds (+1) or takes back (-1) one repetition a fret further up. */
+  extendPattern: (delta: number) => void;
   clearSelection: () => void;
   loadSequence: (positions: FretPosition[]) => void;
 }
@@ -22,6 +29,8 @@ export const useFretboardStore = create<FretboardState>((set) => ({
   minFret: 1,
   maxFret: 7,
   selectedNotes: [],
+  patternBase: [],
+  patternExtensions: 0,
   setFretRange: (minFret, maxFret) => set({ minFret, maxFret }),
 
   // How many frets are shown is the screen's call, not the student's; paging
@@ -30,39 +39,55 @@ export const useFretboardStore = create<FretboardState>((set) => ({
   toggleNote: (position) =>
     set((state) => {
       const exists = state.selectedNotes.some((note) => positionsEqual(note, position));
-      return {
-        selectedNotes: exists
-          ? state.selectedNotes.filter((note) => !positionsEqual(note, position))
-          : [...state.selectedNotes, position],
-      };
+      const selectedNotes = exists
+        ? state.selectedNotes.filter((note) => !positionsEqual(note, position))
+        : [...state.selectedNotes, position];
+      return { selectedNotes, patternBase: selectedNotes, patternExtensions: 0 };
     }),
   // The timeline's counterpart to toggling. A sequence can play the same spot
   // over and over — a riff is usually built that way — so adding never asks
   // whether the note is already there, and removing has to name *which* of
   // them goes, which is the index rather than the string and fret.
   appendNote: (position) =>
-    set((state) => ({ selectedNotes: [...state.selectedNotes, position] })),
-  removeAt: (index) =>
-    set((state) => ({ selectedNotes: state.selectedNotes.filter((_, at) => at !== index) })),
-
-  // Reuses loadSequence so the visible window follows the notes; a shape
-  // moved up four frets is no use if the neck keeps showing where it was.
-  transposeSelection: (delta) =>
     set((state) => {
-      if (!canTranspose(state.selectedNotes, delta)) return {};
-      const moved = transpose(state.selectedNotes, delta);
-      const span = state.maxFret - state.minFret + 1;
-      const minFret = windowStartToReveal(moved, state.minFret, span);
-      return { selectedNotes: moved, minFret, maxFret: minFret + span - 1 };
+      const selectedNotes = [...state.selectedNotes, position];
+      return { selectedNotes, patternBase: selectedNotes, patternExtensions: 0 };
+    }),
+  removeAt: (index) =>
+    set((state) => {
+      const selectedNotes = state.selectedNotes.filter((_, at) => at !== index);
+      return { selectedNotes, patternBase: selectedNotes, patternExtensions: 0 };
     }),
 
-  clearSelection: () => set({ selectedNotes: [] }),
+  // The window follows the notes: a repetition four frets further up is no
+  // use if the neck keeps showing where the pattern started.
+  extendPattern: (delta) =>
+    set((state) => {
+      const { patternBase, patternExtensions } = state;
+      const allowed =
+        delta > 0 ? canExtend(patternBase, patternExtensions) : canShrink(patternExtensions);
+      if (!allowed) return {};
+
+      const patternExtensionsNext = patternExtensions + delta;
+      const selectedNotes = extendedSequence(patternBase, patternExtensionsNext);
+      const span = state.maxFret - state.minFret + 1;
+      const minFret = windowStartToReveal(selectedNotes, state.minFret, span);
+      return { selectedNotes, patternExtensions: patternExtensionsNext, minFret, maxFret: minFret + span - 1 };
+    }),
+
+  clearSelection: () => set({ selectedNotes: [], patternBase: [], patternExtensions: 0 }),
   // Loading also reveals: a sequence outside the visible frets would otherwise
   // play while the neck looks empty. The window slides, keeping its width.
   loadSequence: (positions) =>
     set((state) => {
       const span = state.maxFret - state.minFret + 1;
       const minFret = windowStartToReveal(positions, state.minFret, span);
-      return { selectedNotes: positions, minFret, maxFret: minFret + span - 1 };
+      return {
+        selectedNotes: positions,
+        patternBase: positions,
+        patternExtensions: 0,
+        minFret,
+        maxFret: minFret + span - 1,
+      };
     }),
 }));

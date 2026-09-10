@@ -9,7 +9,7 @@ import { useCountIn } from '../../hooks/useCountIn';
 import { useMetronome } from '../../hooks/useMetronome';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useExerciseStore, findExercise } from '../../state/exercise-store';
-import { canTranspose } from '../../domain/fretboard/transpose';
+import { canExtend, canShrink } from '../../domain/fretboard/neck-pattern';
 import { sequencesEqual } from '../../domain/fretboard/fretboard-model';
 import { usePlaybackStore } from '../../state/playback-store';
 import { useSpeedTrainerStore } from '../../state/speed-trainer-store';
@@ -54,7 +54,9 @@ export function ControlBar() {
   const sequence = usePlaybackSequence();
   const userExercises = useExerciseStore((state) => state.userExercises);
   const selectedNotes = useFretboardStore((state) => state.selectedNotes);
-  const transposeSelection = useFretboardStore((state) => state.transposeSelection);
+  const extendPattern = useFretboardStore((state) => state.extendPattern);
+  const patternBase = useFretboardStore((state) => state.patternBase);
+  const patternExtensions = useFretboardStore((state) => state.patternExtensions);
 
   // Whether the neck still holds what the exercise was saved with. Comparing
   // is better than tracking a flag: the flag would have to be cleared from
@@ -167,22 +169,29 @@ export function ControlBar() {
         <Gauge className="h-4 w-4" />
       </IconButton>
 
+      {/*
+        Walking the shape up the neck: each press plays it through once more,
+        a fret further on. The count is shown because after two presses the
+        neck is busy enough that counting the repetitions by eye is work.
+      */}
       <Chip>
         <button
           type="button"
-          aria-label="Uma casa para trás"
-          disabled={!canTranspose(selectedNotes, -1)}
-          onClick={() => transposeSelection(-1)}
+          aria-label="Tirar a última casa"
+          disabled={!canShrink(patternExtensions)}
+          onClick={() => extendPattern(-1)}
           className="text-text-primary transition-all duration-200 hover:opacity-70 disabled:opacity-30"
         >
           −
         </button>
-        <span className="text-text-secondary">casa</span>
+        <span className="text-text-secondary">
+          {patternExtensions === 0 ? 'casas' : `+${patternExtensions} casa${patternExtensions > 1 ? 's' : ''}`}
+        </span>
         <button
           type="button"
-          aria-label="Uma casa para frente"
-          disabled={!canTranspose(selectedNotes, 1)}
-          onClick={() => transposeSelection(1)}
+          aria-label="Repetir uma casa acima"
+          disabled={!canExtend(patternBase, patternExtensions)}
+          onClick={() => extendPattern(1)}
           className="text-text-primary transition-all duration-200 hover:opacity-70 disabled:opacity-30"
         >
           +
