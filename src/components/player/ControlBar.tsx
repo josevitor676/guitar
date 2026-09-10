@@ -38,7 +38,10 @@ export function ControlBar() {
   };
 
   return (
-    <div className="flex flex-col gap-3 border-t border-white/[0.06] pt-4">
+    // The bar used to sit at the foot of the card, where a rule separated it
+    // from the neck. It now sits inline in the toolbar row, so that rule
+    // would be a line with nothing on either side of it.
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-4">
       <IconButton
         label={isPlaying ? 'Parar' : 'Começar'}
