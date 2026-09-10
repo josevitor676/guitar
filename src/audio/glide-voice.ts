@@ -1,37 +1,28 @@
 import * as Tone from 'tone';
 import type { GlideRequest, IGlideVoice } from './audio-engine.types';
+import { SAMPLE_BASE_URL, SAMPLE_URLS, nearestSample } from './guitar-samples';
+
+/** Long enough to close the note without a click, short enough not to blur it. */
+const FADE_OUT_SECONDS = 0.12;
 
 /**
- * A plucked-sounding synth whose pitch travels during the note.
+ * Slides and bends played on the recorded guitar.
  *
- * Slides and bends cannot be played by the sampler — Tone's Sampler has no
- * frequency or detune parameter, so a sampled note is fixed at the pitch it was
- * struck at. A MonoSynth's frequency is a signal and can be ramped, at the cost
- * of not being the recorded guitar. The envelope is shaped short and bright so
- * it sits as close to a plucked string as a synth gets.
+ * Tone's Sampler cannot do this — it exposes no frequency or detune parameter,
+ * so a sampled note is stuck at the pitch it was struck at. But `playbackRate`
+ * on a raw buffer source *is* a Param, so it can be ramped, and speeding a
+ * recording up or slowing it down is exactly what a vibrating string does when
+ * a finger slides or bends it. This is closer to the instrument than any synth
+ * could be: the same recording, moving.
  */
 export class ToneGlideVoice implements IGlideVoice {
-  private synth: Tone.MonoSynth;
+  private buffers: Tone.ToneAudioBuffers;
 
   constructor() {
-    this.synth = new Tone.MonoSynth({
-      // A triangle is close to a plucked string's spectrum; the sawtooth this
-      // started as read as a synth buzz next to the sampled guitar.
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.004, decay: 0.9, sustain: 0.08, release: 0.6 },
-      filter: { type: 'lowpass', rolloff: -24, Q: 0.6 },
-      // The filter closes as the note decays, which is what makes a plucked
-      // string go dull as it dies away instead of staying bright.
-      filterEnvelope: {
-        attack: 0.003,
-        decay: 0.5,
-        sustain: 0.05,
-        release: 0.5,
-        baseFrequency: 260,
-        octaves: 3.2,
-      },
-      volume: -12,
-    }).toDestination();
+    this.buffers = new Tone.ToneAudioBuffers({
+      urls: SAMPLE_URLS,
+      baseUrl: SAMPLE_BASE_URL,
+    });
   }
 
   playGlide({
@@ -41,23 +32,32 @@ export class ToneGlideVoice implements IGlideVoice {
     glideSeconds,
     holdSeconds,
     time,
-    velocity,
+    velocity = 1,
   }: GlideRequest): void {
+    const { note, rootHz } = nearestSample(fromHz);
+    if (!this.buffers.has(note) || !this.buffers.loaded) return;
+
     const start = time ?? Tone.now();
+    const gain = new Tone.Gain(velocity).toDestination();
+    const source = new Tone.ToneBufferSource({
+      url: this.buffers.get(note),
+      fadeOut: FADE_OUT_SECONDS,
+    }).connect(gain);
 
-    // One note, struck once, that keeps sounding while its pitch travels. The
-    // string is picked at the first pitch and never picked again.
-    this.synth.frequency.setValueAtTime(fromHz, start);
-    this.synth.triggerAttack(fromHz, start, velocity);
-
+    // Playing the recording faster raises its pitch; ramping that speed is the
+    // glide. The rate is relative to the pitch the recording was played at.
+    source.playbackRate.setValueAtTime(fromHz / rootHz, start);
     if (glideSeconds > 0) {
-      // Exponential in frequency is linear in pitch, which is how a hand moving
-      // at a steady speed actually sounds.
-      this.synth.frequency.exponentialRampTo(toHz, glideSeconds, start + startsAfterSeconds);
+      source.playbackRate.exponentialRampTo(toHz / rootHz, glideSeconds, start + startsAfterSeconds);
     } else {
-      this.synth.frequency.setValueAtTime(toHz, start + startsAfterSeconds);
+      source.playbackRate.setValueAtTime(toHz / rootHz, start + startsAfterSeconds);
     }
 
-    this.synth.triggerRelease(start + holdSeconds);
+    source.start(start);
+    source.stop(start + holdSeconds);
+    source.onended = () => {
+      source.dispose();
+      gain.dispose();
+    };
   }
 }
