@@ -4,10 +4,12 @@ import { Card } from '../ui/Card';
 import { IconButton } from '../ui/IconButton';
 import { ChordNeck } from './ChordNeck';
 import { ChordDiagram } from './ChordDiagram';
+import { ChordProgressions } from './ChordProgressions';
 import { STANDARD_TUNING } from '../../domain/music-theory/tuning';
 import { identifyChord } from '../../domain/chords/chord-identification';
 import { suggestVoicings } from '../../domain/chords/chord-voicing-generator';
 import { voicingKey } from '../../domain/chords/chord-voicing';
+import { fingerChord } from '../../domain/chords/chord-fingering';
 import { useChordStore } from '../../state/chord-store';
 import { useChordPlayback } from '../../hooks/useChordPlayback';
 
@@ -26,6 +28,13 @@ export function ChordPanel() {
   );
 
   const currentKey = voicingKey(voicing);
+  const { barre } = useMemo(() => fingerChord(voicing), [voicing]);
+
+  /** Builds a suggested chord on the neck by loading its plainest shape. */
+  const buildChord = (root: string, intervals: number[]) => {
+    const [best] = suggestVoicings({ root, intervals, tuning: STANDARD_TUNING, limit: 1 });
+    if (best) loadVoicing(best);
+  };
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
@@ -40,6 +49,11 @@ export function ChordPanel() {
               <p className="text-xs text-text-secondary">
                 Inversão de {chord.root}
                 {chord.symbol}, com {chord.bass} no baixo
+              </p>
+            )}
+            {barre && (
+              <p data-testid="barre-hint" className="text-xs text-text-secondary">
+                Pestana na casa {barre.fret}, com o indicador
               </p>
             )}
           </div>
@@ -66,39 +80,48 @@ export function ChordPanel() {
         </p>
       </Card>
 
-      <Card className="min-w-0 flex-1">
-        <p className="text-xs uppercase tracking-wide text-text-secondary">Outras formas de tocar</p>
+      <div className="flex min-w-0 flex-1 flex-col gap-6">
+        <Card>
+          <p className="text-xs uppercase tracking-wide text-text-secondary">Outras formas de tocar</p>
 
-        {!chord && (
-          <p className="mt-4 text-sm text-text-secondary">
-            Monte um acorde no braço e eu digo qual é, com outras posições para tocá-lo.
-          </p>
-        )}
+          {!chord && (
+            <p className="mt-4 text-sm text-text-secondary">
+              Monte um acorde no braço e eu digo qual é, com outras posições para tocá-lo.
+            </p>
+          )}
+
+          {chord && (
+            <div className="subtle-scroll mt-4 grid max-h-[300px] grid-cols-2 gap-4 overflow-y-auto pr-1 sm:grid-cols-3">
+              {suggestions.map((suggestion) => {
+                const key = voicingKey(suggestion);
+                const named = identifyChord(suggestion, STANDARD_TUNING);
+
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-label={`Usar ${named?.displayName ?? chord.displayName} nesta posição`}
+                    onClick={() => loadVoicing(suggestion)}
+                    className={`flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all duration-200 ${
+                      key === currentKey ? 'border-accent bg-accent-dim' : 'border-white/[0.06] hover:border-white/20'
+                    }`}
+                  >
+                    <span className="text-sm font-semibold text-accent">{named?.displayName ?? chord.displayName}</span>
+                    <ChordDiagram voicing={suggestion} />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Card>
 
         {chord && (
-          <div className="subtle-scroll mt-4 grid max-h-[420px] grid-cols-2 gap-4 overflow-y-auto pr-1 sm:grid-cols-3">
-            {suggestions.map((suggestion) => {
-              const key = voicingKey(suggestion);
-              const named = identifyChord(suggestion, STANDARD_TUNING);
-
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  aria-label={`Usar ${named?.displayName ?? chord.displayName} nesta posição`}
-                  onClick={() => loadVoicing(suggestion)}
-                  className={`flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all duration-200 ${
-                    key === currentKey ? 'border-accent bg-accent-dim' : 'border-white/[0.06] hover:border-white/20'
-                  }`}
-                >
-                  <span className="text-sm font-semibold text-accent">{named?.displayName ?? chord.displayName}</span>
-                  <ChordDiagram voicing={suggestion} />
-                </button>
-              );
-            })}
-          </div>
+          <Card>
+            <p className="mb-3 text-xs uppercase tracking-wide text-text-secondary">Vai bem com</p>
+            <ChordProgressions chord={chord} onPick={(pick) => buildChord(pick.root, pick.intervals)} />
+          </Card>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

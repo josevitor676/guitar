@@ -1,11 +1,12 @@
 import type { ChordVoicing } from '../../domain/chords/chord-voicing';
 import { ALL_STRINGS, isSounding, lowestFret } from '../../domain/chords/chord-voicing';
+import { fingerChord } from '../../domain/chords/chord-fingering';
 
 // Wider than tall on purpose: the shape has to read as a neck lying down, the
 // same way round as every other neck in the app. A near-square box reads as
 // neither orientation.
-const ROW_HEIGHT = 13;
-const CELL_WIDTH = 30;
+const ROW_HEIGHT = 15;
+const CELL_WIDTH = 32;
 const FRETS_SHOWN = 4;
 const GUTTER = 16;
 
@@ -14,7 +15,9 @@ const GUTTER = 16;
  * rows, frets across. The reference this was drawn from stands the neck up, but
  * two orientations in one product means relearning the picture on every tab.
  */
-export function ChordDiagram({ voicing }: { voicing: ChordVoicing }) {
+export function ChordDiagram({ voicing, showFingers = true }: { voicing: ChordVoicing; showFingers?: boolean }) {
+  const { fingers, barre } = fingerChord(voicing);
+  const fingerFor = new Map(fingers.map((placement) => [placement.string, placement.finger]));
   const lowest = lowestFret(voicing);
   // An open shape is read from the nut; anything else from where the hand sits.
   const startFret = lowest === null || lowest <= FRETS_SHOWN ? 1 : lowest;
@@ -63,22 +66,41 @@ export function ChordDiagram({ voicing }: { voicing: ChordVoicing }) {
               />
             ))}
 
+            {/* One finger laid across several strings is a bar, not a row of
+                separate dots, and it has to be drawn as the one thing it is. */}
+            {barre && frets.includes(barre.fret) && (
+              <span
+                data-testid="diagram-barre"
+                className="absolute -translate-x-1/2 rounded-full bg-accent"
+                style={{
+                  left: `${frets.indexOf(barre.fret) * CELL_WIDTH + CELL_WIDTH / 2}px`,
+                  top: `${ALL_STRINGS.indexOf(barre.fromString) * ROW_HEIGHT + ROW_HEIGHT / 2 - 5}px`,
+                  width: '10px',
+                  height: `${(ALL_STRINGS.indexOf(barre.toString) - ALL_STRINGS.indexOf(barre.fromString)) * ROW_HEIGHT + 10}px`,
+                }}
+              />
+            )}
+
             {ALL_STRINGS.map((string, row) => {
               const play = voicing[string];
               if (!isSounding(play) || play === 0) return null;
               const column = frets.indexOf(play);
               if (column === -1) return null;
+              // The bar already covers this string at this fret.
+              if (barre && play === barre.fret) return null;
 
               return (
                 <span
                   key={string}
                   data-testid={`diagram-dot-${string}`}
-                  className="absolute h-[11px] w-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent"
+                  className="absolute flex h-[13px] w-[13px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-accent text-[8px] font-bold leading-none text-body"
                   style={{
                     left: `${column * CELL_WIDTH + CELL_WIDTH / 2}px`,
                     top: `${row * ROW_HEIGHT + ROW_HEIGHT / 2}px`,
                   }}
-                />
+                >
+                  {showFingers ? (fingerFor.get(string) ?? '') : ''}
+                </span>
               );
             })}
           </div>

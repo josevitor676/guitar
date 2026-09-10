@@ -89,4 +89,64 @@ describe('ChordPanel', () => {
     expect(screen.getByTestId('chord-name')).toHaveTextContent('G/D');
     expect(screen.getByText(/com D no baixo/i)).toBeInTheDocument();
   });
+
+  describe('fingering and barre', () => {
+    it('says where the barre goes when the shape needs one', () => {
+      // The F barre chord: index across the first fret.
+      useChordStore.getState().loadVoicing({ 6: 1, 5: 3, 4: 3, 3: 2, 2: 1, 1: 1 });
+      render(<ChordPanel />);
+
+      expect(screen.getByTestId('barre-hint')).toHaveTextContent('casa 1');
+    });
+
+    it('says nothing about a barre for a shape that has none', () => {
+      useChordStore.getState().loadVoicing({ 6: 'muted', 5: 3, 4: 2, 3: 0, 2: 1, 1: 0 });
+      render(<ChordPanel />);
+
+      expect(screen.queryByTestId('barre-hint')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('progressions', () => {
+    it('names the key the chord belongs to', () => {
+      useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
+      render(<ChordPanel />);
+
+      expect(screen.getByText(/G maior/)).toBeInTheDocument();
+    });
+
+    it('offers the chords of that key, labelled by degree', () => {
+      useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
+      render(<ChordPanel />);
+
+      expect(screen.getByRole('button', { name: /Montar Em, grau vi/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Montar C, grau IV/ })).toBeInTheDocument();
+    });
+
+    it('builds a suggested chord on the neck when it is picked', () => {
+      useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
+      render(<ChordPanel />);
+
+      fireEvent.click(screen.getByRole('button', { name: /Montar Em, grau vi/ }));
+
+      expect(screen.getByTestId('chord-name')).toHaveTextContent('Em');
+    });
+
+    it('reads a dominant seventh as pointing at the key a fourth above', () => {
+      // G7, which wants to become C.
+      useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 1 });
+      render(<ChordPanel />);
+
+      expect(screen.getByTestId('chord-name')).toHaveTextContent('G7');
+      expect(screen.getByText(/C maior/)).toBeInTheDocument();
+    });
+
+    it('declines to guess a key for a chord that belongs to none', () => {
+      // A diminished chord: B-D-F.
+      useChordStore.getState().loadVoicing({ 6: 'muted', 5: 2, 4: 3, 3: 4, 2: 3, 1: 'muted' });
+      render(<ChordPanel />);
+
+      expect(screen.getByText(/n[ãa]o pertence firmemente a um tom/i)).toBeInTheDocument();
+    });
+  });
 });
