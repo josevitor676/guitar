@@ -5,4 +5,4 @@
  */
 export const LABEL_WIDTH_PX = 40;
 export const FRET_CELL_WIDTH_PX = 56;
-export const ROW_HEIGHT_PX = 48;
+export const ROW_HEIGHT_PX = 34;

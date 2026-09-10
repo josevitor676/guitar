@@ -58,14 +58,14 @@ export function App() {
       )}
 
       {activeTab === 'practice' && (
-        <section className="mt-8">
+        <section className="mt-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Modo Livre</p>
           <h2 className="mt-1 text-3xl font-bold">Explore o braço da guitarra.</h2>
           <p className="mt-1 text-sm text-text-secondary">
             Escolha uma casa, encontre novas combinações e aqueça os dedos.
           </p>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <PracticePanel />
           </div>
         </section>

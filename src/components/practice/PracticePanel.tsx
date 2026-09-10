@@ -65,7 +65,10 @@ export function PracticePanel() {
 
   return (
     <Card>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+      <div
+        data-testid="practice-toolbar"
+        className="mb-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3"
+      >
         <div className="flex items-center gap-1 rounded-full border border-white/[0.06] bg-surface p-1 text-xs font-medium">
           {VIEW_LABELS.map((view) => (
             <button
@@ -82,6 +85,14 @@ export function PracticePanel() {
           ))}
         </div>
 
+        {/*
+          The transport belongs beside the view switch rather than under the
+          neck: with the roll and the neck stacked, anything below them sat off
+          the bottom of the screen, and starting playback meant scrolling away
+          from the thing being played.
+        */}
+        <ControlBar />
+
         <div className="flex items-center gap-4">
           <FretRangeControl minFret={minFret} maxFret={maxFret} onChange={setFretRange} />
           <PulseIndicator currentPulse={currentPulse} isPlaying={isPlaying} />
@@ -97,7 +108,7 @@ export function PracticePanel() {
         </p>
       )}
 
-      <div className="mb-4 flex items-center gap-3 text-xs text-text-secondary">
+      <div className="mb-2 flex items-center gap-3 text-xs text-text-secondary">
         <span className="whitespace-nowrap">
           {currentIndex === null ? `${total} notas` : `nota ${played} / ${total}`}
         </span>
@@ -109,36 +120,31 @@ export function PracticePanel() {
           <Fretboard currentIndex={currentIndex} beatHeadKeys={beatHeadKeys} />
         ) : (
           <>
-            <TimelineRoll
-              timeline={timeline}
-              currentIndex={currentIndex}
-              metronomeOn={metronomeArmed}
-              onRemoveNote={editable ? removeAt : undefined}
-            />
             {/*
               The roll has strings and time but no fret axis, so it cannot say
-              which fret a new note is on. The neck under it does, and here a
-              click adds rather than toggles: that is what lets a riff come
-              back to the same spot.
+              which fret a new note is on. The neck does, and here a click adds
+              rather than toggles: that is what lets a riff come back to the
+              same spot. It comes first because it is where the student acts —
+              the roll below it is the result.
             */}
-            <p className="mt-6 mb-2 text-xs text-text-secondary">
+            <Fretboard currentIndex={currentIndex} mode="append" beatHeadKeys={beatHeadKeys} />
+
+            <p className="mt-2 mb-1 text-xs text-text-secondary">
               {editable
                 ? 'Clique no braço para acrescentar a nota no fim da sequência — a mesma casa pode ser clicada quantas vezes quiser. Clique numa nota da linha do tempo para removê-la.'
                 : sequenceRunning
                   ? 'Pare a sequência para editá-la.'
                   : 'Volte a direção para Descendo para editar a sequência — nas outras, o rolo mostra a sequência tocada, não a que você montou.'}
             </p>
-            <Fretboard
+
+            <TimelineRoll
+              timeline={timeline}
               currentIndex={currentIndex}
-              mode="append"
-              beatHeadKeys={beatHeadKeys}
+              metronomeOn={metronomeArmed}
+              onRemoveNote={editable ? removeAt : undefined}
             />
           </>
         )}
-      </div>
-
-      <div className="mt-6">
-        <ControlBar />
       </div>
     </Card>
   );

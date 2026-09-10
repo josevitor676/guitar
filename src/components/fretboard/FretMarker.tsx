@@ -1,3 +1,5 @@
+import { ROW_HEIGHT_PX, FRET_CELL_WIDTH_PX } from './fretboard-layout';
+
 interface FretMarkerProps {
   string: number;
   fret: number;
@@ -36,7 +38,8 @@ export function FretMarker({
       aria-label={`corda ${string}, casa ${fret}`}
       aria-pressed={selected}
       onClick={onClick}
-      className="group relative flex h-12 w-14 items-center justify-center transition-all duration-200"
+      style={{ height: `${ROW_HEIGHT_PX}px`, width: `${FRET_CELL_WIDTH_PX}px` }}
+      className="group relative flex items-center justify-center transition-all duration-200"
     >
       {selected && repeatCount > 1 && (
         <span

@@ -36,11 +36,11 @@ describe('TimelineRoll', () => {
 
     const second = screen.getByTestId('timeline-note-1');
     expect(second).toHaveAttribute('data-string', '6');
-    expect(second).toHaveStyle({ left: '112px' });
+    expect(second).toHaveStyle({ left: '132px' });
 
     const third = screen.getByTestId('timeline-note-2');
     expect(third).toHaveAttribute('data-string', '3');
-    expect(third).toHaveStyle({ left: '184px' });
+    expect(third).toHaveStyle({ left: '204px' });
   });
 
   it('marks only the note being played as active', () => {
@@ -52,10 +52,10 @@ describe('TimelineRoll', () => {
 
   it('parks the playhead at the start before playback and moves it to the active note', () => {
     const { rerender } = render(<TimelineRoll timeline={timeline} currentIndex={null} />);
-    expect(screen.getByTestId('timeline-playhead')).toHaveStyle({ left: '40px' });
+    expect(screen.getByTestId('timeline-playhead')).toHaveStyle({ left: '60px' });
 
     rerender(<TimelineRoll timeline={timeline} currentIndex={2} />);
-    expect(screen.getByTestId('timeline-playhead')).toHaveStyle({ left: '184px' });
+    expect(screen.getByTestId('timeline-playhead')).toHaveStyle({ left: '204px' });
   });
 
   it('closes every note into its own cell, so three notes get four boundaries', () => {

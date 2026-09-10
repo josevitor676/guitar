@@ -155,4 +155,30 @@ describe('PracticePanel', () => {
       expect(screen.getByLabelText(/primeira casa vis[ií]vel/i)).toBeInTheDocument();
     });
   });
+
+  describe('the layout', () => {
+    const comesBefore = (first: Element, second: Element) =>
+      !!(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+    it('puts the neck above the roll, since the neck is where the student acts', () => {
+      useUiStore.setState({ fretboardView: 'timeline' });
+
+      render(<PracticePanel />);
+
+      const neck = screen.getByRole('button', { name: 'corda 6, casa 1' });
+      const roll = screen.getByTestId('timeline-playhead');
+      expect(comesBefore(neck, roll)).toBe(true);
+    });
+
+    it('keeps the transport on the same row as the fret range, not below the neck', () => {
+      render(<PracticePanel />);
+
+      const transport = screen.getByRole('button', { name: /come[cç]ar/i });
+      const range = screen.getByLabelText(/primeira casa vis[ií]vel/i);
+      expect(transport.closest('[data-testid="practice-toolbar"]')).toBe(
+        range.closest('[data-testid="practice-toolbar"]'),
+      );
+      expect(transport.closest('[data-testid="practice-toolbar"]')).not.toBeNull();
+    });
+  });
 });

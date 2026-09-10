@@ -15,8 +15,10 @@ const STRING_ORDER: StringNumber[] = [1, 2, 3, 4, 5, 6];
  * roll stopped being readable long before it stopped being correct.
  */
 const PX_PER_NOTE = 72;
-const ROW_HEIGHT_PX = 48;
-const LABEL_WIDTH_PX = 40;
+/** Shorter than the neck's rows: the roll sits under it, and both have to fit. */
+const ROW_HEIGHT_PX = 28;
+/** Wide enough that the first note, which sits at beat zero, clears the string label. */
+const LABEL_WIDTH_PX = 60;
 const TRAILING_BEATS = 2;
 /** Beats per bar, which is where the heavier divider falls. */
 const BEATS_PER_BAR = 4;
@@ -56,6 +58,9 @@ export function TimelineRoll({
   const lengthInBeats = timelineLengthInBeats(timeline);
   const widthPx = beatToX(lengthInBeats + TRAILING_BEATS * beatStep);
   const gridHeightPx = STRING_ORDER.length * ROW_HEIGHT_PX;
+  // A slur label sits 40px above its note, which on the first string is above
+  // the grid. Only a sequence that has one needs the room reserved.
+  const hasSlurs = timeline.some((note) => !!note.position.articulation);
 
   // Dividers fall *between* notes, not through them, so each note sits inside
   // its own cell exactly as it sits between two frets on the neck. Boundary k
@@ -80,16 +85,17 @@ export function TimelineRoll({
 
   if (timeline.length === 0) {
     return (
-      <div className="flex h-72 items-center justify-center text-sm text-text-secondary">
+      <div className="flex h-32 items-center justify-center text-sm text-text-secondary">
         Monte uma sequência no braço para vê-la aqui.
       </div>
     );
   }
 
   return (
-    // The top padding has to clear the slur label, which sits 40px above its
-    // note — on the first string, that is above the grid itself.
-    <div ref={scrollRef} className="subtle-scroll relative overflow-x-auto overflow-y-hidden pt-11">
+    <div
+      ref={scrollRef}
+      className={`subtle-scroll relative overflow-x-auto overflow-y-hidden ${hasSlurs ? 'pt-11' : 'pt-3'}`}
+    >
       <div className="relative" style={{ width: `${widthPx}px`, height: `${gridHeightPx}px` }}>
         {/*
           One divider per beat, so the roll reads in columns the way tablature
@@ -235,7 +241,7 @@ export function TimelineRoll({
             >
               <span className="absolute -top-4 text-[10px] text-text-secondary">{pitch}</span>
               <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-all duration-200 ${
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all duration-200 ${
                   active
                     ? 'bg-accent text-body ring-4 ring-accent-dim'
                     : onBeatHead
