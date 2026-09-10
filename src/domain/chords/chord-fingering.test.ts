@@ -45,6 +45,23 @@ describe('fingerChord', () => {
     expect(fingerChord(voicing('x', 3, 2, 0, 1, 0)).barre).toBeNull();
   });
 
+  it('finds no barre when an open string rings between the notes that share a fret', () => {
+    // The open G has two notes at the third fret with open strings between
+    // them. A finger laid across would stop exactly the strings the chord
+    // needs ringing, so this is not a barre chord.
+    expect(fingerChord(voicing(3, 2, 0, 0, 0, 3)).barre).toBeNull();
+    expect(fingerChord(voicing(3, 5, 0, 0, 0, 3)).barre).toBeNull();
+  });
+
+  it('allows a muted string under the bar, which the finger simply covers', () => {
+    expect(fingerChord(voicing(3, 5, 5, 'x', 3, 3)).barre).toEqual({
+      fret: 3,
+      fromString: 6,
+      toString: 1,
+      finger: 1,
+    });
+  });
+
   it('finds no barre when nothing is fretted above the lowest fret', () => {
     // A shape held flat across one fret is a barre in the hand, but there is
     // nothing above it, so the whole shape is that one finger and drawing a

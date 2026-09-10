@@ -9,6 +9,8 @@ const PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#
 const WINDOW_FRETS = 4;
 const HIGHEST_WINDOW_START = 12;
 const MAX_MUTED = 2;
+/** How many shapes to keep from any one position, so the list walks the neck. */
+const PER_POSITION = 3;
 
 export interface VoicingSearch {
   root: string;
@@ -60,7 +62,38 @@ function hasAwkwardInnerMute(voicing: ChordVoicing): boolean {
  * the chord before they are combined: two or three frets per string rather than
  * every fret in the window.
  */
-export function suggestVoicings({ root, intervals, tuning, limit = 12 }: VoicingSearch): ChordVoicing[] {
+/**
+ * True when `lesser` is `fuller` with strings taken away and nothing else.
+ *
+ * Muting one string of a shape produces a technically different voicing that
+ * the hand plays identically. Listing both fills the page with the same chord
+ * over and over, which is what made the suggestions look repetitive.
+ */
+function isSubsumedBy(lesser: ChordVoicing, fuller: ChordVoicing): boolean {
+  let strictlyFewer = false;
+
+  for (const string of ALL_STRINGS) {
+    const a = lesser[string];
+    const b = fuller[string];
+
+    if (isSounding(a)) {
+      if (!isSounding(b) || a !== b) return false;
+    } else if (isSounding(b)) {
+      strictlyFewer = true;
+    }
+  }
+
+  return strictlyFewer;
+}
+
+/** Drops every shape that is another shape with strings removed. */
+function keepFullestShapes(voicings: ChordVoicing[]): ChordVoicing[] {
+  return voicings.filter(
+    (candidate) => !voicings.some((other) => other !== candidate && isSubsumedBy(candidate, other)),
+  );
+}
+
+export function suggestVoicings({ root, intervals, tuning, limit = 24 }: VoicingSearch): ChordVoicing[] {
   const rootSemitone = semitoneOf(root);
   if (rootSemitone < 0) return [];
 
@@ -115,8 +148,29 @@ export function suggestVoicings({ root, intervals, tuning, limit = 12 }: Voicing
     build(0, {});
   }
 
-  return [...found.values()]
-    .sort((a, b) => a.score - b.score)
-    .slice(0, limit)
-    .map((entry) => entry.voicing);
+  const ranked = [...found.values()].sort((a, b) => a.score - b.score).map((entry) => entry.voicing);
+  const distinct = keepFullestShapes(ranked);
+
+  // Taking the best scores outright buries every shape past the third fret,
+  // because a low position always scores better. Walking the neck is the point
+  // of the list, so each position contributes its best few in turn.
+  const byPosition = new Map<number, ChordVoicing[]>();
+  for (const voicing of distinct) {
+    const position = lowestFret(voicing) ?? 0;
+    const bucket = byPosition.get(position) ?? [];
+    if (bucket.length < PER_POSITION) bucket.push(voicing);
+    byPosition.set(position, bucket);
+  }
+
+  const positions = [...byPosition.keys()].sort((a, b) => a - b);
+  const spread: ChordVoicing[] = [];
+
+  for (let rank = 0; rank < PER_POSITION; rank += 1) {
+    for (const position of positions) {
+      const voicing = byPosition.get(position)?.[rank];
+      if (voicing) spread.push(voicing);
+    }
+  }
+
+  return spread.slice(0, limit);
 }

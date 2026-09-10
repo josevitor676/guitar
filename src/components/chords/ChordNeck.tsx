@@ -1,7 +1,7 @@
 import { STANDARD_TUNING } from '../../domain/music-theory/tuning';
 import type { StringNumber } from '../../domain/music-theory/tuning';
 import { getNoteAt, getPitchClass } from '../../domain/music-theory/notes';
-import { ALL_STRINGS, isSounding } from '../../domain/chords/chord-voicing';
+import { isSounding } from '../../domain/chords/chord-voicing';
 import type { ChordVoicing } from '../../domain/chords/chord-voicing';
 
 const ROW_HEIGHT = 44;
@@ -10,6 +10,12 @@ const LABEL_WIDTH = 34;
 const OPEN_WIDTH = 40;
 const FRETS = Array.from({ length: 12 }, (_, index) => index + 1);
 const INLAY_FRETS = new Set([3, 5, 7, 9]);
+/**
+ * Top to bottom as every other neck in the app draws it: the thin E on top.
+ * The domain lists strings the other way, lowest in pitch first, because that
+ * is what "the bass note" means — but the two orders are different jobs.
+ */
+const DISPLAY_STRINGS: StringNumber[] = [1, 2, 3, 4, 5, 6];
 
 interface ChordNeckProps {
   voicing: ChordVoicing;
@@ -19,7 +25,7 @@ interface ChordNeckProps {
 
 /** The neck the student builds a chord on: one note per string, plus open and muted. */
 export function ChordNeck({ voicing, onToggleFret, onToggleOpen }: ChordNeckProps) {
-  const gridHeight = ALL_STRINGS.length * ROW_HEIGHT;
+  const gridHeight = DISPLAY_STRINGS.length * ROW_HEIGHT;
 
   return (
     <div className="subtle-scroll overflow-x-auto pb-2">
@@ -44,7 +50,7 @@ export function ChordNeck({ voicing, onToggleFret, onToggleOpen }: ChordNeckProp
             />
           ))}
 
-          {ALL_STRINGS.map((string, row) => {
+          {DISPLAY_STRINGS.map((string, row) => {
             const play = voicing[string];
 
             return (

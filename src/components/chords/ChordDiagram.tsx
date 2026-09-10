@@ -1,6 +1,10 @@
 import type { ChordVoicing } from '../../domain/chords/chord-voicing';
-import { ALL_STRINGS, isSounding, lowestFret } from '../../domain/chords/chord-voicing';
+import { isSounding, lowestFret } from '../../domain/chords/chord-voicing';
 import { fingerChord } from '../../domain/chords/chord-fingering';
+import type { StringNumber } from '../../domain/music-theory/tuning';
+
+/** Same order as every other neck in the app: the thin E on top. */
+const DISPLAY_STRINGS: StringNumber[] = [1, 2, 3, 4, 5, 6];
 
 // Wider than tall on purpose: the shape has to read as a neck lying down, the
 // same way round as every other neck in the app. A near-square box reads as
@@ -25,14 +29,17 @@ export function ChordDiagram({ voicing, showFingers = true }: { voicing: ChordVo
 
   return (
     <div className="flex items-center gap-1">
-      <span className="w-4 shrink-0 text-right text-[10px] text-text-secondary">
+      <span
+        data-testid="diagram-position"
+        className="w-4 shrink-0 text-right text-[10px] font-semibold text-text-secondary"
+      >
         {startFret > 1 ? startFret : ''}
       </span>
 
-      <div className="relative" style={{ height: `${ALL_STRINGS.length * ROW_HEIGHT}px` }}>
+      <div className="relative" style={{ height: `${DISPLAY_STRINGS.length * ROW_HEIGHT}px` }}>
         <div className="flex">
           <div className="flex flex-col" style={{ width: `${GUTTER}px` }}>
-            {ALL_STRINGS.map((string) => (
+            {DISPLAY_STRINGS.map((string) => (
               <span
                 key={string}
                 data-testid={`diagram-open-${string}`}
@@ -45,7 +52,7 @@ export function ChordDiagram({ voicing, showFingers = true }: { voicing: ChordVo
           </div>
 
           <div className="relative">
-            {ALL_STRINGS.map((string) => (
+            {DISPLAY_STRINGS.map((string) => (
               <div
                 key={string}
                 className="relative flex items-center border-white/[0.06]"
@@ -62,7 +69,7 @@ export function ChordDiagram({ voicing, showFingers = true }: { voicing: ChordVo
                 className={`absolute top-0 ${
                   index === 0 && startFret === 1 ? 'w-[2px] bg-white/50' : 'w-px bg-white/10'
                 }`}
-                style={{ left: `${index * CELL_WIDTH}px`, height: `${ALL_STRINGS.length * ROW_HEIGHT}px` }}
+                style={{ left: `${index * CELL_WIDTH}px`, height: `${DISPLAY_STRINGS.length * ROW_HEIGHT}px` }}
               />
             ))}
 
@@ -74,14 +81,14 @@ export function ChordDiagram({ voicing, showFingers = true }: { voicing: ChordVo
                 className="absolute -translate-x-1/2 rounded-full bg-accent"
                 style={{
                   left: `${frets.indexOf(barre.fret) * CELL_WIDTH + CELL_WIDTH / 2}px`,
-                  top: `${ALL_STRINGS.indexOf(barre.fromString) * ROW_HEIGHT + ROW_HEIGHT / 2 - 5}px`,
+                  top: `${Math.min(DISPLAY_STRINGS.indexOf(barre.fromString), DISPLAY_STRINGS.indexOf(barre.toString)) * ROW_HEIGHT + ROW_HEIGHT / 2 - 5}px`,
                   width: '10px',
-                  height: `${(ALL_STRINGS.indexOf(barre.toString) - ALL_STRINGS.indexOf(barre.fromString)) * ROW_HEIGHT + 10}px`,
+                  height: `${Math.abs(DISPLAY_STRINGS.indexOf(barre.toString) - DISPLAY_STRINGS.indexOf(barre.fromString)) * ROW_HEIGHT + 10}px`,
                 }}
               />
             )}
 
-            {ALL_STRINGS.map((string, row) => {
+            {DISPLAY_STRINGS.map((string, row) => {
               const play = voicing[string];
               if (!isSounding(play) || play === 0) return null;
               const column = frets.indexOf(play);

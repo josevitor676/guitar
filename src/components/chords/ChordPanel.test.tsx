@@ -15,11 +15,40 @@ import { ChordPanel } from './ChordPanel';
 describe('ChordPanel', () => {
   beforeEach(() => useChordStore.getState().clear());
 
+  const reveal = () => fireEvent.click(screen.getByRole('button', { name: /ver acorde/i }));
+
   it('asks for a chord before it has one', () => {
     render(<ChordPanel />);
 
     expect(screen.getByTestId('chord-name')).toHaveTextContent('—');
-    expect(screen.getByText(/monte um acorde no bra[cç]o/i)).toBeInTheDocument();
+    expect(screen.getByText(/clique em ver acorde/i)).toBeInTheDocument();
+  });
+
+  it('says nothing about the chord until it is asked', () => {
+    useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
+    render(<ChordPanel />);
+
+    expect(screen.getByTestId('chord-name')).toHaveTextContent('—');
+    expect(screen.queryByRole('button', { name: /nesta posição/ })).not.toBeInTheDocument();
+  });
+
+  it('forgets the answer as soon as the shape changes', () => {
+    useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
+    render(<ChordPanel />);
+    reveal();
+    expect(screen.getByTestId('chord-name')).toHaveTextContent('G');
+
+    fireEvent.click(screen.getByRole('button', { name: 'corda 4, casa 2' }));
+
+    expect(screen.getByTestId('chord-name')).toHaveTextContent('—');
+  });
+
+  it('says so when the notes form no chord it knows', () => {
+    useChordStore.getState().loadVoicing({ 6: 1, 5: 2, 4: 3, 3: 'muted', 2: 'muted', 1: 'muted' });
+    render(<ChordPanel />);
+    reveal();
+
+    expect(screen.getByTestId('chord-name')).toHaveTextContent(/não reconheci/i);
   });
 
   it('names the chord as the student builds it', () => {
@@ -32,6 +61,7 @@ describe('ChordPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /corda 3:/ }));
     fireEvent.click(screen.getByRole('button', { name: /corda 2:/ }));
     fireEvent.click(screen.getByRole('button', { name: 'corda 1, casa 3' }));
+    reveal();
 
     expect(screen.getByTestId('chord-name')).toHaveTextContent('G');
   });
@@ -58,6 +88,7 @@ describe('ChordPanel', () => {
   it('offers other positions once it knows the chord', () => {
     useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
     render(<ChordPanel />);
+    reveal();
 
     expect(screen.getAllByRole('button', { name: /Usar G.* nesta posição/ }).length).toBeGreaterThan(3);
   });
@@ -65,6 +96,7 @@ describe('ChordPanel', () => {
   it('loads a suggestion onto the neck when it is picked', () => {
     useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
     render(<ChordPanel />);
+    reveal();
 
     const before = { ...useChordStore.getState().voicing };
     const suggestions = screen.getAllByRole('button', { name: /nesta posição/ });
@@ -76,6 +108,7 @@ describe('ChordPanel', () => {
   it('clears the neck', () => {
     useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
     render(<ChordPanel />);
+    reveal();
 
     fireEvent.click(screen.getByRole('button', { name: /limpar acorde/i }));
 
@@ -85,6 +118,7 @@ describe('ChordPanel', () => {
   it('says when a shape is an inversion, and which note is in the bass', () => {
     useChordStore.getState().loadVoicing({ 6: 'muted', 5: 'muted', 4: 0, 3: 0, 2: 0, 1: 3 });
     render(<ChordPanel />);
+    reveal();
 
     expect(screen.getByTestId('chord-name')).toHaveTextContent('G/D');
     expect(screen.getByText(/com D no baixo/i)).toBeInTheDocument();
@@ -95,6 +129,7 @@ describe('ChordPanel', () => {
       // The F barre chord: index across the first fret.
       useChordStore.getState().loadVoicing({ 6: 1, 5: 3, 4: 3, 3: 2, 2: 1, 1: 1 });
       render(<ChordPanel />);
+      reveal();
 
       expect(screen.getByTestId('barre-hint')).toHaveTextContent('casa 1');
     });
@@ -102,6 +137,7 @@ describe('ChordPanel', () => {
     it('says nothing about a barre for a shape that has none', () => {
       useChordStore.getState().loadVoicing({ 6: 'muted', 5: 3, 4: 2, 3: 0, 2: 1, 1: 0 });
       render(<ChordPanel />);
+      reveal();
 
       expect(screen.queryByTestId('barre-hint')).not.toBeInTheDocument();
     });
@@ -111,6 +147,7 @@ describe('ChordPanel', () => {
     it('names the key the chord belongs to', () => {
       useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
       render(<ChordPanel />);
+      reveal();
 
       expect(screen.getByText(/G maior/)).toBeInTheDocument();
     });
@@ -118,6 +155,7 @@ describe('ChordPanel', () => {
     it('offers the chords of that key, labelled by degree', () => {
       useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
       render(<ChordPanel />);
+      reveal();
 
       expect(screen.getByRole('button', { name: /Montar Em, grau vi/ })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Montar C, grau IV/ })).toBeInTheDocument();
@@ -126,8 +164,10 @@ describe('ChordPanel', () => {
     it('builds a suggested chord on the neck when it is picked', () => {
       useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
       render(<ChordPanel />);
+      reveal();
 
       fireEvent.click(screen.getByRole('button', { name: /Montar Em, grau vi/ }));
+      reveal();
 
       expect(screen.getByTestId('chord-name')).toHaveTextContent('Em');
     });
@@ -136,6 +176,7 @@ describe('ChordPanel', () => {
       // G7, which wants to become C.
       useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 1 });
       render(<ChordPanel />);
+      reveal();
 
       expect(screen.getByTestId('chord-name')).toHaveTextContent('G7');
       expect(screen.getByText(/C maior/)).toBeInTheDocument();
@@ -145,6 +186,7 @@ describe('ChordPanel', () => {
       // A diminished chord: B-D-F.
       useChordStore.getState().loadVoicing({ 6: 'muted', 5: 2, 4: 3, 3: 4, 2: 3, 1: 'muted' });
       render(<ChordPanel />);
+      reveal();
 
       expect(screen.getByText(/n[ãa]o pertence firmemente a um tom/i)).toBeInTheDocument();
     });

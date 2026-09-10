@@ -29,6 +29,30 @@ interface FrettedNote {
 }
 
 /**
+ * The bar the index finger lays, if the shape actually has one.
+ *
+ * Two notes sharing the lowest fret is not enough. A finger laid across the
+ * neck stops every string it crosses, so a shape with an open string between
+ * those two notes cannot be barred — the bar would silence the very string the
+ * chord needs ringing. The open G is exactly that case: two notes at the third
+ * fret with three open strings between them, and it is not a barre chord.
+ */
+function findBarre(voicing: ChordVoicing, atLowest: FrettedNote[], lowestFret: number): Barre | null {
+  if (atLowest.length < 2) return null;
+
+  const fromString = Math.max(...atLowest.map((note) => note.string)) as StringNumber;
+  const toString = Math.min(...atLowest.map((note) => note.string)) as StringNumber;
+
+  for (let string = toString + 1; string < fromString; string += 1) {
+    const play = voicing[string as StringNumber];
+    // Muted is fine under a bar; open is not, because the bar would stop it.
+    if (isSounding(play) && play < lowestFret) return null;
+  }
+
+  return { fret: lowestFret, fromString, toString, finger: 1 };
+}
+
+/**
  * Which finger holds each note, and whether the index finger bars.
  *
  * The rule is the one a hand follows: the lowest fret goes to the lowest
@@ -48,17 +72,7 @@ export function fingerChord(voicing: ChordVoicing): FingeredChord {
   const lowestFret = Math.min(...fretted.map((note) => note.fret));
   const atLowest = fretted.filter((note) => note.fret === lowestFret);
 
-  // One finger laid flat covers several strings at the same fret. That only
-  // reads as a bar when more than one string needs it.
-  const barre: Barre | null =
-    atLowest.length >= 2
-      ? {
-          fret: lowestFret,
-          fromString: Math.max(...atLowest.map((note) => note.string)) as StringNumber,
-          toString: Math.min(...atLowest.map((note) => note.string)) as StringNumber,
-          finger: 1,
-        }
-      : null;
+  const barre = findBarre(voicing, atLowest, lowestFret);
 
   const byReach = (a: FrettedNote, b: FrettedNote) =>
     a.fret !== b.fret ? a.fret - b.fret : b.string - a.string;

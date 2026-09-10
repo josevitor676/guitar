@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Play, RotateCcw } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Play, RotateCcw, Search } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { IconButton } from '../ui/IconButton';
 import { ChordNeck } from './ChordNeck';
@@ -21,7 +21,14 @@ export function ChordPanel() {
   const clear = useChordStore((state) => state.clear);
   const { strum } = useChordPlayback();
 
-  const chord = useMemo(() => identifyChord(voicing, STANDARD_TUNING), [voicing]);
+  // The chord is not named as the student clicks: they choose the notes and
+  // then ask. Naming every half-built shape turns the neck into a guessing
+  // game running out loud.
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => setRevealed(false), [voicing]);
+
+  const identified = useMemo(() => identifyChord(voicing, STANDARD_TUNING), [voicing]);
+  const chord = revealed ? identified : null;
   const suggestions = useMemo(
     () => (chord ? suggestVoicings({ root: chord.root, intervals: chord.intervals, tuning: STANDARD_TUNING }) : []),
     [chord],
@@ -43,7 +50,7 @@ export function ChordPanel() {
           <div>
             <p className="text-xs uppercase tracking-wide text-text-secondary">Acorde montado</p>
             <p data-testid="chord-name" className="text-2xl font-bold text-accent">
-              {chord?.displayName ?? '—'}
+              {chord?.displayName ?? (revealed ? 'Não reconheci' : '—')}
             </p>
             {chord?.isInversion && (
               <p className="text-xs text-text-secondary">
@@ -51,7 +58,7 @@ export function ChordPanel() {
                 {chord.symbol}, com {chord.bass} no baixo
               </p>
             )}
-            {barre && (
+            {revealed && barre && (
               <p data-testid="barre-hint" className="text-xs text-text-secondary">
                 Pestana na casa {barre.fret}, com o indicador
               </p>
@@ -59,6 +66,14 @@ export function ChordPanel() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setRevealed(true)}
+              className="flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-body transition-all duration-200 hover:bg-accent-soft active:scale-95"
+            >
+              <Search className="h-4 w-4" />
+              Ver acorde
+            </button>
             <IconButton label="Ouvir o acorde" variant="primary" onClick={() => void strum(voicing)}>
               <Play className="h-4 w-4" />
             </IconButton>
@@ -86,7 +101,9 @@ export function ChordPanel() {
 
           {!chord && (
             <p className="mt-4 text-sm text-text-secondary">
-              Monte um acorde no braço e eu digo qual é, com outras posições para tocá-lo.
+              {revealed
+                ? 'Essas notas não formam um acorde que eu reconheça. Tente completar a forma no braço.'
+                : 'Monte o acorde no braço e clique em Ver acorde.'}
             </p>
           )}
 

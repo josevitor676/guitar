@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { suggestVoicings } from './chord-voicing-generator';
 import { identifyChord } from './chord-identification';
-import { voicingSpan, voicingKey, ALL_STRINGS, isSounding } from './chord-voicing';
+import { voicingSpan, voicingKey, ALL_STRINGS, isSounding, lowestFret } from './chord-voicing';
 import { STANDARD_TUNING } from '../music-theory/tuning';
 
 const majorOf = (root: string) => suggestVoicings({ root, intervals: [0, 4, 7], tuning: STANDARD_TUNING });
@@ -60,5 +60,36 @@ describe('suggestVoicings', () => {
 
   it('respects the limit it is given', () => {
     expect(suggestVoicings({ root: 'G', intervals: [0, 4, 7], tuning: STANDARD_TUNING, limit: 5 })).toHaveLength(5);
+  });
+
+  it('never lists a shape that is another shape with strings muted away', () => {
+    const shapes = majorOf('G');
+
+    for (const candidate of shapes) {
+      for (const other of shapes) {
+        if (candidate === other) continue;
+        const sameWhereBothSound = ALL_STRINGS.every((string) => {
+          const a = candidate[string];
+          const b = other[string];
+          return !isSounding(a) || (isSounding(b) && a === b);
+        });
+        const otherSoundsMore = ALL_STRINGS.some(
+          (string) => !isSounding(candidate[string]) && isSounding(other[string]),
+        );
+        expect(sameWhereBothSound && otherSoundsMore).toBe(false);
+      }
+    }
+  });
+
+  it('walks the neck instead of piling up at the first position', () => {
+    const positions = new Set(majorOf('G').map((v) => lowestFret(v) ?? 0));
+
+    // The reference this was compared against spreads shapes right up the neck.
+    expect(positions.size).toBeGreaterThanOrEqual(5);
+  });
+
+  it('still offers the easiest shapes first', () => {
+    const [first] = majorOf('G');
+    expect(lowestFret(first) ?? 0).toBeLessThanOrEqual(3);
   });
 });
