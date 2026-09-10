@@ -5,7 +5,9 @@ import { isValidPosition } from '../fretboard/fretboard-model';
 describe('EXERCISE_CATALOG', () => {
   it('has at least one exercise per required category', () => {
     const categories = new Set(EXERCISE_CATALOG.map((exercise) => exercise.category));
-    expect(categories).toEqual(new Set(['aquecimento', 'digitacao', 'escala', 'arpejo', 'tecnica']));
+    expect(categories).toEqual(
+      new Set(['aquecimento', 'digitacao', 'escala', 'arpejo', 'tecnica', 'repeticao']),
+    );
   });
 
   it('has unique ids', () => {
@@ -56,5 +58,53 @@ describe('EXERCISE_CATALOG', () => {
         expect(position.string).toBe(exercise.positions[index - 1].string);
       });
     }
+  });
+
+  describe('the repeated-note exercises', () => {
+    const repeated = EXERCISE_CATALOG.filter((exercise) => exercise.category === 'repeticao');
+
+    const keysOf = (exercise: (typeof EXERCISE_CATALOG)[number]) =>
+      exercise.positions.map((position) => `${position.string}:${position.fret}`);
+
+    function playsASpotMoreThanOnce(exercise: (typeof EXERCISE_CATALOG)[number]): boolean {
+      const keys = keysOf(exercise);
+      return new Set(keys).size < keys.length;
+    }
+
+    function playsASpotTwiceRunning(exercise: (typeof EXERCISE_CATALOG)[number]): boolean {
+      const keys = keysOf(exercise);
+      return keys.some((key, index) => index > 0 && keys[index - 1] === key);
+    }
+
+    it('offers several, since one example proves little', () => {
+      expect(repeated.length).toBeGreaterThanOrEqual(6);
+    });
+
+    it('comes back to a spot it has already played, in every one of them', () => {
+      for (const exercise of repeated) {
+        expect(playsASpotMoreThanOnce(exercise)).toBe(true);
+      }
+    });
+
+    // Two notes running on the same spot and the same spot revisited later are
+    // different things to get wrong: the first is what a toggling neck erases
+    // outright, the second is what sorting the sequence quietly collapses.
+    it('covers the harder case too, the same spot struck twice running', () => {
+      expect(repeated.filter(playsASpotTwiceRunning).length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('explains each one, since a riff pattern is not self-evident from the frets', () => {
+      for (const exercise of repeated) {
+        expect(exercise.howTo).toBeTruthy();
+      }
+    });
+
+    it('stays inside the twelve frets the neck shows by default', () => {
+      for (const exercise of repeated) {
+        for (const position of exercise.positions) {
+          expect(position.fret).toBeLessThanOrEqual(12);
+        }
+      }
+    });
   });
 });

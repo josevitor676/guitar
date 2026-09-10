@@ -1,7 +1,15 @@
 import type { FretPosition } from '../music-theory/tuning';
 import type { Subdivision } from '../music-theory/rhythm';
 
-export type ExerciseCategory = 'aquecimento' | 'digitacao' | 'escala' | 'arpejo' | 'tecnica' | 'meu';
+export type ExerciseCategory =
+  | 'aquecimento'
+  | 'digitacao'
+  | 'escala'
+  | 'arpejo'
+  | 'tecnica'
+  /** Riffs and melodies that play the same spot more than once. */
+  | 'repeticao'
+  | 'meu';
 
 export interface Exercise {
   id: string;

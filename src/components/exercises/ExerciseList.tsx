@@ -6,6 +6,7 @@ import { useExerciseStore } from '../../state/exercise-store';
 
 const CATEGORY_LABELS: Record<string, string> = {
   aquecimento: 'Aquecimento',
+  repeticao: 'Notas repetidas',
   digitacao: 'Digitação',
   escala: 'Escala',
   arpejo: 'Arpejo',
