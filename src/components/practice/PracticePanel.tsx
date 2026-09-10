@@ -13,6 +13,8 @@ import { useTimeline } from '../../hooks/useTimeline';
 import { beatHeadPositionKeys } from '../../domain/playback/timeline-model';
 import { useResponsiveFretSpan } from '../../hooks/useResponsiveFretSpan';
 import { useUiStore } from '../../state/ui-store';
+import { usePlaybackStore } from '../../state/playback-store';
+import { useFretboardStore } from '../../state/fretboard-store';
 import { useExerciseStore } from '../../state/exercise-store';
 import { EXERCISE_CATALOG } from '../../domain/exercises/exercise-catalog';
 import type { FretboardView } from '../../state/ui-store';
@@ -26,6 +28,9 @@ export function PracticePanel() {
   const { minFret, maxFret, setFretRange } = useFretboardSelection();
   const { currentIndex } = useNotePlayback();
   const { isPlaying, currentPulse, enabled: metronomeArmed } = useMetronome();
+  const sequenceRunning = usePlaybackStore((state) => state.isPlaying);
+  const direction = usePlaybackStore((state) => state.direction);
+  const removeAt = useFretboardStore((state) => state.removeAt);
   const timeline = useTimeline();
   const fretboardView = useUiStore((state) => state.fretboardView);
   const setFretboardView = useUiStore((state) => state.setFretboardView);
@@ -46,6 +51,14 @@ export function PracticePanel() {
 
   // Only while the metronome is armed: outside that the marks would mean nothing.
   const beatHeadKeys = metronomeArmed ? beatHeadPositionKeys(timeline) : undefined;
+
+  // A note can only be removed by its place in the roll, and that place is
+  // the place in the sequence only while the roll shows the sequence as it
+  // was built. Played backwards or as a round trip, the roll is a rendering
+  // of the sequence rather than the sequence itself, and clicking note three
+  // would delete some other note.
+  const showsBuiltOrder = direction === 'sixthToFirst';
+  const editable = fretboardView === 'timeline' && !sequenceRunning && showsBuiltOrder;
 
   const total = timeline.length;
   const played = currentIndex === null ? 0 : currentIndex + 1;
@@ -70,9 +83,7 @@ export function PracticePanel() {
         </div>
 
         <div className="flex items-center gap-4">
-          {fretboardView === 'grid' && (
-            <FretRangeControl minFret={minFret} maxFret={maxFret} onChange={setFretRange} />
-          )}
+          <FretRangeControl minFret={minFret} maxFret={maxFret} onChange={setFretRange} />
           <PulseIndicator currentPulse={currentPulse} isPlaying={isPlaying} />
         </div>
       </div>
@@ -97,7 +108,32 @@ export function PracticePanel() {
         {fretboardView === 'grid' ? (
           <Fretboard currentIndex={currentIndex} beatHeadKeys={beatHeadKeys} />
         ) : (
-          <TimelineRoll timeline={timeline} currentIndex={currentIndex} metronomeOn={metronomeArmed} />
+          <>
+            <TimelineRoll
+              timeline={timeline}
+              currentIndex={currentIndex}
+              metronomeOn={metronomeArmed}
+              onRemoveNote={editable ? removeAt : undefined}
+            />
+            {/*
+              The roll has strings and time but no fret axis, so it cannot say
+              which fret a new note is on. The neck under it does, and here a
+              click adds rather than toggles: that is what lets a riff come
+              back to the same spot.
+            */}
+            <p className="mt-6 mb-2 text-xs text-text-secondary">
+              {editable
+                ? 'Clique no braço para acrescentar a nota no fim da sequência — a mesma casa pode ser clicada quantas vezes quiser. Clique numa nota da linha do tempo para removê-la.'
+                : sequenceRunning
+                  ? 'Pare a sequência para editá-la.'
+                  : 'Volte a direção para Descendo para editar a sequência — nas outras, o rolo mostra a sequência tocada, não a que você montou.'}
+            </p>
+            <Fretboard
+              currentIndex={currentIndex}
+              mode="append"
+              beatHeadKeys={beatHeadKeys}
+            />
+          </>
         )}
       </div>
 

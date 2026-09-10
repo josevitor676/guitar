@@ -12,16 +12,29 @@ const INLAY_FRETS = new Set([3, 5, 7, 9, 15, 17, 19, 21]);
 /** The octave frets carry two dots on a real neck, which is how players find them. */
 const DOUBLE_INLAY_FRETS = new Set([12, 24]);
 
+/**
+ * Toggling treats the neck as a map: a spot is either in the selection or
+ * not. Appending treats it as a sequence being played into the timeline, so
+ * clicking the same spot twice plays it twice.
+ */
+export type FretboardMode = 'toggle' | 'append';
+
 interface FretboardProps {
   currentIndex: number | null;
+  mode?: FretboardMode;
   /** Positions that fall on a beat head, as "string:fret". Empty unless the metronome is armed. */
   beatHeadKeys?: ReadonlySet<string>;
 }
 
 const NO_BEAT_HEADS: ReadonlySet<string> = new Set();
 
-export function Fretboard({ currentIndex, beatHeadKeys = NO_BEAT_HEADS }: FretboardProps) {
-  const { minFret, maxFret, selectedNotes, toggleNote } = useFretboardSelection();
+export function Fretboard({
+  currentIndex,
+  mode = 'toggle',
+  beatHeadKeys = NO_BEAT_HEADS,
+}: FretboardProps) {
+  const { minFret, maxFret, selectedNotes, toggleNote, appendNote } = useFretboardSelection();
+  const markNote = mode === 'append' ? appendNote : toggleNote;
   // currentIndex counts through the played order, which is not the order the
   // notes were marked in.
   const sequence = usePlaybackSequence();
@@ -76,7 +89,10 @@ export function Fretboard({ currentIndex, beatHeadKeys = NO_BEAT_HEADS }: Fretbo
               </span>
               {frets.map((fret) => {
                 const position = { string, fret };
-                const selected = selectedNotes.some((note) => positionsEqual(note, position));
+                const timesPlayed = selectedNotes.filter((note) =>
+                  positionsEqual(note, position),
+                ).length;
+                const selected = timesPlayed > 0;
                 const highlighted = !!highlightedPosition && positionsEqual(highlightedPosition, position);
                 const note = getNoteAt(STANDARD_TUNING, position);
                 return (
@@ -88,7 +104,8 @@ export function Fretboard({ currentIndex, beatHeadKeys = NO_BEAT_HEADS }: Fretbo
                       highlighted={highlighted}
                       onBeatHead={beatHeadKeys.has(`${string}:${fret}`)}
                       noteLabel={note.pitchClass}
-                      onClick={() => toggleNote(position)}
+                      repeatCount={timesPlayed}
+                      onClick={() => markNote(position)}
                     />
                   </div>
                 );

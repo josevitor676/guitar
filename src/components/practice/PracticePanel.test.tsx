@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useMetronomeStore } from '../../state/metronome-store';
 import { usePlaybackStore } from '../../state/playback-store';
@@ -37,13 +37,13 @@ describe('PracticePanel', () => {
     expect(screen.queryByTestId('timeline-playhead')).not.toBeInTheDocument();
   });
 
-  it('swaps the grid for the timeline roll when the view changes', () => {
+  it('keeps the neck under the roll when the view changes, so notes can still be added', () => {
     render(<PracticePanel />);
 
     fireEvent.click(screen.getByRole('button', { name: /linha do tempo/i }));
 
     expect(screen.getByTestId('timeline-playhead')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /corda \d, casa \d+/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /corda \d, casa \d+/ }).length).toBeGreaterThan(0);
   });
 
   it('reports the total note count while stopped', () => {
@@ -95,6 +95,64 @@ describe('PracticePanel', () => {
       render(<PracticePanel />);
 
       expect(screen.queryByTestId('exercise-how-to')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('building a sequence on the timeline', () => {
+    beforeEach(() => {
+      useUiStore.setState({ fretboardView: 'timeline' });
+      useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });
+    });
+
+    it('adds a note each time the neck is clicked, so a spot can repeat', async () => {
+      render(<PracticePanel />);
+      const cell = screen.getByRole('button', { name: /corda 5, casa 7/i });
+
+      await act(async () => {
+        fireEvent.click(cell);
+      });
+      await act(async () => {
+        fireEvent.click(cell);
+      });
+
+      expect(useFretboardStore.getState().selectedNotes).toHaveLength(2);
+    });
+
+    it('removes the occurrence that was clicked, leaving its twin alone', () => {
+      useFretboardStore.setState({
+        selectedNotes: [7, 5, 7].map((fret) => ({ string: 5, fret })),
+      });
+
+      render(<PracticePanel />);
+      fireEvent.click(screen.getByTestId('timeline-note-0'));
+
+      expect(useFretboardStore.getState().selectedNotes.map((note) => note.fret)).toEqual([5, 7]);
+    });
+
+    it('locks the notes while the sequence is running, so it cannot change underfoot', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 5, fret: 7 }] });
+      usePlaybackStore.setState({ isPlaying: true });
+
+      render(<PracticePanel />);
+
+      expect(screen.getByTestId('timeline-note-0').tagName).toBe('DIV');
+    });
+
+    it('locks them too when the roll is not showing the order they were built in', () => {
+      useFretboardStore.setState({
+        selectedNotes: [7, 5].map((fret) => ({ string: 5, fret })),
+      });
+      usePlaybackStore.setState({ direction: 'roundTrip' });
+
+      render(<PracticePanel />);
+
+      expect(screen.getByTestId('timeline-note-0').tagName).toBe('DIV');
+    });
+
+    it('offers the fret range control, since the riff may sit high up the neck', () => {
+      render(<PracticePanel />);
+
+      expect(screen.getByLabelText(/primeira casa vis[ií]vel/i)).toBeInTheDocument();
     });
   });
 });

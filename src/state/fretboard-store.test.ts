@@ -72,6 +72,48 @@ describe('useFretboardStore', () => {
     ]);
   });
 
+  describe('appendNote', () => {
+    it('adds a note the sequence already contains, which is what makes a repeat', () => {
+      const store = useFretboardStore.getState();
+      store.appendNote({ string: 5, fret: 7 });
+      store.appendNote({ string: 5, fret: 7 });
+
+      expect(useFretboardStore.getState().selectedNotes).toEqual([
+        { string: 5, fret: 7 },
+        { string: 5, fret: 7 },
+      ]);
+    });
+
+    it('keeps the order the notes were played in', () => {
+      const store = useFretboardStore.getState();
+      [7, 5, 7, 5, 7].forEach((fret) => store.appendNote({ string: 5, fret }));
+
+      expect(useFretboardStore.getState().selectedNotes.map((note) => note.fret)).toEqual([
+        7, 5, 7, 5, 7,
+      ]);
+    });
+  });
+
+  describe('removeAt', () => {
+    it('removes one occurrence rather than every copy of the same spot', () => {
+      const store = useFretboardStore.getState();
+      [7, 5, 7].forEach((fret) => store.appendNote({ string: 5, fret }));
+
+      store.removeAt(0);
+
+      expect(useFretboardStore.getState().selectedNotes.map((note) => note.fret)).toEqual([5, 7]);
+    });
+
+    it('ignores an index that is not in the sequence', () => {
+      const store = useFretboardStore.getState();
+      store.appendNote({ string: 5, fret: 7 });
+
+      store.removeAt(4);
+
+      expect(useFretboardStore.getState().selectedNotes).toHaveLength(1);
+    });
+  });
+
   describe('loadSequence', () => {
     it('slides the window onto the loaded positions instead of leaving them hidden', () => {
       useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });

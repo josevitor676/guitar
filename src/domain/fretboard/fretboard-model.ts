@@ -14,6 +14,18 @@ export function positionsEqual(a: FretPosition, b: FretPosition): boolean {
   return a.string === b.string && a.fret === b.fret;
 }
 
+/** Whether any string and fret is played more than once in the sequence. */
+export function hasRepeatedPosition(positions: FretPosition[]): boolean {
+  const seen = new Set<string>();
+
+  return positions.some((position) => {
+    const key = `${position.string}:${position.fret}`;
+    if (seen.has(key)) return true;
+    seen.add(key);
+    return false;
+  });
+}
+
 /** A twelve-fret neck covers one octave, which is as much as is useful at once. */
 export const MAX_VISIBLE_FRETS = 12;
 /** Below this the neck stops being playable, so a small screen scrolls instead. */
@@ -69,6 +81,13 @@ export function windowStartToReveal(
  * kept.
  */
 export function orderAlongNeck(positions: FretPosition[]): FretPosition[] {
+  // A sequence that plays the same spot more than once is a sequence in the
+  // strict sense: the grid has one marker per spot and cannot show that the
+  // note comes round again, so sorting it would silently discard the order the
+  // student built. The grid orders what it is able to represent, and leaves
+  // the rest alone.
+  if (hasRepeatedPosition(positions)) return [...positions];
+
   return [...positions]
     .sort((a, b) => {
       // String 6 is the lowest in pitch and the first to be played.

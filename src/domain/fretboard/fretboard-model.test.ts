@@ -151,6 +151,22 @@ describe('orderAlongNeck', () => {
   it('handles an empty selection', () => {
     expect(orderAlongNeck([])).toEqual([]);
   });
+
+  it('leaves a sequence with a repeated note in the order it was built', () => {
+    const marked = [7, 5, 7, 5, 7].map((fret) => ({ string: 5 as const, fret }));
+
+    expect(orderAlongNeck(marked).map((position) => position.fret)).toEqual([7, 5, 7, 5, 7]);
+  });
+
+  it('keeps the slurs of a sequence it does not reorder', () => {
+    const marked = [
+      { string: 5 as const, fret: 7 },
+      { string: 5 as const, fret: 5, articulation: 'pullOff' as const },
+      { string: 5 as const, fret: 7 },
+    ];
+
+    expect(orderAlongNeck(marked)[1].articulation).toBe('pullOff');
+  });
 });
 
 describe('applyDirection', () => {

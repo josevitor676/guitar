@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { buildTimeline } from '../../domain/playback/timeline-model';
 import { TimelineRoll } from './TimelineRoll';
 
@@ -204,5 +204,36 @@ describe('TimelineRoll', () => {
 
     expect(screen.getByTestId('timeline-slur-label-1')).toHaveTextContent('sl');
     expect(screen.getByTestId('timeline-slur-label-2')).toHaveTextContent('b');
+  });
+
+  describe('removing a note', () => {
+    const repeated = buildTimeline(
+      [7, 5, 7].map((fret) => ({ string: 5 as const, fret })),
+      'quarter',
+      () => 'quarter',
+    );
+
+    it('reports which occurrence was clicked, not which string and fret', () => {
+      const onRemoveNote = vi.fn();
+      render(<TimelineRoll timeline={repeated} currentIndex={null} onRemoveNote={onRemoveNote} />);
+
+      fireEvent.click(screen.getByTestId('timeline-note-2'));
+
+      expect(onRemoveNote).toHaveBeenCalledWith(2);
+    });
+
+    it('names the occurrence so the two identical notes can be told apart', () => {
+      render(<TimelineRoll timeline={repeated} currentIndex={null} onRemoveNote={vi.fn()} />);
+
+      expect(screen.getByTestId('timeline-note-2')).toHaveAccessibleName(
+        'remover nota 3: corda 5, casa 7',
+      );
+    });
+
+    it('is not clickable when the roll is only being watched', () => {
+      render(<TimelineRoll timeline={repeated} currentIndex={null} />);
+
+      expect(screen.getByTestId('timeline-note-0').tagName).toBe('DIV');
+    });
   });
 });

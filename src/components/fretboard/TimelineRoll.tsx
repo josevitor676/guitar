@@ -27,11 +27,23 @@ interface TimelineRollProps {
   currentIndex: number | null;
   /** While the metronome leads, notes on a beat head are marked out. */
   metronomeOn?: boolean;
+  /**
+   * Removes one note by its place in the sequence. It has to be the index:
+   * a riff plays the same string and fret over and over, so naming the spot
+   * would not say which of them the student meant. Left out, the roll is
+   * read-only.
+   */
+  onRemoveNote?: (index: number) => void;
 }
 
 
 
-export function TimelineRoll({ timeline, currentIndex, metronomeOn = false }: TimelineRollProps) {
+export function TimelineRoll({
+  timeline,
+  currentIndex,
+  metronomeOn = false,
+  onRemoveNote,
+}: TimelineRollProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Beats are converted through the gap between notes, so the layout keeps its
@@ -196,14 +208,26 @@ export function TimelineRoll({ timeline, currentIndex, metronomeOn = false }: Ti
           const onBeatHead = metronomeOn && isOnBeatHead(note);
           const pitch = getNoteAt(STANDARD_TUNING, note.position).pitchClass;
 
+          const removable = !!onRemoveNote;
+          const Wrapper = removable ? 'button' : 'div';
+
           return (
-            <div
+            <Wrapper
               key={note.index}
+              type={removable ? 'button' : undefined}
+              aria-label={
+                removable
+                  ? `remover nota ${note.index + 1}: corda ${note.position.string}, casa ${note.position.fret}`
+                  : undefined
+              }
+              onClick={removable ? () => onRemoveNote(note.index) : undefined}
               data-testid={`timeline-note-${note.index}`}
               data-string={note.position.string}
               data-active={active}
               data-on-beat={onBeatHead}
-              className="absolute z-30 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
+              className={`group absolute z-30 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center ${
+                removable ? 'cursor-pointer' : ''
+              }`}
               style={{
                 left: `${beatToX(note.startBeat)}px`,
                 top: `${rowIndex * ROW_HEIGHT_PX + ROW_HEIGHT_PX / 2}px`,
@@ -217,11 +241,12 @@ export function TimelineRoll({ timeline, currentIndex, metronomeOn = false }: Ti
                     : onBeatHead
                       ? 'border-2 border-accent bg-body text-accent'
                       : 'border border-white/20 bg-body text-text-primary'
-                }`}
+                } ${removable ? 'group-hover:border-accent group-hover:text-accent' : ''}`}
               >
-                {note.position.fret}
+                <span className={removable ? 'group-hover:hidden' : ''}>{note.position.fret}</span>
+                {removable && <span className="hidden group-hover:inline">✕</span>}
               </span>
-            </div>
+            </Wrapper>
           );
         })}
       </div>
