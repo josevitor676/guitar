@@ -12,6 +12,8 @@ import { useUiStore } from '../../state/ui-store';
 import { useExerciseStore } from '../../state/exercise-store';
 import type { TabId } from '../../state/ui-store';
 import { EXERCISE_CATALOG } from '../../domain/exercises/exercise-catalog';
+import { ThemeToggle } from './ThemeToggle';
+import { useThemeStore, readStoredTheme } from '../../state/theme-store';
 
 export function App() {
   const samplerLoaded = useSamplerLoaded();
@@ -27,6 +29,7 @@ export function App() {
   ];
 
   useEffect(() => {
+    useThemeStore.getState().setTheme(readStoredTheme());
     useExerciseStore.getState().hydrateUserExercises();
     const preferences = loadPreferences();
     if (preferences) {
@@ -40,16 +43,30 @@ export function App() {
   return (
     <div className="min-h-screen bg-body px-8 py-6 text-text-primary">
       <header className="mb-8 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.06] bg-surface text-sm font-bold">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-edge bg-surface text-sm font-bold">
           GT
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-text-secondary">Estúdio de Prática</p>
           <h1 className="text-lg font-semibold">Guitar Teacher</h1>
         </div>
+
+        <div className="ml-auto">
+          <ThemeToggle />
+        </div>
       </header>
 
-      <Tabs tabs={tabs} activeTabId={activeTab} onChange={(id) => setActiveTab(id as TabId)} />
+      <Tabs
+        tabs={tabs}
+        activeTabId={activeTab}
+        onChange={(id) => {
+          // Walking over to free practice means leaving the exercise behind:
+          // finding its notes still on the neck reads as the app having
+          // ignored the move.
+          if (id === 'practice') useExerciseStore.getState().leaveExercise();
+          setActiveTab(id as TabId);
+        }}
+      />
 
       {!samplerLoaded && (
         <p className="mt-4 text-sm text-text-secondary" role="status">
@@ -58,14 +75,14 @@ export function App() {
       )}
 
       {activeTab === 'practice' && (
-        <section className="mt-8">
+        <section className="mt-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Modo Livre</p>
           <h2 className="mt-1 text-3xl font-bold">Explore o braço da guitarra.</h2>
           <p className="mt-1 text-sm text-text-secondary">
             Escolha uma casa, encontre novas combinações e aqueça os dedos.
           </p>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <PracticePanel />
           </div>
         </section>

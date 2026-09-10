@@ -18,7 +18,7 @@ export function FretRangeControl({ minFret, maxFret, onChange }: FretRangeContro
   };
 
   return (
-    <div className="flex items-center gap-3 rounded-full border border-white/[0.06] bg-surface px-3 py-1.5 text-xs font-medium">
+    <div className="flex items-center gap-3 rounded-full border border-edge bg-surface px-3 py-1.5 text-xs font-medium">
       <span className="whitespace-nowrap text-text-primary">
         Casas {minFret}-{maxFret}
       </span>
@@ -29,7 +29,7 @@ export function FretRangeControl({ minFret, maxFret, onChange }: FretRangeContro
         value={Math.min(minFret, highestStart)}
         aria-label="Primeira casa visível"
         onChange={(event) => moveTo(Number(event.target.value))}
-        className="h-1 w-32 cursor-pointer appearance-none rounded-full bg-white/10 accent-accent"
+        className="h-1 w-32 cursor-pointer appearance-none rounded-full bg-edge-soft accent-accent"
       />
     </div>
   );

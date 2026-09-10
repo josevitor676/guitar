@@ -15,6 +15,9 @@ traz, para cada arquivo, a lista de notas esperadas no formato
 | `exemplo-7-slide-bend.png` | `5/9`, `9\5`, `7b9`, `5b7` | slide nos dois sentidos e bend |
 | `exemplo-8-tecnicas-misturadas.png` | as quatro técnicas em dois sistemas | leitura de técnicas diferentes na mesma folha |
 | `exemplo-9-tecnicas.pdf` | PDF de 2 páginas com ligaduras e glissandos | técnicas sobrevivendo à rasterização do PDF |
+| `exemplo-10-oitavos-repetidos.png` | blocos de `5-5-5` na mesma casa, mudando de corda | a mesma casa tocada três vezes seguidas |
+| `exemplo-11-alternancia.png` | `7-5-7-5-7` e `9-7-5-7-9` | duas notas revezando, cada uma repetida no compasso |
+| `exemplo-12-celula-repetida.pdf` | PDF de 2 páginas, célula de 3 notas girando 3 vezes | repetição atravessando a rasterização e a junção de páginas |
 
 Todas as folhas trazem **pauta de cinco linhas junto da tablatura**, além de
 marcações de quiáltera e dinâmica, justamente para verificar que a notação é
@@ -36,6 +39,9 @@ gabarito:
 | exemplo-7 | 8 | 8 | 100% |
 | exemplo-8 | 12 | 12 | 100% |
 | exemplo-9 | 8 | 8 | 100% |
+| exemplo-10 | 18 | 18 | 100% |
+| exemplo-11 | 12 | 12 | 100% |
+| exemplo-12 | 18 | 18 | 100% |
 
 Nos exemplos 6 a 9 a conferência inclui a **articulação**, não só corda e casa:
 um `7b9` só conta como acerto se voltar como bend, e não como hammer-on.
@@ -47,3 +53,25 @@ horizontais escuras, e a inclinação as dissolve. Está descrito em
 
 Para refazer a medição, gere os arquivos e rode o app contra eles comparando
 com `gabarito.json`.
+
+## Notas repetidas
+
+Os exemplos 10 a 12 existem por um motivo específico: até eles, nenhuma folha
+tocava a **mesma corda e casa** mais de uma vez, então uma leitura que
+descartasse repetições silenciosamente ainda pontuaria 100%. A conferência é
+por posição na sequência, não por conjunto — `5 5 5` só conta como certo
+quando voltam três notas, não uma.
+
+## Como regerar
+
+`gerador/gerar-exemplos.mjs` desenha as folhas e as fotografa, e atualiza
+`gabarito.json` com as notas esperadas de cada uma. Precisa do Playwright e do
+pdf-lib, que não são dependências do app:
+
+```
+npm i -D playwright pdf-lib && npx playwright install chromium
+node exemplos/gerador/gerar-exemplos.mjs
+```
+
+Só os exemplos 10 a 12 saem dele; os anteriores foram gerados antes de o
+script existir e estão versionados como estão.

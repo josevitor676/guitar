@@ -301,4 +301,15 @@ describe('ToneSequencePlayer', () => {
 
     expect(sequenceStart).toHaveBeenCalledWith(0);
   });
+
+  it('changes tempo without restarting, so a speed climb does not cut the loop', () => {
+    const player = new ToneSequencePlayer(createFakeSampler(), createFakeGlideVoice());
+    player.play([{ frequency: 220, duration: '4n' }], 90, 'quarter');
+    sequenceDispose.mockClear();
+
+    player.setBpm(120);
+
+    expect(Tone.Transport.bpm.value).toBe(120);
+    expect(sequenceDispose).not.toHaveBeenCalled();
+  });
 });

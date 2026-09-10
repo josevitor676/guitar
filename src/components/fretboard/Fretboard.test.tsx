@@ -55,7 +55,7 @@ describe('Fretboard', () => {
     render(<Fretboard currentIndex={null} />);
     const cell = screen.getByRole('button', { name: /corda 6, casa 1/i });
     const circle = cell.querySelector('span');
-    expect(circle?.className).toMatch(/border-white\/20/);
+    expect(circle?.className).toMatch(/border-edge-strong/);
     expect(circle?.className).not.toMatch(/bg-accent/);
   });
 
@@ -115,5 +115,40 @@ describe('Fretboard', () => {
     for (const fret of [3, 5, 7, 9]) {
       expect(screen.getByTestId(`inlay-fret-${fret}`).children).toHaveLength(1);
     }
+  });
+
+  describe('in append mode', () => {
+    it('adds the note again instead of clearing it, so a riff can repeat a spot', async () => {
+      render(<Fretboard currentIndex={null} mode="append" />);
+      const cell = screen.getByRole('button', { name: /corda 5, casa 7/i });
+
+      await act(async () => {
+        fireEvent.click(cell);
+      });
+      await act(async () => {
+        fireEvent.click(cell);
+      });
+
+      expect(useFretboardStore.getState().selectedNotes).toEqual([
+        { string: 5, fret: 7 },
+        { string: 5, fret: 7 },
+      ]);
+    });
+
+    it('shows how many times a spot is played, so the neck does not look unchanged', () => {
+      useFretboardStore.setState({
+        selectedNotes: [7, 7, 7].map((fret) => ({ string: 5, fret })),
+      });
+      render(<Fretboard currentIndex={null} mode="append" />);
+
+      expect(screen.getByTestId('repeat-count-5-7')).toHaveTextContent('3');
+    });
+
+    it('leaves a spot played once without a count, which would only be noise', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 5, fret: 7 }] });
+      render(<Fretboard currentIndex={null} mode="append" />);
+
+      expect(screen.queryByTestId('repeat-count-5-7')).not.toBeInTheDocument();
+    });
   });
 });

@@ -3,6 +3,7 @@ import {
   isValidPosition,
   positionsEqual,
   orderAlongNeck,
+  sequencesEqual,
   applyDirection,
   fretSpanForWidth,
   windowStartToReveal,
@@ -98,6 +99,29 @@ describe('windowStartToReveal', () => {
   });
 });
 
+describe('sequencesEqual', () => {
+  const riff = [
+    { string: 6 as const, fret: 3 },
+    { string: 6 as const, fret: 5, articulation: 'hammerOn' as const },
+  ];
+
+  it('sees the same notes in the same order as the same sequence', () => {
+    expect(sequencesEqual(riff, [...riff])).toBe(true);
+  });
+
+  it('sees a moved fret as a change', () => {
+    expect(sequencesEqual(riff, [riff[0], { ...riff[1], fret: 6 }])).toBe(false);
+  });
+
+  it('sees a lost articulation as a change, since the technique is the exercise', () => {
+    expect(sequencesEqual(riff, [riff[0], { string: 6, fret: 5 }])).toBe(false);
+  });
+
+  it('sees a different length as a change', () => {
+    expect(sequencesEqual(riff, [riff[0]])).toBe(false);
+  });
+});
+
 describe('orderAlongNeck', () => {
   it('starts on the lowest string, whatever order the notes were marked in', () => {
     const marked = [
@@ -150,6 +174,22 @@ describe('orderAlongNeck', () => {
 
   it('handles an empty selection', () => {
     expect(orderAlongNeck([])).toEqual([]);
+  });
+
+  it('leaves a sequence with a repeated note in the order it was built', () => {
+    const marked = [7, 5, 7, 5, 7].map((fret) => ({ string: 5 as const, fret }));
+
+    expect(orderAlongNeck(marked).map((position) => position.fret)).toEqual([7, 5, 7, 5, 7]);
+  });
+
+  it('keeps the slurs of a sequence it does not reorder', () => {
+    const marked = [
+      { string: 5 as const, fret: 7 },
+      { string: 5 as const, fret: 5, articulation: 'pullOff' as const },
+      { string: 5 as const, fret: 7 },
+    ];
+
+    expect(orderAlongNeck(marked)[1].articulation).toBe('pullOff');
   });
 });
 

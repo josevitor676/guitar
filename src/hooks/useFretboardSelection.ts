@@ -12,6 +12,7 @@ export function useFretboardSelection() {
   const setFretRange = useFretboardStore((state) => state.setFretRange);
   const toggleNoteInStore = useFretboardStore((state) => state.toggleNote);
   const loadSequence = useFretboardStore((state) => state.loadSequence);
+  const appendNoteToStore = useFretboardStore((state) => state.appendNote);
 
   const toggleNote = useCallback(
     async (position: FretPosition) => {
@@ -23,5 +24,15 @@ export function useFretboardSelection() {
     [toggleNoteInStore],
   );
 
-  return { minFret, maxFret, selectedNotes, setFretRange, toggleNote, loadSequence };
+  const appendNote = useCallback(
+    async (position: FretPosition) => {
+      await ensureAudioStarted();
+      const note = getNoteAt(STANDARD_TUNING, position);
+      sampler.playNote(note.frequency, 0.5);
+      appendNoteToStore(position);
+    },
+    [appendNoteToStore],
+  );
+
+  return { minFret, maxFret, selectedNotes, setFretRange, toggleNote, appendNote, loadSequence };
 }

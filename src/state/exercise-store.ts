@@ -5,14 +5,25 @@ import { loadUserExercises, saveUserExercises } from './exercise-library';
 import { useFretboardStore } from './fretboard-store';
 import { useMetronomeStore } from './metronome-store';
 import { useUiStore } from './ui-store';
+import { useSpeedTrainerStore } from './speed-trainer-store';
 
 interface ExerciseState {
   activeExerciseId: string | null;
   userExercises: UserExercise[];
   selectExercise: (id: string) => void;
+  /** Puts the exercise away and empties the neck it was loaded onto. */
+  leaveExercise: () => void;
   saveCurrentSelection: (name: string) => UserExercise | null;
+  /** Writes what is on the neck over the student's exercise that is open. */
+  updateActiveUserExercise: () => UserExercise | null;
   deleteUserExercise: (id: string) => void;
   hydrateUserExercises: () => void;
+}
+
+/** An exercise by id, from the fixed catalogue or the student's own library. */
+export function findExercise(id: string | null, userExercises: UserExercise[]): Exercise | undefined {
+  if (!id) return undefined;
+  return EXERCISE_CATALOG.find((item) => item.id === id) ?? userExercises.find((item) => item.id === id);
 }
 
 function isUserExercise(exercise: Exercise): exercise is UserExercise {
@@ -50,7 +61,18 @@ export const useExerciseStore = create<ExerciseState>((set, get) => ({
       useMetronomeStore.getState().setSubdivision(exercise.subdivision);
     }
 
+    // The last climb's result belongs to the exercise it was played on.
+    useSpeedTrainerStore.setState({ lastResult: null });
     set({ activeExerciseId: id });
+  },
+
+  leaveExercise: () => {
+    // Free practice is the student's own scratch space: there is no exercise
+    // to leave, and clearing it would throw away work they meant to keep.
+    if (!get().activeExerciseId) return;
+    useFretboardStore.getState().clearSelection();
+    useSpeedTrainerStore.setState({ lastResult: null });
+    set({ activeExerciseId: null });
   },
 
   saveCurrentSelection: (name) => {
@@ -76,6 +98,23 @@ export const useExerciseStore = create<ExerciseState>((set, get) => ({
     set({ userExercises, activeExerciseId: exercise.id });
 
     return exercise;
+  },
+
+  updateActiveUserExercise: () => {
+    const { activeExerciseId, userExercises } = get();
+    const existing = userExercises.find((item) => item.id === activeExerciseId);
+    const positions = useFretboardStore.getState().selectedNotes;
+    // The catalogue belongs to the app. A change to one of those has to become
+    // an exercise of the student's own, which is what saving under a name does.
+    if (!existing || positions.length === 0) return null;
+
+    const { bpm, subdivision } = useMetronomeStore.getState();
+    const updated: UserExercise = { ...existing, positions: [...positions], bpm, subdivision };
+    const library = userExercises.map((item) => (item.id === updated.id ? updated : item));
+    saveUserExercises(library);
+    set({ userExercises: library });
+
+    return updated;
   },
 
   deleteUserExercise: (id) => {

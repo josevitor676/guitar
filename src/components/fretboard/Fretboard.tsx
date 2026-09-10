@@ -12,16 +12,29 @@ const INLAY_FRETS = new Set([3, 5, 7, 9, 15, 17, 19, 21]);
 /** The octave frets carry two dots on a real neck, which is how players find them. */
 const DOUBLE_INLAY_FRETS = new Set([12, 24]);
 
+/**
+ * Toggling treats the neck as a map: a spot is either in the selection or
+ * not. Appending treats it as a sequence being played into the timeline, so
+ * clicking the same spot twice plays it twice.
+ */
+export type FretboardMode = 'toggle' | 'append';
+
 interface FretboardProps {
   currentIndex: number | null;
+  mode?: FretboardMode;
   /** Positions that fall on a beat head, as "string:fret". Empty unless the metronome is armed. */
   beatHeadKeys?: ReadonlySet<string>;
 }
 
 const NO_BEAT_HEADS: ReadonlySet<string> = new Set();
 
-export function Fretboard({ currentIndex, beatHeadKeys = NO_BEAT_HEADS }: FretboardProps) {
-  const { minFret, maxFret, selectedNotes, toggleNote } = useFretboardSelection();
+export function Fretboard({
+  currentIndex,
+  mode = 'toggle',
+  beatHeadKeys = NO_BEAT_HEADS,
+}: FretboardProps) {
+  const { minFret, maxFret, selectedNotes, toggleNote, appendNote } = useFretboardSelection();
+  const markNote = mode === 'append' ? appendNote : toggleNote;
   // currentIndex counts through the played order, which is not the order the
   // notes were marked in.
   const sequence = usePlaybackSequence();
@@ -31,7 +44,7 @@ export function Fretboard({ currentIndex, beatHeadKeys = NO_BEAT_HEADS }: Fretbo
 
   return (
     <div className="relative inline-block">
-      <div className="flex items-center border-b border-white/[0.06] pb-1 text-xs text-text-secondary">
+      <div className="flex items-center border-b border-edge pb-1 text-xs text-text-secondary">
         <span className="w-10" />
         {frets.map((fret) => (
           <span key={fret} data-testid={`fret-number-${fret}`} className="flex w-14 items-center justify-center">
@@ -56,8 +69,8 @@ export function Fretboard({ currentIndex, beatHeadKeys = NO_BEAT_HEADS }: Fretbo
                   top: `${gridHeightPx / 2}px`,
                 }}
               >
-                <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                {isDouble && <span className="h-2.5 w-2.5 rounded-full bg-white/10" />}
+                <span className="h-2.5 w-2.5 rounded-full bg-edge-soft" />
+                {isDouble && <span className="h-2.5 w-2.5 rounded-full bg-edge-soft" />}
               </span>
             );
           })}
@@ -69,18 +82,21 @@ export function Fretboard({ currentIndex, beatHeadKeys = NO_BEAT_HEADS }: Fretbo
               <span
                 data-testid={`string-line-${string}`}
                 aria-hidden="true"
-                className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/[0.06]"
+                className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-edge"
               />
               <span className="relative z-10 w-10 text-center text-sm text-text-secondary">
                 {getPitchClass(STANDARD_TUNING[string])}
               </span>
               {frets.map((fret) => {
                 const position = { string, fret };
-                const selected = selectedNotes.some((note) => positionsEqual(note, position));
+                const timesPlayed = selectedNotes.filter((note) =>
+                  positionsEqual(note, position),
+                ).length;
+                const selected = timesPlayed > 0;
                 const highlighted = !!highlightedPosition && positionsEqual(highlightedPosition, position);
                 const note = getNoteAt(STANDARD_TUNING, position);
                 return (
-                  <div key={fret} className="relative z-10 border-r border-white/[0.06]">
+                  <div key={fret} className="relative z-10 border-r border-edge">
                     <FretMarker
                       string={string}
                       fret={fret}
@@ -88,7 +104,8 @@ export function Fretboard({ currentIndex, beatHeadKeys = NO_BEAT_HEADS }: Fretbo
                       highlighted={highlighted}
                       onBeatHead={beatHeadKeys.has(`${string}:${fret}`)}
                       noteLabel={note.pitchClass}
-                      onClick={() => toggleNote(position)}
+                      repeatCount={timesPlayed}
+                      onClick={() => markNote(position)}
                     />
                   </div>
                 );

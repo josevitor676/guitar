@@ -45,7 +45,7 @@ export function ChordNeck({ voicing, onToggleFret, onToggleOpen }: ChordNeckProp
               key={`fret-${fret}`}
               aria-hidden="true"
               data-testid={INLAY_FRETS.has(fret) ? `chord-inlay-${fret}` : undefined}
-              className={`absolute top-0 w-px ${index === 0 ? 'bg-white/25' : 'bg-white/[0.08]'}`}
+              className={`absolute top-0 w-px ${index === 0 ? 'bg-edge-strong' : 'bg-edge'}`}
               style={{ left: `${LABEL_WIDTH + OPEN_WIDTH + index * CELL_WIDTH}px`, height: `${gridHeight}px` }}
             />
           ))}
@@ -67,14 +67,14 @@ export function ChordNeck({ voicing, onToggleFret, onToggleOpen }: ChordNeckProp
                     play === 0
                       ? 'border-accent text-accent'
                       : play === 'muted'
-                        ? 'border-white/20 text-text-secondary'
+                        ? 'border-edge-strong text-text-secondary'
                         : 'border-transparent text-text-secondary/50'
                   }`}
                 >
                   {play === 0 ? '○' : '✕'}
                 </button>
 
-                <span aria-hidden="true" className="absolute left-[74px] right-0 top-1/2 h-px -translate-y-1/2 bg-white/[0.08]" />
+                <span aria-hidden="true" className="absolute left-[74px] right-0 top-1/2 h-px -translate-y-1/2 bg-edge" />
 
                 {FRETS.map((fret) => {
                   const chosen = isSounding(play) && play === fret;
@@ -97,7 +97,7 @@ export function ChordNeck({ voicing, onToggleFret, onToggleOpen }: ChordNeckProp
                         className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-all duration-200 ${
                           chosen
                             ? 'bg-accent text-body'
-                            : 'border border-transparent text-transparent group-hover:border-white/20'
+                            : 'border border-transparent text-transparent group-hover:border-edge-strong'
                         }`}
                       >
                         {note.pitchClass}
@@ -113,7 +113,7 @@ export function ChordNeck({ voicing, onToggleFret, onToggleOpen }: ChordNeckProp
             <span
               key={`inlay-${fret}`}
               aria-hidden="true"
-              className="absolute h-2 w-2 -translate-x-1/2 rounded-full bg-white/10"
+              className="absolute h-2 w-2 -translate-x-1/2 rounded-full bg-edge-soft"
               style={{ left: `${LABEL_WIDTH + OPEN_WIDTH + (fret - 1) * CELL_WIDTH + CELL_WIDTH / 2}px`, top: `${gridHeight - 6}px` }}
             />
           ))}

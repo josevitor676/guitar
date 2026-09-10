@@ -65,6 +65,12 @@ export class ToneSequencePlayer implements ISequencePlayer {
     Tone.Transport.start();
   }
 
+  setBpm(bpm: number): void {
+    // The Sequence follows the transport, so retuning the transport changes
+    // the speed of the notes already scheduled without touching the loop.
+    Tone.Transport.bpm.value = bpm;
+  }
+
   stop(): void {
     this.sequence?.dispose();
     this.sequence = null;

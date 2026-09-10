@@ -55,10 +55,10 @@ export function ChordDiagram({ voicing, showFingers = true }: { voicing: ChordVo
             {DISPLAY_STRINGS.map((string) => (
               <div
                 key={string}
-                className="relative flex items-center border-white/[0.06]"
+                className="relative flex items-center border-edge"
                 style={{ height: `${ROW_HEIGHT}px`, width: `${frets.length * CELL_WIDTH}px` }}
               >
-                <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/20" />
+                <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-edge-strong" />
               </div>
             ))}
 
@@ -67,7 +67,7 @@ export function ChordDiagram({ voicing, showFingers = true }: { voicing: ChordVo
                 key={fret}
                 aria-hidden="true"
                 className={`absolute top-0 ${
-                  index === 0 && startFret === 1 ? 'w-[2px] bg-white/50' : 'w-px bg-white/10'
+                  index === 0 && startFret === 1 ? 'w-[2px] bg-text-secondary' : 'w-px bg-edge-soft'
                 }`}
                 style={{ left: `${index * CELL_WIDTH}px`, height: `${DISPLAY_STRINGS.length * ROW_HEIGHT}px` }}
               />
