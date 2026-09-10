@@ -4,31 +4,33 @@
 
 @layer components {
   /*
-    The timeline can run wider than the card, so its scrollbar is part of the
-    interface rather than an accident. The browser default is a bright, chunky
-    bar that fights a dark card, so it is drawn to match: a thin track that
-    disappears into the surface and a thumb that picks up the accent on hover.
+    Where something scrolls inside the page — the timeline sideways, the
+    exercise list downwards — the scrollbar is part of the interface rather
+    than an accident. The browser default is a bright, chunky bar that fights a
+    dark card, so it is drawn to match: a thin track that disappears into the
+    surface and a thumb that picks up the accent on hover.
   */
-  .timeline-scroll {
+  .subtle-scroll {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
   }
 
-  .timeline-scroll::-webkit-scrollbar {
+  .subtle-scroll::-webkit-scrollbar {
     height: 8px;
+    width: 8px;
   }
 
-  .timeline-scroll::-webkit-scrollbar-track {
+  .subtle-scroll::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  .timeline-scroll::-webkit-scrollbar-thumb {
+  .subtle-scroll::-webkit-scrollbar-thumb {
     /* Surface over card is too close in tone to find; this reads without shouting. */
     background-color: rgba(255, 255, 255, 0.14);
     border-radius: 9999px;
   }
 
-  .timeline-scroll:hover::-webkit-scrollbar-thumb {
+  .subtle-scroll:hover::-webkit-scrollbar-thumb {
     background-color: theme('colors.accent-soft');
   }
 }

@@ -70,6 +70,11 @@ export const EXERCISE_CATALOG: Exercise[] = [
     id: 'technique-hammer-on-ladder',
     name: 'Hammer-on em todas as cordas',
     category: 'tecnica',
+    howTo:
+      'Hammer-on é ligar duas notas subindo sem palhetar a segunda. Palhete a casa 5 com o ' +
+      'indicador e, com a nota ainda soando, bata o dedo anelar na casa 7 com força e perto do ' +
+      'traste. O som da segunda nota vem da batida do dedo, não da palheta. Mantenha o indicador ' +
+      'apoiado na casa 5 o tempo todo.',
     // Pick the 5th fret, hammer the 7th with the ring finger, string by string.
     positions: acrossStrings(LOW_TO_HIGH, 5, 7, 'hammerOn'),
   },
@@ -77,6 +82,11 @@ export const EXERCISE_CATALOG: Exercise[] = [
     id: 'technique-pull-off-ladder',
     name: 'Pull-off em todas as cordas',
     category: 'tecnica',
+    howTo:
+      'Pull-off é o caminho de volta: ligar duas notas descendo sem palhetar a segunda. Prenda as ' +
+      'duas casas antes de tocar — indicador na 5, anelar na 7 — palhete a casa 7 e então puxe o ' +
+      'anelar para o lado, arranhando a corda de leve ao sair. Se você só levantar o dedo, a nota ' +
+      'da casa 5 sai fraca ou não sai.',
     // The mirror of the hammer drill: fret both notes, pick the 7th, pull to the 5th.
     positions: acrossStrings(HIGH_TO_LOW, 7, 5, 'pullOff'),
   },
@@ -84,6 +94,11 @@ export const EXERCISE_CATALOG: Exercise[] = [
     id: 'technique-slide-shift',
     name: 'Slide subindo e descendo o braço',
     category: 'tecnica',
+    howTo:
+      'Slide é arrastar o dedo pela corda de uma casa até outra, sem soltar a pressão. Palhete a ' +
+      'casa 5 e deslize o mesmo dedo até a 9 mantendo o peso na corda; só a primeira nota é ' +
+      'palhetada. Chegue na casa certa e pare — se aliviar a pressão no meio do caminho o som ' +
+      'morre antes de chegar.',
     // Long shifts, which is what a slide is for: it carries the hand to a new position.
     positions: [
       { string: 3, fret: 5 },
@@ -100,6 +115,11 @@ export const EXERCISE_CATALOG: Exercise[] = [
     id: 'technique-whole-step-bend',
     name: 'Bend de um tom nas cordas agudas',
     category: 'tecnica',
+    howTo:
+      'Bend é empurrar a corda para o lado para subir a afinação sem mudar de casa. Prenda a casa ' +
+      '8 com o anelar, apoie o médio e o indicador atrás dele, e gire o pulso para empurrar a ' +
+      'corda em direção ao teto. Duas casas de bend é um tom: toque antes a casa 10 para ouvir o ' +
+      'alvo, e empurre até chegar exatamente nela. A força vem do pulso, não dos dedos.',
     // Two frets is a whole step, bent on the strings where bends actually live.
     positions: [
       { string: 2, fret: 8 },

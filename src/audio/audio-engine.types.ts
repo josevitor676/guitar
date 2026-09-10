@@ -3,6 +3,8 @@ import type { Subdivision } from '../domain/music-theory/rhythm';
 export interface INoteSampler {
   isLoaded(): boolean;
   playNote(frequencyHz: number, duration: number | string, time?: number, velocity?: number): void;
+  /** Sounds a note reached by hammering or pulling, with the pick attack softened away. */
+  playSlurred(frequencyHz: number, duration: number | string, time?: number, velocity?: number): void;
 }
 
 export interface GlideRequest {
@@ -40,6 +42,8 @@ export interface PlayableNote {
   velocity?: number;
   /** Present when the note is reached by gliding from the pitch before it. */
   glide?: { fromHz: number; seconds: number };
+  /** True when the note is reached without picking it. */
+  slurred?: boolean;
 }
 
 export interface ISequencePlayer {
@@ -47,7 +51,7 @@ export interface ISequencePlayer {
     notes: PlayableNote[],
     bpm: number,
     spacingSubdivision: Subdivision,
-    options?: { silent?: boolean },
+    options?: { silent?: boolean; startOffsetSteps?: number },
   ): void;
   stop(): void;
   onNoteChange(callback: (index: number) => void): () => void;

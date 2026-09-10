@@ -23,14 +23,22 @@ export class ToneSequencePlayer implements ISequencePlayer {
     notes: PlayableNote[],
     bpm: number,
     spacingSubdivision: Subdivision,
-    options: { silent?: boolean } = {},
+    options: { silent?: boolean; startOffsetSteps?: number } = {},
   ): void {
     this.stop();
     Tone.Transport.stop();
     Tone.Transport.bpm.value = bpm;
     const spacing = SUBDIVISION_DURATIONS[spacingSubdivision];
+    // Silent steps in front of the sequence hold it back while the count-in is
+    // counted, so the first note lands exactly on the downbeat after it.
+    const leadingRests: (number | null)[] = Array.from(
+      { length: options.startOffsetSteps ?? 0 },
+      () => null,
+    );
+
     this.sequence = new Tone.Sequence(
-      (time, index: number) => {
+      (time, index: number | null) => {
+        if (index === null) return;
         const note = notes[index];
         if (!options.silent) {
           // A glided note travels from the pitch before it and so belongs to
@@ -44,13 +52,15 @@ export class ToneSequencePlayer implements ISequencePlayer {
               time,
               velocity: note.velocity,
             });
+          } else if (note.slurred) {
+            this.sampler.playSlurred(note.frequency, note.duration, time, note.velocity);
           } else {
             this.sampler.playNote(note.frequency, note.duration, time, note.velocity);
           }
         }
         this.listeners.forEach((listener) => listener(index));
       },
-      notes.map((_, index) => index),
+      [...leadingRests, ...notes.map((_, index) => index)],
       spacing,
     ).start(0);
     Tone.Transport.start();

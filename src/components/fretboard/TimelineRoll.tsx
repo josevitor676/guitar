@@ -77,7 +77,7 @@ export function TimelineRoll({ timeline, currentIndex, metronomeOn = false }: Ti
   return (
     // The top padding has to clear the slur label, which sits 40px above its
     // note — on the first string, that is above the grid itself.
-    <div ref={scrollRef} className="timeline-scroll relative overflow-x-auto overflow-y-hidden pt-11">
+    <div ref={scrollRef} className="subtle-scroll relative overflow-x-auto overflow-y-hidden pt-11">
       <div className="relative" style={{ width: `${widthPx}px`, height: `${gridHeightPx}px` }}>
         {/*
           One divider per beat, so the roll reads in columns the way tablature

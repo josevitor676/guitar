@@ -15,11 +15,22 @@ export class ToneGlideVoice implements IGlideVoice {
 
   constructor() {
     this.synth = new Tone.MonoSynth({
-      oscillator: { type: 'sawtooth' },
-      envelope: { attack: 0.005, decay: 0.35, sustain: 0.25, release: 0.4 },
-      filter: { type: 'lowpass', rolloff: -12 },
-      filterEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.2, release: 0.3, baseFrequency: 320, octaves: 3 },
-      volume: -10,
+      // A triangle is close to a plucked string's spectrum; the sawtooth this
+      // started as read as a synth buzz next to the sampled guitar.
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.004, decay: 0.9, sustain: 0.08, release: 0.6 },
+      filter: { type: 'lowpass', rolloff: -24, Q: 0.6 },
+      // The filter closes as the note decays, which is what makes a plucked
+      // string go dull as it dies away instead of staying bright.
+      filterEnvelope: {
+        attack: 0.003,
+        decay: 0.5,
+        sustain: 0.05,
+        release: 0.5,
+        baseFrequency: 260,
+        octaves: 3.2,
+      },
+      volume: -12,
     }).toDestination();
   }
 
@@ -31,6 +42,8 @@ export class ToneGlideVoice implements IGlideVoice {
     this.synth.triggerAttackRelease(fromHz, duration, time, velocity);
 
     if (glideSeconds > 0) {
+      // Exponential in frequency is linear in pitch, which is how a hand moving
+      // at a steady speed actually sounds.
       this.synth.frequency.exponentialRampTo(toHz, glideSeconds, time);
     } else {
       this.synth.frequency.setValueAtTime(toHz, time ?? Tone.now());

@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Play, Square, RotateCcw, Volume2, VolumeX, BookmarkPlus } from 'lucide-react';
+import { Play, Square, RotateCcw, BookmarkPlus } from 'lucide-react';
 import { IconButton } from '../ui/IconButton';
 import { Chip } from '../ui/Chip';
 import { MetronomeControls } from '../metronome/MetronomeControls';
+import { MetronomeIcon } from '../metronome/MetronomeIcon';
 import { useNotePlayback } from '../../hooks/useNotePlayback';
+import { useCountIn } from '../../hooks/useCountIn';
 import { useMetronome } from '../../hooks/useMetronome';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useExerciseStore } from '../../state/exercise-store';
@@ -12,7 +14,8 @@ import type { PlaybackDirection } from '../../domain/fretboard/fretboard-model';
 
 export function ControlBar() {
   const { play, stop, isPlaying } = useNotePlayback();
-  const { bpm, setBpm, isPlaying: metronomeOn, start: startMetronome, stop: stopMetronome } = useMetronome();
+  const { bpm, setBpm, enabled: metronomeArmed, setEnabled: setMetronomeArmed } = useMetronome();
+  const countIn = useCountIn(bpm);
   const clearSelection = useFretboardStore((state) => state.clearSelection);
   const hasSelection = useFretboardStore((state) => state.selectedNotes.length > 0);
   const saveCurrentSelection = useExerciseStore((state) => state.saveCurrentSelection);
@@ -40,9 +43,26 @@ export function ControlBar() {
       <IconButton
         label={isPlaying ? 'Parar' : 'Começar'}
         variant="primary"
-        onClick={() => (isPlaying ? stop() : void play())}
+        onClick={() => {
+          if (isPlaying) {
+            stop();
+            countIn.clear();
+            return;
+          }
+          // Playback is already scheduled to begin after the count; this shows it.
+          countIn.start();
+          void play();
+        }}
       >
-        {isPlaying ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        {countIn.count !== null ? (
+          <span data-testid="count-in" className="text-sm font-bold">
+            {countIn.count}
+          </span>
+        ) : isPlaying ? (
+          <Square className="h-4 w-4" />
+        ) : (
+          <Play className="h-4 w-4" />
+        )}
       </IconButton>
 
       <IconButton label="Limpar seleção" onClick={clearSelection}>
@@ -50,10 +70,11 @@ export function ControlBar() {
       </IconButton>
 
       <IconButton
-        label={metronomeOn ? 'Desligar metrônomo' : 'Ligar metrônomo'}
-        onClick={() => (metronomeOn ? stopMetronome() : void startMetronome())}
+        label={metronomeArmed ? 'Desligar metrônomo' : 'Ligar metrônomo'}
+        onClick={() => setMetronomeArmed(!metronomeArmed)}
+        className={metronomeArmed ? 'bg-accent text-body hover:bg-accent-soft' : ''}
       >
-        {metronomeOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+        <MetronomeIcon />
       </IconButton>
 
       <Chip>

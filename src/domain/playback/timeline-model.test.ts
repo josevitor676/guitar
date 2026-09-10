@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildTimeline, timelineLengthInBeats, isOnBeatHead } from './timeline-model';
+import {
+  buildTimeline,
+  timelineLengthInBeats,
+  isOnBeatHead,
+  beatHeadPositionKeys,
+} from './timeline-model';
 import type { FretPosition } from '../music-theory/tuning';
 
 const positions: FretPosition[] = [
@@ -77,5 +82,42 @@ describe('isOnBeatHead', () => {
 
   it('tolerates the rounding a triplet grid produces', () => {
     expect(isOnBeatHead(at(1 / 3 + 1 / 3 + 1 / 3))).toBe(true);
+  });
+});
+
+describe('beatHeadPositionKeys', () => {
+  const positions = [
+    { string: 6 as const, fret: 3 },
+    { string: 6 as const, fret: 5 },
+    { string: 5 as const, fret: 3 },
+    { string: 5 as const, fret: 5 },
+  ];
+
+  it('marks every position when each note lands on a beat', () => {
+    const keys = beatHeadPositionKeys(buildTimeline(positions, 'quarter', () => 'quarter'));
+
+    expect(keys).toEqual(new Set(['6:3', '6:5', '5:3', '5:5']));
+  });
+
+  it('marks every other position when the figure is eighths', () => {
+    const keys = beatHeadPositionKeys(buildTimeline(positions, 'eighth', () => 'eighth'));
+
+    expect(keys).toEqual(new Set(['6:3', '5:3']));
+  });
+
+  it('marks a repeated position when any of its turns falls on a beat', () => {
+    const repeated = [
+      { string: 6 as const, fret: 3 },
+      { string: 6 as const, fret: 5 },
+      { string: 6 as const, fret: 3 },
+    ];
+
+    expect(beatHeadPositionKeys(buildTimeline(repeated, 'eighth', () => 'eighth'))).toEqual(
+      new Set(['6:3']),
+    );
+  });
+
+  it('marks nothing for an empty sequence', () => {
+    expect(beatHeadPositionKeys([])).toEqual(new Set());
   });
 });

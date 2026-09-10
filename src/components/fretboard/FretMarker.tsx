@@ -17,14 +17,14 @@ export function FretMarker({
   onClick,
   onBeatHead = false,
 }: FretMarkerProps) {
-  // On a beat head the note is filled solid white against the accent ring, so
-  // it reads apart from the ordinary highlight at a glance.
+  // A note on a beat head is outlined in the accent so the student can see
+  // which notes coincide with the click; the note actually sounding is filled.
   const circleClasses = highlighted
-    ? onBeatHead
-      ? 'bg-text-primary text-body ring-4 ring-accent'
-      : 'bg-accent text-body ring-4 ring-accent-dim'
+    ? 'bg-accent text-body ring-4 ring-accent-dim'
     : selected
-      ? 'border border-white/20 bg-body text-text-primary'
+      ? onBeatHead
+        ? 'border-2 border-accent bg-body text-accent'
+        : 'border border-white/20 bg-body text-text-primary'
       : 'border border-transparent text-transparent group-hover:border-white/20';
 
   return (

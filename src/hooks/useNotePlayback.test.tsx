@@ -8,15 +8,18 @@ import { getNoteAt } from '../domain/music-theory/notes';
 import { STANDARD_TUNING, type FretPosition } from '../domain/music-theory/tuning';
 import { SUBDIVISION_DURATIONS } from '../domain/music-theory/rhythm';
 
-const { play, stop, onNoteChange, ensureAudioStarted } = vi.hoisted(() => ({
+const { play, stop, onNoteChange, ensureAudioStarted, metronomeStart, metronomeStop } = vi.hoisted(() => ({
   play: vi.fn(),
   stop: vi.fn(),
   onNoteChange: vi.fn(),
   ensureAudioStarted: vi.fn().mockResolvedValue(undefined),
+  metronomeStart: vi.fn(),
+  metronomeStop: vi.fn(),
 }));
 
 vi.mock('../audio', () => ({
   sequencePlayer: { play, stop, onNoteChange: (cb: (i: number) => void) => onNoteChange(cb) },
+  metronome: { start: metronomeStart, stop: metronomeStop, setBpm: vi.fn(), setSubdivision: vi.fn() },
   ensureAudioStarted,
 }));
 
@@ -142,7 +145,7 @@ describe('useNotePlayback', () => {
   });
 
   it('mutes the notes while the metronome leads, so the click is not muddied', async () => {
-    useMetronomeStore.setState({ isPlaying: true });
+    useMetronomeStore.setState({ enabled: true });
     useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
 
     const { result } = renderHook(() => useNotePlayback());
@@ -154,7 +157,7 @@ describe('useNotePlayback', () => {
   });
 
   it('sounds the notes when the metronome is off', async () => {
-    useMetronomeStore.setState({ isPlaying: false });
+    useMetronomeStore.setState({ enabled: false });
     useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
 
     const { result } = renderHook(() => useNotePlayback());
@@ -166,7 +169,7 @@ describe('useNotePlayback', () => {
   });
 
   it('marks a slurred note to sound softer than the picked note before it', async () => {
-    useMetronomeStore.setState({ isPlaying: false });
+    useMetronomeStore.setState({ enabled: false });
     useUiStore.setState({ fretboardView: 'timeline' });
     useFretboardStore.setState({
       selectedNotes: [
@@ -186,7 +189,7 @@ describe('useNotePlayback', () => {
   });
 
   it('gives a bent note the pitch it travels from and a slower glide than a slide', async () => {
-    useMetronomeStore.setState({ isPlaying: false, bpm: 60, subdivision: 'quarter' });
+    useMetronomeStore.setState({ enabled: false, bpm: 60, subdivision: 'quarter' });
     useUiStore.setState({ fretboardView: 'timeline' });
     useFretboardStore.setState({
       selectedNotes: [
@@ -209,7 +212,7 @@ describe('useNotePlayback', () => {
   });
 
   it('never glides the first note, which has no pitch to travel from', async () => {
-    useMetronomeStore.setState({ isPlaying: false });
+    useMetronomeStore.setState({ enabled: false });
     useUiStore.setState({ fretboardView: 'timeline' });
     useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 9, articulation: 'slide' }] });
 

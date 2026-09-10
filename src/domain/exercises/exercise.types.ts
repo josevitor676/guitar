@@ -8,6 +8,8 @@ export interface Exercise {
   name: string;
   category: ExerciseCategory;
   positions: FretPosition[];
+  /** What the technique is and how the hand performs it. */
+  howTo?: string;
 }
 
 /** An exercise the student built and saved, as opposed to one from the fixed catalog. */

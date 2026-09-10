@@ -36,3 +36,21 @@ export function timelineLengthInBeats(timeline: TimedNote[]): number {
 export function isOnBeatHead(note: TimedNote): boolean {
   return Math.abs(note.startBeat - Math.round(note.startBeat)) < 1e-6;
 }
+
+/**
+ * The positions whose notes fall on a beat head, keyed as "string:fret".
+ *
+ * The grid has no time axis, so it cannot show *when* a note lands — but it can
+ * mark *which* notes coincide with the click, which is what the student needs
+ * to see while practising against a metronome. A position played more than once
+ * counts if any of its turns falls on a beat.
+ */
+export function beatHeadPositionKeys(timeline: TimedNote[]): Set<string> {
+  const keys = new Set<string>();
+
+  for (const note of timeline) {
+    if (isOnBeatHead(note)) keys.add(`${note.position.string}:${note.position.fret}`);
+  }
+
+  return keys;
+}

@@ -6,7 +6,9 @@ import { metronome, ensureAudioStarted } from '../audio';
 export function useMetronome() {
   const bpm = useMetronomeStore((state) => state.bpm);
   const subdivision = useMetronomeStore((state) => state.subdivision);
+  const enabled = useMetronomeStore((state) => state.enabled);
   const isPlaying = useMetronomeStore((state) => state.isPlaying);
+  const setEnabled = useMetronomeStore((state) => state.setEnabled);
   const currentPulse = useMetronomeStore((state) => state.currentPulse);
   const setBpmInStore = useMetronomeStore((state) => state.setBpm);
   const setSubdivisionInStore = useMetronomeStore((state) => state.setSubdivision);
@@ -48,8 +50,10 @@ export function useMetronome() {
   return {
     bpm,
     subdivision,
+    enabled,
     isPlaying,
     currentPulse,
+    setEnabled,
     start,
     stop,
     setBpm,

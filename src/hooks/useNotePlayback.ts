@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useMetronomeStore } from '../state/metronome-store';
 import { usePlaybackSequence } from './usePlaybackSequence';
+import { countInOffsetBeats } from '../domain/playback/count-in';
 import { usePlaybackStore } from '../state/playback-store';
 import { STANDARD_TUNING } from '../domain/music-theory/tuning';
 import { getNoteAt } from '../domain/music-theory/notes';
@@ -11,13 +12,13 @@ import {
   isGliding,
   glideSecondsFor,
 } from '../domain/music-theory/articulation';
-import { sequencePlayer, ensureAudioStarted } from '../audio';
+import { sequencePlayer, metronome, ensureAudioStarted } from '../audio';
 
 export function useNotePlayback() {
   const sequence = usePlaybackSequence();
   const bpm = useMetronomeStore((state) => state.bpm);
   const subdivision = useMetronomeStore((state) => state.subdivision);
-  const metronomeOn = useMetronomeStore((state) => state.isPlaying);
+  const metronomeArmed = useMetronomeStore((state) => state.enabled);
   const currentIndex = usePlaybackStore((state) => state.currentIndex);
   const isPlaying = usePlaybackStore((state) => state.isPlaying);
   const setCurrentIndex = usePlaybackStore((state) => state.setCurrentIndex);
@@ -43,6 +44,7 @@ export function useNotePlayback() {
         velocity: position.articulation ? SLURRED_VELOCITY : PLUCKED_VELOCITY,
         // A slide or a bend starts at the pitch before it and travels; the
         // player hands those to the voice that can move.
+        slurred: !!position.articulation && !glides,
         glide: glides
           ? {
               fromHz: getNoteAt(STANDARD_TUNING, previous).frequency,
@@ -52,12 +54,27 @@ export function useNotePlayback() {
       };
     });
     // With the metronome leading, the notes stay silent so the click is clear.
-    sequencePlayer.play(notes, bpm, subdivision, { silent: metronomeOn });
+    sequencePlayer.play(notes, bpm, subdivision, {
+      silent: metronomeArmed,
+      startOffsetSteps: countInOffsetBeats(subdivision),
+    });
+
+    // The click belongs to playback: arming it only marks the beats on screen,
+    // and it starts sounding when the sequence does.
+    if (metronomeArmed) {
+      metronome.setBpm(bpm);
+      metronome.setSubdivision(subdivision);
+      metronome.start();
+      useMetronomeStore.setState({ isPlaying: true });
+    }
+
     setIsPlaying(true);
-  }, [sequence, bpm, subdivision, metronomeOn, setIsPlaying, setCurrentIndex]);
+  }, [sequence, bpm, subdivision, metronomeArmed, setIsPlaying, setCurrentIndex]);
 
   const stop = useCallback(() => {
     sequencePlayer.stop();
+    metronome.stop();
+    useMetronomeStore.setState({ isPlaying: false, currentPulse: 0 });
     setIsPlaying(false);
     setCurrentIndex(null);
   }, [setIsPlaying, setCurrentIndex]);

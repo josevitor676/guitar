@@ -6,7 +6,9 @@ let capturedOnload: (() => void) | undefined;
 vi.mock('tone', () => {
   return {
     Sampler: function(options: { onload?: () => void }) {
-      capturedOnload = options.onload;
+      // Two samplers are built now — the picked voice and the soft-attack one
+      // for slurs — and only the first carries the load callback.
+      if (options.onload) capturedOnload = options.onload;
       return {
         toDestination: vi.fn().mockReturnThis(),
         triggerAttackRelease,
@@ -63,5 +65,17 @@ describe('ToneNoteSampler', () => {
     sampler.playNote(440, '4n', 1, 0.45);
 
     expect(triggerAttackRelease).toHaveBeenCalledWith(440, '4n', 1, 0.45);
+  });
+
+  it('sounds a slurred note on a different voice from a picked one', () => {
+    const sampler = new ToneNoteSampler();
+    capturedOnload?.();
+    triggerAttackRelease.mockClear();
+
+    sampler.playNote(440, '4n', 0, 1);
+    sampler.playSlurred(440, '4n', 1, 0.45);
+
+    // Both voices share the mocked trigger, so the calls prove the routing.
+    expect(triggerAttackRelease).toHaveBeenCalledTimes(2);
   });
 });

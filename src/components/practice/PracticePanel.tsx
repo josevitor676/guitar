@@ -10,9 +10,11 @@ import { useFretboardSelection } from '../../hooks/useFretboardSelection';
 import { useNotePlayback } from '../../hooks/useNotePlayback';
 import { useMetronome } from '../../hooks/useMetronome';
 import { useTimeline } from '../../hooks/useTimeline';
-import { isOnBeatHead } from '../../domain/playback/timeline-model';
+import { beatHeadPositionKeys } from '../../domain/playback/timeline-model';
 import { useResponsiveFretSpan } from '../../hooks/useResponsiveFretSpan';
 import { useUiStore } from '../../state/ui-store';
+import { useExerciseStore } from '../../state/exercise-store';
+import { EXERCISE_CATALOG } from '../../domain/exercises/exercise-catalog';
 import type { FretboardView } from '../../state/ui-store';
 
 const VIEW_LABELS: { id: FretboardView; label: string }[] = [
@@ -23,18 +25,21 @@ const VIEW_LABELS: { id: FretboardView; label: string }[] = [
 export function PracticePanel() {
   const { minFret, maxFret, setFretRange } = useFretboardSelection();
   const { currentIndex } = useNotePlayback();
-  const { isPlaying, currentPulse } = useMetronome();
+  const { isPlaying, currentPulse, enabled: metronomeArmed } = useMetronome();
   const timeline = useTimeline();
   const fretboardView = useUiStore((state) => state.fretboardView);
   const setFretboardView = useUiStore((state) => state.setFretboardView);
 
   // The neck's own box is what decides how many frets fit, not the viewport:
   // on the Exercícios tab the exercise list shares the row with it.
+  const activeExerciseId = useExerciseStore((state) => state.activeExerciseId);
+  const howTo = EXERCISE_CATALOG.find((exercise) => exercise.id === activeExerciseId)?.howTo;
+
   const neckRef = useRef<HTMLDivElement>(null);
   useResponsiveFretSpan(neckRef);
 
-  const playingNote = currentIndex === null ? undefined : timeline[currentIndex];
-  const currentOnBeatHead = isPlaying && !!playingNote && isOnBeatHead(playingNote);
+  // Only while the metronome is armed: outside that the marks would mean nothing.
+  const beatHeadKeys = metronomeArmed ? beatHeadPositionKeys(timeline) : undefined;
 
   const total = timeline.length;
   const played = currentIndex === null ? 0 : currentIndex + 1;
@@ -66,6 +71,15 @@ export function PracticePanel() {
         </div>
       </div>
 
+      {howTo && (
+        <p
+          data-testid="exercise-how-to"
+          className="mb-4 rounded-2xl border border-white/[0.06] bg-body px-4 py-3 text-sm leading-relaxed text-text-secondary"
+        >
+          {howTo}
+        </p>
+      )}
+
       <div className="mb-4 flex items-center gap-3 text-xs text-text-secondary">
         <span className="whitespace-nowrap">
           {currentIndex === null ? `${total} notas` : `nota ${played} / ${total}`}
@@ -75,9 +89,9 @@ export function PracticePanel() {
 
       <div ref={neckRef}>
         {fretboardView === 'grid' ? (
-          <Fretboard currentIndex={currentIndex} currentOnBeatHead={currentOnBeatHead} />
+          <Fretboard currentIndex={currentIndex} beatHeadKeys={beatHeadKeys} />
         ) : (
-          <TimelineRoll timeline={timeline} currentIndex={currentIndex} metronomeOn={isPlaying} />
+          <TimelineRoll timeline={timeline} currentIndex={currentIndex} metronomeOn={metronomeArmed} />
         )}
       </div>
 

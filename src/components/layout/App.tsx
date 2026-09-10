@@ -84,18 +84,25 @@ export function App() {
       )}
 
       {activeTab === 'exercises' && (
-        <section className="mt-8">
+        // The section takes what is left of the window and the two columns
+        // scroll inside it, so the catalog can grow without the page growing.
+        <section className="mt-8 flex h-[calc(100vh-13rem)] flex-col">
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Treino Guiado</p>
           <h2 className="mt-1 text-3xl font-bold">Continue sua evolução.</h2>
           <p className="mt-1 text-sm text-text-secondary">
             Pratique com foco. Cada exercício foi pensado para construir sua técnica.
           </p>
 
-          <div className="mt-6 flex flex-col gap-6 lg:flex-row">
-            <div className="lg:w-64">
+          {/* min-h-0 lets the children shrink; without it a flex child refuses
+              to go below its content height and the section overflows anyway. */}
+          <div className="mt-6 flex min-h-0 flex-1 flex-col gap-6 lg:flex-row">
+            <div className="subtle-scroll min-h-0 overflow-y-auto pr-1 lg:w-64">
               <ExerciseList />
             </div>
-            <div className="flex-1">
+            {/* min-w-0: without it the flex item will not shrink below the
+                timeline's own width, and the page grows a horizontal scrollbar
+                instead of the timeline scrolling inside its card. */}
+            <div className="subtle-scroll min-h-0 min-w-0 flex-1 overflow-y-auto">
               <PracticePanel />
             </div>
           </div>

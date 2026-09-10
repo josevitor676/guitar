@@ -42,6 +42,7 @@ function createFakeSampler(): INoteSampler {
   return {
     isLoaded: () => true,
     playNote: vi.fn(),
+    playSlurred: vi.fn(),
   };
 }
 
@@ -247,5 +248,24 @@ describe('ToneSequencePlayer', () => {
     capturedCallback?.(0, 0);
 
     expect(glideVoice.playGlide).not.toHaveBeenCalled();
+  });
+
+  it('sounds a hammered note on the soft-attack voice, not the picked one', () => {
+    const sampler = createFakeSampler();
+    const player = new ToneSequencePlayer(sampler, createFakeGlideVoice());
+
+    player.play(
+      [
+        { frequency: 110, duration: '4n' },
+        { frequency: 130, duration: '4n', velocity: 0.45, slurred: true },
+      ],
+      120,
+      'quarter',
+    );
+    capturedCallback?.(0, 0);
+    capturedCallback?.(0.5, 1);
+
+    expect(sampler.playNote).toHaveBeenCalledOnce();
+    expect(sampler.playSlurred).toHaveBeenCalledWith(130, '4n', 0.5, 0.45);
   });
 });
