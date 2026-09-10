@@ -9,6 +9,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   digitacao: 'Digitação',
   escala: 'Escala',
   arpejo: 'Arpejo',
+  tecnica: 'Técnica',
   meu: 'Meu exercício',
 };
 

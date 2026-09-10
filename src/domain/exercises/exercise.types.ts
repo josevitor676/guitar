@@ -1,7 +1,7 @@
 import type { FretPosition } from '../music-theory/tuning';
 import type { Subdivision } from '../music-theory/rhythm';
 
-export type ExerciseCategory = 'aquecimento' | 'digitacao' | 'escala' | 'arpejo' | 'meu';
+export type ExerciseCategory = 'aquecimento' | 'digitacao' | 'escala' | 'arpejo' | 'tecnica' | 'meu';
 
 export interface Exercise {
   id: string;

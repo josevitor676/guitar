@@ -4,6 +4,7 @@ import { useFretboardStore } from '../../state/fretboard-store';
 import { useMetronomeStore } from '../../state/metronome-store';
 import { useUiStore } from '../../state/ui-store';
 import { useExerciseStore } from '../../state/exercise-store';
+import { EXERCISE_CATALOG } from '../../domain/exercises/exercise-catalog';
 import { saveUserExercises } from '../../state/exercise-library';
 
 vi.mock('../../audio', () => ({
@@ -40,7 +41,7 @@ describe('App', () => {
 
   it('shows the exercise count badge on the Exercícios tab', () => {
     render(<App />);
-    expect(screen.getByText('04')).toBeInTheDocument();
+    expect(screen.getByText(String(EXERCISE_CATALOG.length).padStart(2, '0'))).toBeInTheDocument();
   });
 
   it('clamps a stale persisted minFret of 0 to 1 instead of restoring fret 0', () => {
@@ -85,7 +86,9 @@ describe('App', () => {
     render(<App />);
 
     expect(useExerciseStore.getState().userExercises).toHaveLength(1);
-    expect(screen.getByText('05')).toBeInTheDocument();
+    // The badge counts the catalog and the student's library together.
+    const total = EXERCISE_CATALOG.length + 1;
+    expect(screen.getByText(String(total).padStart(2, '0'))).toBeInTheDocument();
   });
 
   it('opens the import tab and asks for a tablature file', () => {

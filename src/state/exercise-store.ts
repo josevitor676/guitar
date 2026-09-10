@@ -4,6 +4,7 @@ import type { Exercise, UserExercise } from '../domain/exercises/exercise.types'
 import { loadUserExercises, saveUserExercises } from './exercise-library';
 import { useFretboardStore } from './fretboard-store';
 import { useMetronomeStore } from './metronome-store';
+import { useUiStore } from './ui-store';
 
 interface ExerciseState {
   activeExerciseId: string | null;
@@ -16,6 +17,10 @@ interface ExerciseState {
 
 function isUserExercise(exercise: Exercise): exercise is UserExercise {
   return exercise.category === 'meu';
+}
+
+function hasArticulations(exercise: Exercise): boolean {
+  return exercise.positions.some((position) => position.articulation !== undefined);
 }
 
 export const useExerciseStore = create<ExerciseState>((set, get) => ({
@@ -31,6 +36,13 @@ export const useExerciseStore = create<ExerciseState>((set, get) => ({
 
     // loadSequence widens the visible fret range on its own.
     useFretboardStore.getState().loadSequence(exercise.positions);
+
+    // The grid reorders along the neck and so drops slurs. An exercise built
+    // around a technique would then play as plain picked notes with nothing to
+    // say why, so it opens on the timeline, where its order and slurs survive.
+    if (hasArticulations(exercise)) {
+      useUiStore.getState().setFretboardView('timeline');
+    }
 
     // A student exercise carries the tempo and feel it was saved with.
     if (isUserExercise(exercise)) {

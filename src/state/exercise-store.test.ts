@@ -3,6 +3,7 @@ import { useExerciseStore } from './exercise-store';
 import { useFretboardStore } from './fretboard-store';
 import { EXERCISE_CATALOG } from '../domain/exercises/exercise-catalog';
 import { useMetronomeStore } from './metronome-store';
+import { useUiStore } from './ui-store';
 
 describe('useExerciseStore', () => {
   beforeEach(() => {
@@ -10,6 +11,7 @@ describe('useExerciseStore', () => {
     useExerciseStore.setState({ activeExerciseId: null, userExercises: [] });
     useFretboardStore.setState({ selectedNotes: [], minFret: 1, maxFret: 7 });
     useMetronomeStore.setState({ bpm: 100, subdivision: 'quarter' });
+    useUiStore.setState({ fretboardView: 'grid' });
   });
 
   it('starts with no active exercise', () => {
@@ -177,6 +179,27 @@ describe('useExerciseStore', () => {
       useExerciseStore.getState().deleteUserExercise(doomed!.id);
 
       expect(useExerciseStore.getState().activeExerciseId).toBe(kept!.id);
+    });
+  });
+
+  describe('technique exercises', () => {
+    it('opens an exercise built on a technique in the timeline, where its slurs survive', () => {
+      useExerciseStore.getState().selectExercise('technique-hammer-on-ladder');
+
+      expect(useUiStore.getState().fretboardView).toBe('timeline');
+    });
+
+    it('loads the slurs along with the notes', () => {
+      useExerciseStore.getState().selectExercise('technique-slide-shift');
+
+      const loaded = useFretboardStore.getState().selectedNotes;
+      expect(loaded.some((position) => position.articulation === 'slide')).toBe(true);
+    });
+
+    it('leaves the view alone for an exercise with no technique in it', () => {
+      useExerciseStore.getState().selectExercise('warmup-1234-low-e');
+
+      expect(useUiStore.getState().fretboardView).toBe('grid');
     });
   });
 });
