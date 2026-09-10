@@ -13,3 +13,16 @@ export const SUBDIVISION_BEATS: Record<Subdivision, number> = {
   triplet: 1 / 3,
   sixteenth: 0.25,
 };
+
+/**
+ * What each figure is called in Portuguese. It lives here rather than in the
+ * metronome's dropdown because the exported sheet prints the same word, and a
+ * sheet that disagreed with the screen about the figure would be worse than
+ * one that named no figure at all.
+ */
+export const SUBDIVISION_LABELS: Record<Subdivision, string> = {
+  quarter: 'Semínima',
+  eighth: 'Colcheia',
+  triplet: 'Tercina',
+  sixteenth: 'Semicolcheia',
+};

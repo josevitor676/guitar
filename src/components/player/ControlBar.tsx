@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Square, RotateCcw, BookmarkPlus, Gauge } from 'lucide-react';
+import { Play, Square, RotateCcw, BookmarkPlus, Gauge, Download } from 'lucide-react';
 import { IconButton } from '../ui/IconButton';
 import { Chip } from '../ui/Chip';
 import { MetronomeControls } from '../metronome/MetronomeControls';
@@ -8,11 +8,14 @@ import { useNotePlayback } from '../../hooks/useNotePlayback';
 import { useCountIn } from '../../hooks/useCountIn';
 import { useMetronome } from '../../hooks/useMetronome';
 import { useFretboardStore } from '../../state/fretboard-store';
-import { useExerciseStore } from '../../state/exercise-store';
+import { useExerciseStore, findExercise } from '../../state/exercise-store';
 import { usePlaybackStore } from '../../state/playback-store';
 import { useSpeedTrainerStore } from '../../state/speed-trainer-store';
 import { useSpeedTrainer } from '../../hooks/useSpeedTrainer';
 import { SpeedTrainerSettings } from './SpeedTrainerSettings';
+import { usePlaybackSequence } from '../../hooks/usePlaybackSequence';
+import { downloadTabImage, downloadTabPdf } from '../../services/tab-export';
+import { useMetronomeStore } from '../../state/metronome-store';
 import type { PlaybackDirection } from '../../domain/fretboard/fretboard-model';
 
 export function ControlBar() {
@@ -30,6 +33,7 @@ export function ControlBar() {
   const direction = usePlaybackStore((state) => state.direction);
   const setDirection = usePlaybackStore((state) => state.setDirection);
 
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isNaming, setIsNaming] = useState(false);
   const [name, setName] = useState('');
 
@@ -41,6 +45,27 @@ export function ControlBar() {
     useSpeedTrainerStore.getState().endSession(activeExerciseId);
   };
   useSpeedTrainer({ stop: stopEverything });
+
+  // The sheet prints what would be played, direction and all — it is meant to
+  // be handed to someone who will play it, not to describe the neck.
+  const sequence = usePlaybackSequence();
+  const userExercises = useExerciseStore((state) => state.userExercises);
+  const subdivision = useMetronomeStore((state) => state.subdivision);
+
+  const download = (save: (sheet: {
+    title: string;
+    bpm: number;
+    subdivision: typeof subdivision;
+    positions: typeof sequence;
+  }) => Promise<void>) => {
+    setIsDownloading(false);
+    void save({
+      title: findExercise(activeExerciseId, userExercises)?.name ?? 'Sequência livre',
+      bpm,
+      subdivision,
+      positions: sequence,
+    });
+  };
 
   const closeForm = () => {
     setIsNaming(false);
@@ -130,6 +155,15 @@ export function ControlBar() {
       </IconButton>
 
       <IconButton
+        label="Baixar tablatura"
+        onClick={() => setIsDownloading(!isDownloading)}
+        active={isDownloading}
+        disabled={!hasSelection}
+      >
+        <Download className="h-4 w-4" />
+      </IconButton>
+
+      <IconButton
         label="Salvar sequência"
         onClick={() => setIsNaming(true)}
         disabled={!hasSelection}
@@ -154,6 +188,27 @@ export function ControlBar() {
       </div>
 
       {trainerOn && <SpeedTrainerSettings />}
+
+      {isDownloading && (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+          Baixar como
+          <button
+            type="button"
+            onClick={() => download(downloadTabImage)}
+            className="rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
+          >
+            Imagem (PNG)
+          </button>
+          <button
+            type="button"
+            onClick={() => download(downloadTabPdf)}
+            className="rounded-full border border-white/[0.06] bg-surface px-3 py-1 text-text-primary transition-all duration-200 hover:border-accent hover:text-accent"
+          >
+            PDF
+          </button>
+          <span>A folha sai com o andamento e a figura rítmica, para poder ser tocada depois.</span>
+        </div>
+      )}
 
       {isNaming && (
         <form

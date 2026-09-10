@@ -23,6 +23,12 @@ const { metronome, sequencePlayer, noteListeners } = vi.hoisted(() => {
   };
 });
 
+const tabExport = vi.hoisted(() => ({
+  downloadTabImage: vi.fn().mockResolvedValue(undefined),
+  downloadTabPdf: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../../services/tab-export', () => tabExport);
+
 vi.mock('../../audio', () => ({
   sampler: { isLoaded: () => true, playNote: vi.fn() },
   metronome,
@@ -54,6 +60,8 @@ describe('ControlBar', () => {
     });
     metronome.start.mockClear();
     metronome.stop.mockClear();
+    tabExport.downloadTabImage.mockClear();
+    tabExport.downloadTabPdf.mockClear();
     sequencePlayer.play.mockClear();
     sequencePlayer.setBpm.mockClear();
   });
@@ -308,6 +316,61 @@ describe('ControlBar', () => {
       fireEvent.click(screen.getByRole('button', { name: /parar/i }));
 
       expect(useSpeedTrainerStore.getState().records['repeat-three-note-cell']).toBe(85);
+    });
+  });
+
+  describe('taking the tablature out', () => {
+    it('offers nothing to download while there is no sequence', () => {
+      useFretboardStore.setState({ selectedNotes: [] });
+      render(<ControlBar />);
+
+      expect(screen.getByRole('button', { name: /baixar tablatura/i })).toBeDisabled();
+    });
+
+    it('offers the two printable formats', () => {
+      render(<ControlBar />);
+
+      fireEvent.click(screen.getByRole('button', { name: /baixar tablatura/i }));
+
+      expect(screen.getByRole('button', { name: /imagem/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^pdf$/i })).toBeInTheDocument();
+    });
+
+    it('sends the sequence, the tempo and the figure, since a sheet without them cannot be played', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }, { string: 6, fret: 5 }] });
+      useMetronomeStore.setState({ bpm: 96, subdivision: 'sixteenth' });
+      render(<ControlBar />);
+
+      fireEvent.click(screen.getByRole('button', { name: /baixar tablatura/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^pdf$/i }));
+
+      expect(tabExport.downloadTabPdf).toHaveBeenCalledWith({
+        title: 'Sequência livre',
+        bpm: 96,
+        subdivision: 'sixteenth',
+        positions: [{ string: 6, fret: 3 }, { string: 6, fret: 5 }],
+      });
+    });
+
+    it('titles the sheet with the exercise being practised', () => {
+      useExerciseStore.setState({ activeExerciseId: 'repeat-three-note-cell' });
+      render(<ControlBar />);
+
+      fireEvent.click(screen.getByRole('button', { name: /baixar tablatura/i }));
+      fireEvent.click(screen.getByRole('button', { name: /imagem/i }));
+
+      expect(tabExport.downloadTabImage).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Célula 3-5-7 repetida' }),
+      );
+    });
+
+    it('closes the menu once a format is chosen', () => {
+      render(<ControlBar />);
+
+      fireEvent.click(screen.getByRole('button', { name: /baixar tablatura/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^pdf$/i }));
+
+      expect(screen.queryByRole('button', { name: /^pdf$/i })).not.toBeInTheDocument();
     });
   });
 });

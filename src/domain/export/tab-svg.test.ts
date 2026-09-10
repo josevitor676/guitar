@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { splitIntoSystems, tabSheetSvg, NOTES_PER_SYSTEM } from './tab-sheet';
-import type { TabSheet } from './tab-sheet';
+import { splitIntoSystems, NOTES_PER_SYSTEM } from './tab-layout';
+import type { TabSheet } from './tab-layout';
+import { tabSheetSvg } from './tab-svg';
 
 const sheet: TabSheet = {
   title: 'Célula 3-5-7 repetida',

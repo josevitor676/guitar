@@ -15,6 +15,12 @@ interface ExerciseState {
   hydrateUserExercises: () => void;
 }
 
+/** An exercise by id, from the fixed catalogue or the student's own library. */
+export function findExercise(id: string | null, userExercises: UserExercise[]): Exercise | undefined {
+  if (!id) return undefined;
+  return EXERCISE_CATALOG.find((item) => item.id === id) ?? userExercises.find((item) => item.id === id);
+}
+
 function isUserExercise(exercise: Exercise): exercise is UserExercise {
   return exercise.category === 'meu';
 }

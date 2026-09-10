@@ -1,12 +1,6 @@
 import type { Subdivision } from '../../domain/music-theory/rhythm';
+import { SUBDIVISION_LABELS } from '../../domain/music-theory/rhythm';
 import { useMetronome } from '../../hooks/useMetronome';
-
-const SUBDIVISION_LABELS: Record<Subdivision, string> = {
-  quarter: 'Semínima',
-  eighth: 'Colcheia',
-  triplet: 'Tercina',
-  sixteenth: 'Semicolcheia',
-};
 
 export function MetronomeControls() {
   const { subdivision, setSubdivision } = useMetronome();
