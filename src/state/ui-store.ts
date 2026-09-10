@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type TabId = 'practice' | 'exercises' | 'import';
+export type TabId = 'practice' | 'exercises' | 'import' | 'chords';
 export type FretboardView = 'grid' | 'timeline';
 
 interface UiState {

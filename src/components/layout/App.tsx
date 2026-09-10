@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { PracticePanel } from '../practice/PracticePanel';
 import { ExerciseList } from '../exercises/ExerciseList';
 import { ImportPanel } from '../import/ImportPanel';
+import { ChordPanel } from '../chords/ChordPanel';
 import { Tabs } from './Tabs';
 import { useSamplerLoaded } from '../../hooks/useSamplerLoaded';
 import { loadPreferences, initPersistence } from '../../state/persistence';
@@ -22,6 +23,7 @@ export function App() {
     { id: 'practice', label: 'Prática / Fretboard Livre' },
     { id: 'exercises', label: 'Exercícios', badge: EXERCISE_CATALOG.length + userExerciseCount },
     { id: 'import', label: 'Importar' },
+    { id: 'chords', label: 'Acordes' },
   ];
 
   useEffect(() => {
@@ -79,6 +81,20 @@ export function App() {
 
           <div className="mt-6">
             <ImportPanel />
+          </div>
+        </section>
+      )}
+
+      {activeTab === 'chords' && (
+        <section className="mt-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Harmonia</p>
+          <h2 className="mt-1 text-3xl font-bold">Monte e descubra acordes.</h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            Escolha as notas no braço e eu digo que acorde é, com outras posições para tocá-lo.
+          </p>
+
+          <div className="mt-6">
+            <ChordPanel />
           </div>
         </section>
       )}
