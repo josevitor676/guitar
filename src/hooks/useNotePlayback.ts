@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useMetronomeStore } from '../state/metronome-store';
 import { usePlaybackSequence } from './usePlaybackSequence';
-import { countInOffsetBeats } from '../domain/playback/count-in';
+import { countInSeconds } from '../domain/playback/count-in';
 import { usePlaybackStore } from '../state/playback-store';
 import { STANDARD_TUNING } from '../domain/music-theory/tuning';
 import { getNoteAt } from '../domain/music-theory/notes';
@@ -33,8 +33,13 @@ export function useNotePlayback() {
 
     const notes = sequence.map((position, index) => {
       const note = getNoteAt(STANDARD_TUNING, position);
-      const previous = sequence[index - 1];
-      const glides = !!position.articulation && isGliding(position.articulation) && !!previous;
+      const next = sequence[index + 1];
+      // A glide is one picked note whose pitch travels, so the gesture is
+      // described on the note it departs from, not on the one it reaches.
+      const departsInto =
+        next?.articulation && isGliding(next.articulation) ? next.articulation : undefined;
+      const arrivesByGlide =
+        !!position.articulation && isGliding(position.articulation) && index > 0;
       // A hammered or pulled note is not picked: it sounds because the finger
       // strikes or plucks a string that is already ringing, so it comes out
       // weaker than the note before it.
@@ -44,19 +49,25 @@ export function useNotePlayback() {
         velocity: position.articulation ? SLURRED_VELOCITY : PLUCKED_VELOCITY,
         // A slide or a bend starts at the pitch before it and travels; the
         // player hands those to the voice that can move.
-        slurred: !!position.articulation && !glides,
-        glide: glides
+        slurred: !!position.articulation && !arrivesByGlide,
+        arrivesByGlide,
+        glide: departsInto
           ? {
-              fromHz: getNoteAt(STANDARD_TUNING, previous).frequency,
-              seconds: glideSecondsFor(position.articulation!, secondsPerNote),
+              toHz: getNoteAt(STANDARD_TUNING, next).frequency,
+              // The pitch starts moving when the second note is written to sound.
+              startsAfterSeconds: secondsPerNote,
+              glideSeconds: glideSecondsFor(departsInto, secondsPerNote),
+              holdSeconds: secondsPerNote * 2,
             }
           : undefined,
       };
     });
     // With the metronome leading, the notes stay silent so the click is clear.
+    const countIn = countInSeconds(bpm);
+
     sequencePlayer.play(notes, bpm, subdivision, {
       silent: metronomeArmed,
-      startOffsetSteps: countInOffsetBeats(subdivision),
+      startAfterSeconds: countIn,
     });
 
     // The click belongs to playback: arming it only marks the beats on screen,
@@ -64,7 +75,9 @@ export function useNotePlayback() {
     if (metronomeArmed) {
       metronome.setBpm(bpm);
       metronome.setSubdivision(subdivision);
-      metronome.start();
+      // Held back with the sequence: the click belongs to the exercise, and
+      // starting it under the count would put it out of step with the first note.
+      metronome.start(countIn);
       useMetronomeStore.setState({ isPlaying: true });
     }
 

@@ -23,35 +23,31 @@ export class ToneSequencePlayer implements ISequencePlayer {
     notes: PlayableNote[],
     bpm: number,
     spacingSubdivision: Subdivision,
-    options: { silent?: boolean; startOffsetSteps?: number } = {},
+    options: { silent?: boolean; startAfterSeconds?: number } = {},
   ): void {
     this.stop();
     Tone.Transport.stop();
     Tone.Transport.bpm.value = bpm;
     const spacing = SUBDIVISION_DURATIONS[spacingSubdivision];
-    // Silent steps in front of the sequence hold it back while the count-in is
-    // counted, so the first note lands exactly on the downbeat after it.
-    const leadingRests: (number | null)[] = Array.from(
-      { length: options.startOffsetSteps ?? 0 },
-      () => null,
-    );
-
     this.sequence = new Tone.Sequence(
-      (time, index: number | null) => {
-        if (index === null) return;
+      (time, index: number) => {
         const note = notes[index];
         if (!options.silent) {
-          // A glided note travels from the pitch before it and so belongs to
-          // the voice that can move, not to the sampler.
+          // The note a glide departs from carries the whole gesture, and the
+          // note it arrives at makes no sound of its own — one string, picked
+          // once, whose pitch moves.
           if (note.glide) {
             this.glideVoice.playGlide({
-              fromHz: note.glide.fromHz,
-              toHz: note.frequency,
-              duration: note.duration,
-              glideSeconds: note.glide.seconds,
+              fromHz: note.frequency,
+              toHz: note.glide.toHz,
+              startsAfterSeconds: note.glide.startsAfterSeconds,
+              glideSeconds: note.glide.glideSeconds,
+              holdSeconds: note.glide.holdSeconds,
               time,
               velocity: note.velocity,
             });
+          } else if (note.arrivesByGlide) {
+            // Already sounding, carried by the note before it.
           } else if (note.slurred) {
             this.sampler.playSlurred(note.frequency, note.duration, time, note.velocity);
           } else {
@@ -60,9 +56,12 @@ export class ToneSequencePlayer implements ISequencePlayer {
         }
         this.listeners.forEach((listener) => listener(index));
       },
-      [...leadingRests, ...notes.map((_, index) => index)],
+      notes.map((_, index) => index),
       spacing,
-    ).start(0);
+    // The count-in delays the whole sequence once. Padding the pattern with
+    // rests instead would put them inside the loop, so every repeat would pause
+    // for the length of the count before coming round again.
+    ).start(options.startAfterSeconds ?? 0);
     Tone.Transport.start();
   }
 

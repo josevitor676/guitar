@@ -10,8 +10,12 @@ export interface INoteSampler {
 export interface GlideRequest {
   fromHz: number;
   toHz: number;
-  duration: number | string;
+  /** When the pitch starts moving, measured from the note's own start. */
+  startsAfterSeconds: number;
+  /** How long the pitch takes to travel. */
   glideSeconds: number;
+  /** How long the whole gesture sounds, covering both notated notes. */
+  holdSeconds: number;
   time?: number;
   velocity?: number;
 }
@@ -23,13 +27,18 @@ export interface GlideRequest {
  * frequency parameter, so a sampled note is stuck at the pitch it was struck
  * at. Slides and bends therefore sound on a synthesised voice, which is a real
  * trade in timbre for the only way to make the pitch actually travel.
+ *
+ * The whole gesture is one call, made when the *first* of the two notes sounds.
+ * A slide is one note that moves, not two notes: attacking the target
+ * separately would sound the starting pitch twice, in two timbres at once.
  */
 export interface IGlideVoice {
   playGlide(request: GlideRequest): void;
 }
 
 export interface IMetronome {
-  start(): void;
+  /** `atSeconds` is a transport time, so the click can be held back for a count-in. */
+  start(atSeconds?: number): void;
   stop(): void;
   setBpm(bpm: number): void;
   setSubdivision(subdivision: Subdivision): void;
@@ -40,8 +49,10 @@ export interface PlayableNote {
   frequency: number;
   duration: string;
   velocity?: number;
-  /** Present when the note is reached by gliding from the pitch before it. */
-  glide?: { fromHz: number; seconds: number };
+  /** Set on the note a glide *departs* from; it carries the whole gesture. */
+  glide?: { toHz: number; startsAfterSeconds: number; glideSeconds: number; holdSeconds: number };
+  /** True for the note a glide arrives at: it makes no sound of its own. */
+  arrivesByGlide?: boolean;
   /** True when the note is reached without picking it. */
   slurred?: boolean;
 }
@@ -51,7 +62,7 @@ export interface ISequencePlayer {
     notes: PlayableNote[],
     bpm: number,
     spacingSubdivision: Subdivision,
-    options?: { silent?: boolean; startOffsetSteps?: number },
+    options?: { silent?: boolean; startAfterSeconds?: number },
   ): void;
   stop(): void;
   onNoteChange(callback: (index: number) => void): () => void;

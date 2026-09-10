@@ -72,7 +72,7 @@ export function ControlBar() {
       <IconButton
         label={metronomeArmed ? 'Desligar metrônomo' : 'Ligar metrônomo'}
         onClick={() => setMetronomeArmed(!metronomeArmed)}
-        className={metronomeArmed ? 'bg-accent text-body hover:bg-accent-soft' : ''}
+        active={metronomeArmed}
       >
         <MetronomeIcon />
       </IconButton>

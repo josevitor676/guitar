@@ -32,8 +32,14 @@ export function PracticePanel() {
 
   // The neck's own box is what decides how many frets fit, not the viewport:
   // on the Exercícios tab the exercise list shares the row with it.
+  const activeTab = useUiStore((state) => state.activeTab);
   const activeExerciseId = useExerciseStore((state) => state.activeExerciseId);
-  const howTo = EXERCISE_CATALOG.find((exercise) => exercise.id === activeExerciseId)?.howTo;
+  // Free practice keeps whatever sequence was loaded, but the exercise's
+  // instructions belong to the exercise, not to the neck.
+  const howTo =
+    activeTab === 'exercises'
+      ? EXERCISE_CATALOG.find((exercise) => exercise.id === activeExerciseId)?.howTo
+      : undefined;
 
   const neckRef = useRef<HTMLDivElement>(null);
   useResponsiveFretSpan(neckRef);

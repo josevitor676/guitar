@@ -9,6 +9,8 @@ interface IconButtonProps {
   variant?: IconButtonVariant;
   className?: string;
   disabled?: boolean;
+  /** Draws the button as switched on, which swaps the variant rather than layering over it. */
+  active?: boolean;
 }
 
 const VARIANT_CLASSES: Record<IconButtonVariant, string> = {
@@ -24,7 +26,12 @@ export function IconButton({
   variant = 'secondary',
   className = '',
   disabled = false,
+  active = false,
 }: IconButtonProps) {
+  // Passing an override class cannot work: both it and the variant's own
+  // background end up in the class list, and which one wins is decided by the
+  // order Tailwind emits them, not by the order they are written here.
+  const appearance = active ? VARIANT_CLASSES.primary : VARIANT_CLASSES[variant];
   return (
     <button
       type="button"
@@ -32,7 +39,8 @@ export function IconButton({
       title={label}
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${VARIANT_CLASSES[variant]} ${className}`.trim()}
+      aria-pressed={active}
+      className={`flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${appearance} ${className}`.trim()}
     >
       {children}
     </button>

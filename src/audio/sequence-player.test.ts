@@ -207,15 +207,19 @@ describe('ToneSequencePlayer', () => {
     expect(sampler.playNote).toHaveBeenNthCalledWith(2, 130, '4n', 0.5, 0.45);
   });
 
-  it('hands a glided note to the voice that can move, not to the sampler', () => {
+  it('plays a glide as one moving note, never striking the starting pitch twice', () => {
     const sampler = createFakeSampler();
     const glideVoice = createFakeGlideVoice();
     const player = new ToneSequencePlayer(sampler, glideVoice);
 
     player.play(
       [
-        { frequency: 110, duration: '4n' },
-        { frequency: 130, duration: '4n', velocity: 0.45, glide: { fromHz: 110, seconds: 0.09 } },
+        {
+          frequency: 110,
+          duration: '4n',
+          glide: { toHz: 130, startsAfterSeconds: 0.5, glideSeconds: 0.09, holdSeconds: 1 },
+        },
+        { frequency: 130, duration: '4n', arrivesByGlide: true },
       ],
       120,
       'quarter',
@@ -223,24 +227,34 @@ describe('ToneSequencePlayer', () => {
     capturedCallback?.(0, 0);
     capturedCallback?.(0.5, 1);
 
-    expect(sampler.playNote).toHaveBeenCalledOnce();
+    // The sampler never sounds: the whole gesture belongs to the moving voice,
+    // and the arriving note is already ringing.
+    expect(sampler.playNote).not.toHaveBeenCalled();
+    expect(glideVoice.playGlide).toHaveBeenCalledOnce();
     expect(glideVoice.playGlide).toHaveBeenCalledWith({
       fromHz: 110,
       toHz: 130,
-      duration: '4n',
+      startsAfterSeconds: 0.5,
       glideSeconds: 0.09,
-      time: 0.5,
-      velocity: 0.45,
+      holdSeconds: 1,
+      time: 0,
+      velocity: undefined,
     });
   });
 
-  it('keeps a glided note silent too when the metronome leads', () => {
+  it('keeps a glide silent too when the metronome leads', () => {
     const sampler = createFakeSampler();
     const glideVoice = createFakeGlideVoice();
     const player = new ToneSequencePlayer(sampler, glideVoice);
 
     player.play(
-      [{ frequency: 130, duration: '4n', glide: { fromHz: 110, seconds: 0.09 } }],
+      [
+        {
+          frequency: 110,
+          duration: '4n',
+          glide: { toHz: 130, startsAfterSeconds: 0.5, glideSeconds: 0.09, holdSeconds: 1 },
+        },
+      ],
       120,
       'quarter',
       { silent: true },
@@ -267,5 +281,24 @@ describe('ToneSequencePlayer', () => {
 
     expect(sampler.playNote).toHaveBeenCalledOnce();
     expect(sampler.playSlurred).toHaveBeenCalledWith(130, '4n', 0.5, 0.45);
+  });
+
+  it('delays the whole sequence for the count-in instead of padding the loop', () => {
+    const player = new ToneSequencePlayer(createFakeSampler(), createFakeGlideVoice());
+
+    player.play([{ frequency: 110, duration: '4n' }], 120, 'quarter', { startAfterSeconds: 1.5 });
+
+    // The pattern holds only the notes; rests inside it would replay on every
+    // loop and pause the sequence before it came round again.
+    expect(capturedEvents).toEqual([0]);
+    expect(sequenceStart).toHaveBeenCalledWith(1.5);
+  });
+
+  it('starts at once when nothing is counted in', () => {
+    const player = new ToneSequencePlayer(createFakeSampler(), createFakeGlideVoice());
+
+    player.play([{ frequency: 110, duration: '4n' }], 120, 'quarter');
+
+    expect(sequenceStart).toHaveBeenCalledWith(0);
   });
 });

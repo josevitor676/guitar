@@ -188,7 +188,7 @@ describe('useNotePlayback', () => {
     expect(notes[1].velocity).toBeLessThan(notes[0].velocity);
   });
 
-  it('gives a bent note the pitch it travels from and a slower glide than a slide', async () => {
+  it('describes the glide on the note it departs from, with a bend slower than a slide', async () => {
     useMetronomeStore.setState({ enabled: false, bpm: 60, subdivision: 'quarter' });
     useUiStore.setState({ fretboardView: 'timeline' });
     useFretboardStore.setState({
@@ -206,9 +206,13 @@ describe('useNotePlayback', () => {
     });
 
     const [notes] = play.mock.calls[0];
-    expect(notes[0].glide).toBeUndefined();
-    expect(notes[1].glide.fromHz).toBeCloseTo(notes[0].frequency, 5);
-    expect(notes[3].glide.seconds).toBeLessThan(notes[1].glide.seconds);
+    // The gesture sits on the picked note, and the note it reaches is silent.
+    expect(notes[0].glide.toHz).toBeCloseTo(notes[1].frequency, 5);
+    expect(notes[1].arrivesByGlide).toBe(true);
+    expect(notes[1].glide).toBeUndefined();
+
+    // A bend travels slower than a slide.
+    expect(notes[2].glide.glideSeconds).toBeLessThan(notes[0].glide.glideSeconds);
   });
 
   it('never glides the first note, which has no pitch to travel from', async () => {
@@ -221,6 +225,32 @@ describe('useNotePlayback', () => {
       await result.current.play();
     });
 
-    expect(play.mock.calls[0][0][0].glide).toBeUndefined();
+    const [notes] = play.mock.calls[0];
+    expect(notes[0].glide).toBeUndefined();
+    expect(notes[0].arrivesByGlide).toBe(false);
+  });
+
+  it('holds the click back for the count, so it starts with the first note', async () => {
+    useMetronomeStore.setState({ enabled: true, bpm: 60 });
+    useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+
+    const { result } = renderHook(() => useNotePlayback());
+    await act(async () => {
+      await result.current.play();
+    });
+
+    // Three beats at 60 BPM is three seconds, for both the click and the notes.
+    expect(metronomeStart).toHaveBeenCalledWith(3);
+    expect(play.mock.calls[0][3].startAfterSeconds).toBeCloseTo(3, 5);
+  });
+
+  it('silences the click again on stop', async () => {
+    useMetronomeStore.setState({ enabled: true });
+    const { result } = renderHook(() => useNotePlayback());
+
+    act(() => result.current.stop());
+
+    expect(metronomeStop).toHaveBeenCalled();
+    expect(useMetronomeStore.getState().isPlaying).toBe(false);
   });
 });

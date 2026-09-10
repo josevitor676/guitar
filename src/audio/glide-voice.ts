@@ -34,19 +34,30 @@ export class ToneGlideVoice implements IGlideVoice {
     }).toDestination();
   }
 
-  playGlide({ fromHz, toHz, duration, glideSeconds, time, velocity }: GlideRequest): void {
-    // Start where the previous note left off, then travel to the target. The
-    // note is not struck again at the target: the pitch simply arrives there,
-    // which is what a slide and a bend do.
-    this.synth.frequency.setValueAtTime(fromHz, time ?? Tone.now());
-    this.synth.triggerAttackRelease(fromHz, duration, time, velocity);
+  playGlide({
+    fromHz,
+    toHz,
+    startsAfterSeconds,
+    glideSeconds,
+    holdSeconds,
+    time,
+    velocity,
+  }: GlideRequest): void {
+    const start = time ?? Tone.now();
+
+    // One note, struck once, that keeps sounding while its pitch travels. The
+    // string is picked at the first pitch and never picked again.
+    this.synth.frequency.setValueAtTime(fromHz, start);
+    this.synth.triggerAttack(fromHz, start, velocity);
 
     if (glideSeconds > 0) {
       // Exponential in frequency is linear in pitch, which is how a hand moving
       // at a steady speed actually sounds.
-      this.synth.frequency.exponentialRampTo(toHz, glideSeconds, time);
+      this.synth.frequency.exponentialRampTo(toHz, glideSeconds, start + startsAfterSeconds);
     } else {
-      this.synth.frequency.setValueAtTime(toHz, time ?? Tone.now());
+      this.synth.frequency.setValueAtTime(toHz, start + startsAfterSeconds);
     }
+
+    this.synth.triggerRelease(start + holdSeconds);
   }
 }

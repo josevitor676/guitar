@@ -4,6 +4,7 @@ import { useFretboardStore } from '../../state/fretboard-store';
 import { useMetronomeStore } from '../../state/metronome-store';
 import { usePlaybackStore } from '../../state/playback-store';
 import { useUiStore } from '../../state/ui-store';
+import { useExerciseStore } from '../../state/exercise-store';
 
 vi.mock('../../audio', () => ({
   sampler: { isLoaded: () => true, playNote: vi.fn() },
@@ -66,5 +67,34 @@ describe('PracticePanel', () => {
   it('renders the control bar', () => {
     render(<PracticePanel />);
     expect(screen.getByRole('button', { name: /come[cç]ar/i })).toBeInTheDocument();
+  });
+
+  describe('the exercise instructions', () => {
+    it('shows them on the exercises tab', () => {
+      useUiStore.setState({ activeTab: 'exercises' });
+      useExerciseStore.setState({ activeExerciseId: 'technique-hammer-on-ladder' });
+
+      render(<PracticePanel />);
+
+      expect(screen.getByTestId('exercise-how-to')).toBeInTheDocument();
+    });
+
+    it('leaves them behind on the practice tab, where no exercise is open', () => {
+      useUiStore.setState({ activeTab: 'practice' });
+      useExerciseStore.setState({ activeExerciseId: 'technique-hammer-on-ladder' });
+
+      render(<PracticePanel />);
+
+      expect(screen.queryByTestId('exercise-how-to')).not.toBeInTheDocument();
+    });
+
+    it('shows nothing for an exercise that has no instructions', () => {
+      useUiStore.setState({ activeTab: 'exercises' });
+      useExerciseStore.setState({ activeExerciseId: 'warmup-1234-low-e' });
+
+      render(<PracticePanel />);
+
+      expect(screen.queryByTestId('exercise-how-to')).not.toBeInTheDocument();
+    });
   });
 });

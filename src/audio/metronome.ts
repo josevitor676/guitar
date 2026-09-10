@@ -28,7 +28,7 @@ export class ToneMetronome implements IMetronome {
     }).toDestination();
   }
 
-  start(): void {
+  start(atSeconds = 0): void {
     this.loop?.dispose();
     this.pulseIndex = 0;
     this.loop = new Tone.Loop((time) => {
@@ -47,7 +47,7 @@ export class ToneMetronome implements IMetronome {
       }, time);
 
       this.pulseIndex += 1;
-    }, SUBDIVISION_DURATIONS[this.subdivision]).start(0);
+    }, SUBDIVISION_DURATIONS[this.subdivision]).start(atSeconds);
     Tone.Transport.start();
   }
 

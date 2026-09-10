@@ -71,3 +71,30 @@ describe('ProgressBar', () => {
     expect(bar.firstElementChild).toHaveStyle({ width: '0%' });
   });
 });
+
+describe('IconButton, switched on', () => {
+  it('draws itself filled, and says so to assistive technology', () => {
+    render(
+      <IconButton label="Metrônomo" active onClick={() => {}}>
+        <span aria-hidden="true">M</span>
+      </IconButton>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Metrônomo' });
+    expect(button.className).toContain('bg-accent');
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('keeps its own variant when switched off', () => {
+    render(
+      <IconButton label="Metrônomo" onClick={() => {}}>
+        <span aria-hidden="true">M</span>
+      </IconButton>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Metrônomo' });
+    expect(button.className).toContain('bg-surface');
+    expect(button.className).not.toContain('bg-accent');
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+  });
+});
