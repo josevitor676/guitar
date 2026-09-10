@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { suggestVoicings } from './chord-voicing-generator';
 import { identifyChord } from './chord-identification';
+import { fingerChord } from './chord-fingering';
 import { voicingSpan, voicingKey, ALL_STRINGS, isSounding, lowestFret } from './chord-voicing';
 import { STANDARD_TUNING } from '../music-theory/tuning';
 
@@ -62,12 +63,15 @@ describe('suggestVoicings', () => {
     expect(suggestVoicings({ root: 'G', intervals: [0, 4, 7], tuning: STANDARD_TUNING, limit: 5 })).toHaveLength(5);
   });
 
-  it('never lists a shape that is another shape with strings muted away', () => {
+  it('never lists a reduction of another shape that gains the player nothing', () => {
     const shapes = majorOf('G');
+    const bassOf = (voicing: (typeof shapes)[number]) =>
+      ALL_STRINGS.find((string) => isSounding(voicing[string]));
 
     for (const candidate of shapes) {
       for (const other of shapes) {
         if (candidate === other) continue;
+
         const sameWhereBothSound = ALL_STRINGS.every((string) => {
           const a = candidate[string];
           const b = other[string];
@@ -76,7 +80,19 @@ describe('suggestVoicings', () => {
         const otherSoundsMore = ALL_STRINGS.some(
           (string) => !isSounding(candidate[string]) && isSounding(other[string]),
         );
-        expect(sameWhereBothSound && otherSoundsMore).toBe(false);
+        if (!sameWhereBothSound || !otherSoundsMore) continue;
+
+        // Dropping strings is allowed to earn a place, but only by changing the
+        // bass — and so the chord — or by making the grip genuinely easier.
+        const changesTheBass = bassOf(candidate) !== bassOf(other);
+        const narrowerBar =
+          (fingerChord(other).barre ? 1 : 0) - (fingerChord(candidate).barre ? 1 : 0) > 0;
+        const fewerFingers =
+          new Set(fingerChord(other).fingers.map((f) => f.finger)).size -
+            new Set(fingerChord(candidate).fingers.map((f) => f.finger)).size >=
+          1;
+
+        expect(changesTheBass || narrowerBar || fewerFingers).toBe(true);
       }
     }
   });
@@ -110,6 +126,25 @@ describe('suggestVoicings', () => {
     // The E-shape barre at the third fret, and the A-shape at the tenth.
     expect(keys).toContain('3,5,5,4,3,3');
     expect(keys.some((key) => key.startsWith('10,10,12,12,12,10'))).toBe(true);
+  });
+
+  it('offers the smaller grips beside the barres, not only the six-string ones', () => {
+    const keys = majorOf('G').map(voicingKey);
+
+    // Four strings at the third position, and four at the fifth: the shapes a
+    // student reaches for long before they can hold a full barre.
+    expect(keys).toContain('muted,muted,5,4,3,3');
+    expect(keys).toContain('muted,muted,5,7,8,7');
+  });
+
+  it('never hides a chord behind its own inversion', () => {
+    // x-x-5-4-3-3 has G in the bass; x-5-5-4-3-3 has D. Muting the bass string
+    // makes a different chord, so neither can stand in for the other.
+    const shapes = majorOf('G');
+    const rootPosition = shapes.find((voicing) => voicingKey(voicing) === 'muted,muted,5,4,3,3');
+
+    expect(rootPosition).toBeDefined();
+    expect(identifyChord(rootPosition!, STANDARD_TUNING)?.isInversion).toBe(false);
   });
 
   it('still puts the open shape first, which is the one everybody learns', () => {

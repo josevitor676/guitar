@@ -1,6 +1,7 @@
 import type { StringNumber, Tuning } from '../music-theory/tuning';
 import { getNoteAt } from '../music-theory/notes';
 import { ALL_STRINGS, isSounding, voicingSpan, lowestFret, voicingKey } from './chord-voicing';
+import { fingerChord } from './chord-fingering';
 import type { ChordVoicing, StringPlay } from './chord-voicing';
 
 const PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -11,7 +12,7 @@ const WINDOW_FRETS = 4;
 const HIGHEST_WINDOW_START = 17;
 const MAX_MUTED = 2;
 /** How many shapes to keep from any one position, so the list walks the neck. */
-const PER_POSITION = 3;
+const PER_POSITION = 4;
 
 export interface VoicingSearch {
   root: string;
@@ -70,14 +71,26 @@ function hasAwkwardInnerMute(voicing: ChordVoicing): boolean {
  * the chord before they are combined: two or three frets per string rather than
  * every fret in the window.
  */
+/** How much easier one grip has to be to earn its own entry. */
+const FINGERS_SAVED_TO_MATTER = 2;
+const BARRE_STRINGS_SAVED_TO_MATTER = 2;
+
+/** The lowest-pitched string that sounds, which is the one carrying the bass. */
+function bassString(voicing: ChordVoicing): StringNumber | null {
+  return ALL_STRINGS.find((string) => isSounding(voicing[string])) ?? null;
+}
+
 /**
  * True when `lesser` is `fuller` with strings taken away and nothing else.
  *
- * Muting one string of a shape produces a technically different voicing that
- * the hand plays identically. Listing both fills the page with the same chord
- * over and over, which is what made the suggestions look repetitive.
+ * Muting the bass string is never merely taking a string away: it puts a
+ * different note underneath and so names a different chord. Dropping the sixth
+ * string of a G turns it into a G/D, and calling one a lesser copy of the other
+ * would hide a chord behind its own inversion.
  */
 function isSubsumedBy(lesser: ChordVoicing, fuller: ChordVoicing): boolean {
+  if (bassString(lesser) !== bassString(fuller)) return false;
+
   let strictlyFewer = false;
 
   for (const string of ALL_STRINGS) {
@@ -94,14 +107,47 @@ function isSubsumedBy(lesser: ChordVoicing, fuller: ChordVoicing): boolean {
   return strictlyFewer;
 }
 
-/** Drops every shape that is another shape with strings removed. */
+/**
+ * True when the smaller grip is worth listing beside the fuller one.
+ *
+ * Muting one string of a shape usually produces a voicing the hand plays
+ * identically, and listing both fills the page with the same chord over and
+ * over. But dropping strings can also turn a six-string barre into a
+ * four-string grip with no bar at all — a different chord to play, and usually
+ * the one a student can actually reach. That earns its place.
+ */
+function isWorthKeepingBesides(lesser: ChordVoicing, fuller: ChordVoicing): boolean {
+  const lesserGrip = fingerChord(lesser);
+  const fullerGrip = fingerChord(fuller);
+
+  // How wide the bar is, not merely whether there is one: laying the index
+  // across two strings and across six are different techniques, and the
+  // narrower grip is often the only one a student can reach.
+  const barWidth = (grip: typeof lesserGrip) =>
+    grip.barre ? Math.abs(grip.barre.fromString - grip.barre.toString) + 1 : 0;
+
+  if (barWidth(fullerGrip) - barWidth(lesserGrip) >= BARRE_STRINGS_SAVED_TO_MATTER) return true;
+
+  const fingersSaved =
+    new Set(fullerGrip.fingers.map((f) => f.finger)).size -
+    new Set(lesserGrip.fingers.map((f) => f.finger)).size;
+  return fingersSaved >= FINGERS_SAVED_TO_MATTER;
+}
+
+/** Drops shapes that are another shape with strings removed and nothing gained. */
 function keepFullestShapes(voicings: ChordVoicing[]): ChordVoicing[] {
   return voicings.filter(
-    (candidate) => !voicings.some((other) => other !== candidate && isSubsumedBy(candidate, other)),
+    (candidate) =>
+      !voicings.some(
+        (other) =>
+          other !== candidate &&
+          isSubsumedBy(candidate, other) &&
+          !isWorthKeepingBesides(candidate, other),
+      ),
   );
 }
 
-export function suggestVoicings({ root, intervals, tuning, limit = 24 }: VoicingSearch): ChordVoicing[] {
+export function suggestVoicings({ root, intervals, tuning, limit = 30 }: VoicingSearch): ChordVoicing[] {
   const rootSemitone = semitoneOf(root);
   if (rootSemitone < 0) return [];
 
@@ -162,20 +208,32 @@ export function suggestVoicings({ root, intervals, tuning, limit = 24 }: Voicing
   // Taking the best scores outright buries every shape past the third fret,
   // because a low position always scores better. Walking the neck is the point
   // of the list, so each position contributes its best few in turn.
-  const byPosition = new Map<number, ChordVoicing[]>();
+  //
+  // Position alone is not enough to group by: a six-string barre always
+  // outscores the four-string grip beside it, because muted strings are
+  // penalised, and the easier shape would never be shown. Full and partial
+  // grips are counted separately so both survive at every position.
+  const buckets = new Map<string, ChordVoicing[]>();
   for (const voicing of distinct) {
     const position = lowestFret(voicing) ?? 0;
-    const bucket = byPosition.get(position) ?? [];
+    const sounding = ALL_STRINGS.filter((string) => isSounding(voicing[string])).length;
+    const key = `${position}:${sounding >= 6 ? 'full' : 'partial'}`;
+
+    const bucket = buckets.get(key) ?? [];
     if (bucket.length < PER_POSITION) bucket.push(voicing);
-    byPosition.set(position, bucket);
+    buckets.set(key, bucket);
   }
 
-  const positions = [...byPosition.keys()].sort((a, b) => a - b);
-  const spread: ChordVoicing[] = [];
+  const orderedKeys = [...buckets.keys()].sort((a, b) => {
+    const [positionA] = a.split(':');
+    const [positionB] = b.split(':');
+    return Number(positionA) - Number(positionB) || a.localeCompare(b);
+  });
 
+  const spread: ChordVoicing[] = [];
   for (let rank = 0; rank < PER_POSITION; rank += 1) {
-    for (const position of positions) {
-      const voicing = byPosition.get(position)?.[rank];
+    for (const key of orderedKeys) {
+      const voicing = buckets.get(key)?.[rank];
       if (voicing) spread.push(voicing);
     }
   }
