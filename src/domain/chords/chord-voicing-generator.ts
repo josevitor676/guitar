@@ -7,7 +7,8 @@ const PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#
 
 /** Four frets is what a hand covers without shifting. */
 const WINDOW_FRETS = 4;
-const HIGHEST_WINDOW_START = 12;
+/** The neck runs to the 24th fret, and shapes are found for most of it. */
+const HIGHEST_WINDOW_START = 17;
 const MAX_MUTED = 2;
 /** How many shapes to keep from any one position, so the list walks the neck. */
 const PER_POSITION = 3;
@@ -31,8 +32,15 @@ function candidatesFor(
   windowStart: number,
 ): StringPlay[] {
   const options: StringPlay[] = ['muted'];
-  // The open string is always reachable, whatever position the hand is in.
-  const frets = windowStart === 0 ? [0, 1, 2, 3, 4] : [0, ...Array.from({ length: WINDOW_FRETS }, (_, i) => windowStart + i)];
+
+  // An open string only belongs to a shape held at the nut. Offering it in
+  // every position produces chords nobody plays — fret 15 with three strings
+  // ringing open is a G, and it is not a G shape.
+  const nearTheNut = windowStart <= 1;
+  const window = Array.from({ length: WINDOW_FRETS }, (_, index) => windowStart + index).filter(
+    (fret) => fret > 0,
+  );
+  const frets = nearTheNut ? [0, ...window] : window;
 
   for (const fret of frets) {
     const semitone = getNoteAt(tuning, { string, fret }).midi % 12;

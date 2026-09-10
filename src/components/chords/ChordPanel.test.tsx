@@ -29,7 +29,7 @@ describe('ChordPanel', () => {
     render(<ChordPanel />);
 
     expect(screen.getByTestId('chord-name')).toHaveTextContent('—');
-    expect(screen.queryByRole('button', { name: /nesta posição/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Usar .* nesta posição/ })).not.toBeInTheDocument();
   });
 
   it('forgets the answer as soon as the shape changes', () => {
@@ -99,7 +99,7 @@ describe('ChordPanel', () => {
     reveal();
 
     const before = { ...useChordStore.getState().voicing };
-    const suggestions = screen.getAllByRole('button', { name: /nesta posição/ });
+    const suggestions = screen.getAllByRole('button', { name: /^Usar .* nesta posição/ });
     fireEvent.click(suggestions[suggestions.length - 1]);
 
     expect(useChordStore.getState().voicing).not.toEqual(before);
@@ -189,6 +189,30 @@ describe('ChordPanel', () => {
       reveal();
 
       expect(screen.getByText(/n[ãa]o pertence firmemente a um tom/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('hearing a suggestion', () => {
+    it('offers a listen control on every suggested shape', () => {
+      useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
+      render(<ChordPanel />);
+      reveal();
+
+      const listen = screen.getAllByRole('button', { name: /Ouvir G.* nesta posição/ });
+      const use = screen.getAllByRole('button', { name: /Usar G.* nesta posição/ });
+      expect(listen).toHaveLength(use.length);
+    });
+
+    it('hears a shape without adopting it', () => {
+      useChordStore.getState().loadVoicing({ 6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3 });
+      render(<ChordPanel />);
+      reveal();
+
+      const before = { ...useChordStore.getState().voicing };
+      const listen = screen.getAllByRole('button', { name: /Ouvir G.* nesta posição/ });
+      fireEvent.click(listen[listen.length - 1]);
+
+      expect(useChordStore.getState().voicing).toEqual(before);
     });
   });
 });

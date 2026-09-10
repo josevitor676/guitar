@@ -92,4 +92,27 @@ describe('suggestVoicings', () => {
     const [first] = majorOf('G');
     expect(lowestFret(first) ?? 0).toBeLessThanOrEqual(3);
   });
+
+  it('never rings an open string in a shape held up the neck', () => {
+    // Fret 15 with three strings ringing open is a G, and it is not a G shape.
+    for (const voicing of majorOf('G')) {
+      const position = lowestFret(voicing) ?? 0;
+      if (position <= 4) continue;
+
+      const hasOpen = ALL_STRINGS.some((string) => voicing[string] === 0);
+      expect(hasOpen).toBe(false);
+    }
+  });
+
+  it('offers the barre shapes a player actually uses', () => {
+    const keys = majorOf('G').map(voicingKey);
+
+    // The E-shape barre at the third fret, and the A-shape at the tenth.
+    expect(keys).toContain('3,5,5,4,3,3');
+    expect(keys.some((key) => key.startsWith('10,10,12,12,12,10'))).toBe(true);
+  });
+
+  it('still puts the open shape first, which is the one everybody learns', () => {
+    expect(voicingKey(majorOf('G')[0])).toBe('3,2,0,0,0,3');
+  });
 });

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Play, RotateCcw, Search } from 'lucide-react';
+import { Play, RotateCcw, Search, Volume2 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { IconButton } from '../ui/IconButton';
 import { ChordNeck } from './ChordNeck';
@@ -114,18 +114,36 @@ export function ChordPanel() {
                 const named = identifyChord(suggestion, STANDARD_TUNING);
 
                 return (
-                  <button
-                    key={key}
-                    type="button"
-                    aria-label={`Usar ${named?.displayName ?? chord.displayName} nesta posição`}
-                    onClick={() => loadVoicing(suggestion)}
-                    className={`flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all duration-200 ${
-                      key === currentKey ? 'border-accent bg-accent-dim' : 'border-white/[0.06] hover:border-white/20'
-                    }`}
-                  >
-                    <span className="text-sm font-semibold text-accent">{named?.displayName ?? chord.displayName}</span>
-                    <ChordDiagram voicing={suggestion} />
-                  </button>
+                  <div key={key} className="group relative">
+                    <button
+                      type="button"
+                      aria-label={`Usar ${named?.displayName ?? chord.displayName} nesta posição`}
+                      onClick={() => loadVoicing(suggestion)}
+                      className={`flex w-full flex-col items-center gap-2 rounded-2xl border p-3 transition-all duration-200 ${
+                        key === currentKey ? 'border-accent bg-accent-dim' : 'border-white/[0.06] hover:border-white/20'
+                      }`}
+                    >
+                      <span className="text-sm font-semibold text-accent">
+                        {named?.displayName ?? chord.displayName}
+                      </span>
+                      <ChordDiagram voicing={suggestion} />
+                    </button>
+
+                    {/*
+                      Hearing a shape and choosing it are different intentions,
+                      so hearing gets its own control rather than firing on the
+                      hover itself — a list that plays chords as the mouse
+                      crosses it is unusable.
+                    */}
+                    <button
+                      type="button"
+                      aria-label={`Ouvir ${named?.displayName ?? chord.displayName} nesta posição`}
+                      onClick={() => void strum(suggestion)}
+                      className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-accent text-body opacity-0 transition-all duration-200 hover:bg-accent-soft focus:opacity-100 group-hover:opacity-100"
+                    >
+                      <Volume2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 );
               })}
             </div>
