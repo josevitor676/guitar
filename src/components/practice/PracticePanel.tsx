@@ -15,6 +15,8 @@ import { useResponsiveFretSpan } from '../../hooks/useResponsiveFretSpan';
 import { useUiStore } from '../../state/ui-store';
 import { usePlaybackStore } from '../../state/playback-store';
 import { useFretboardStore } from '../../state/fretboard-store';
+import { useSpeedTrainerStore } from '../../state/speed-trainer-store';
+import { loopsRemaining } from '../../domain/practice/speed-trainer';
 import { useExerciseStore } from '../../state/exercise-store';
 import { EXERCISE_CATALOG } from '../../domain/exercises/exercise-catalog';
 import type { FretboardView } from '../../state/ui-store';
@@ -31,6 +33,9 @@ export function PracticePanel() {
   const sequenceRunning = usePlaybackStore((state) => state.isPlaying);
   const direction = usePlaybackStore((state) => state.direction);
   const removeAt = useFretboardStore((state) => state.removeAt);
+  const training = useSpeedTrainerStore((state) => state.training);
+  const session = useSpeedTrainerStore((state) => state.session);
+  const lastResult = useSpeedTrainerStore((state) => state.lastResult);
   const timeline = useTimeline();
   const fretboardView = useUiStore((state) => state.fretboardView);
   const setFretboardView = useUiStore((state) => state.setFretboardView);
@@ -108,12 +113,43 @@ export function PracticePanel() {
         </p>
       )}
 
+      {/*
+        While the tempo is climbing, how far through the passage the student is
+        matters less than how many times round they still owe at this speed —
+        so the loop count takes the line, and the tempo sits beside it because
+        it is the number that keeps moving.
+      */}
       <div className="mb-2 flex items-center gap-3 text-xs text-text-secondary">
-        <span className="whitespace-nowrap">
-          {currentIndex === null ? `${total} notas` : `nota ${played} / ${total}`}
-        </span>
-        <ProgressBar value={played} max={total} label="Progresso da sequência" />
+        {session ? (
+          <span data-testid="trainer-readout" className="whitespace-nowrap">
+            {session.held
+              ? `segurando em ${session.bpm} BPM`
+              : `volta ${session.loopsDone + 1} de ${training.loopsPerStep} · ${session.bpm} BPM`}
+          </span>
+        ) : (
+          <span className="whitespace-nowrap">
+            {currentIndex === null ? `${total} notas` : `nota ${played} / ${total}`}
+          </span>
+        )}
+        {session && !session.held ? (
+          <ProgressBar
+            value={training.loopsPerStep - loopsRemaining(session, training)}
+            max={training.loopsPerStep}
+            label="Voltas até o próximo andamento"
+          />
+        ) : (
+          <ProgressBar value={played} max={total} label="Progresso da sequência" />
+        )}
       </div>
+
+      {lastResult && (
+        <p
+          data-testid="trainer-result"
+          className="mb-2 rounded-2xl border border-accent/40 bg-accent-dim px-4 py-2 text-xs text-text-primary"
+        >
+          Chegou a <strong>{lastResult.bpm} BPM</strong>. Começou em {lastResult.startBpm}.
+        </p>
+      )}
 
       <div ref={neckRef}>
         {fretboardView === 'grid' ? (

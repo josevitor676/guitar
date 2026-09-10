@@ -5,7 +5,7 @@ import { useChordStore } from '../../state/chord-store';
 vi.mock('../../audio', () => ({
   sampler: { isLoaded: () => true, playNote: vi.fn(), playSlurred: vi.fn() },
   metronome: { start: vi.fn(), stop: vi.fn(), setBpm: vi.fn(), setSubdivision: vi.fn(), onPulse: () => () => {} },
-  sequencePlayer: { play: vi.fn(), stop: vi.fn(), onNoteChange: () => () => {} },
+  sequencePlayer: { play: vi.fn(), stop: vi.fn(), setBpm: vi.fn(), onNoteChange: () => () => {} },
   glideVoice: { playGlide: vi.fn() },
   ensureAudioStarted: vi.fn().mockResolvedValue(undefined),
 }));

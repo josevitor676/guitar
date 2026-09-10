@@ -26,10 +26,14 @@ export function useNotePlayback() {
 
   useEffect(() => sequencePlayer.onNoteChange(setCurrentIndex), [setCurrentIndex]);
 
-  const play = useCallback(async () => {
+  const play = useCallback(async (atBpm?: number) => {
+    // The speed trainer opens a session and starts playing in one gesture, so
+    // the tempo it chose is passed in rather than read back from the store,
+    // which has not re-rendered yet.
+    const tempo = atBpm ?? bpm;
     setCurrentIndex(null);
     await ensureAudioStarted();
-    const secondsPerNote = SUBDIVISION_BEATS[subdivision] * (60 / bpm);
+    const secondsPerNote = SUBDIVISION_BEATS[subdivision] * (60 / tempo);
 
     const notes = sequence.map((position, index) => {
       const note = getNoteAt(STANDARD_TUNING, position);
@@ -63,9 +67,9 @@ export function useNotePlayback() {
       };
     });
     // With the metronome leading, the notes stay silent so the click is clear.
-    const countIn = countInSeconds(bpm);
+    const countIn = countInSeconds(tempo);
 
-    sequencePlayer.play(notes, bpm, subdivision, {
+    sequencePlayer.play(notes, tempo, subdivision, {
       silent: metronomeArmed,
       startAfterSeconds: countIn,
     });
@@ -73,7 +77,7 @@ export function useNotePlayback() {
     // The click belongs to playback: arming it only marks the beats on screen,
     // and it starts sounding when the sequence does.
     if (metronomeArmed) {
-      metronome.setBpm(bpm);
+      metronome.setBpm(tempo);
       metronome.setSubdivision(subdivision);
       // Held back with the sequence: the click belongs to the exercise, and
       // starting it under the count would put it out of step with the first note.

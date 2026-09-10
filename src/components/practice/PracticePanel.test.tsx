@@ -3,13 +3,14 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useMetronomeStore } from '../../state/metronome-store';
 import { usePlaybackStore } from '../../state/playback-store';
+import { useSpeedTrainerStore } from '../../state/speed-trainer-store';
 import { useUiStore } from '../../state/ui-store';
 import { useExerciseStore } from '../../state/exercise-store';
 
 vi.mock('../../audio', () => ({
   sampler: { isLoaded: () => true, playNote: vi.fn() },
   metronome: { start: vi.fn(), stop: vi.fn(), setBpm: vi.fn(), setSubdivision: vi.fn(), onPulse: () => () => {} },
-  sequencePlayer: { play: vi.fn(), stop: vi.fn(), onNoteChange: () => () => {} },
+  sequencePlayer: { play: vi.fn(), stop: vi.fn(), setBpm: vi.fn(), onNoteChange: () => () => {} },
   ensureAudioStarted: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -26,8 +27,11 @@ describe('PracticePanel', () => {
       ],
     });
     useMetronomeStore.setState({ bpm: 100, subdivision: 'quarter', isPlaying: false });
-    usePlaybackStore.setState({ currentIndex: null, isPlaying: false });
+    // direction included: a round trip turns two marked notes into three
+    // played ones, so leaving it set would follow a test into the next one.
+    usePlaybackStore.setState({ currentIndex: null, isPlaying: false, direction: 'sixthToFirst' });
     useUiStore.setState({ fretboardView: 'grid' });
+    useSpeedTrainerStore.setState({ session: null, lastResult: null });
   });
 
   it('shows the fret grid by default', () => {
@@ -179,6 +183,47 @@ describe('PracticePanel', () => {
         range.closest('[data-testid="practice-toolbar"]'),
       );
       expect(transport.closest('[data-testid="practice-toolbar"]')).not.toBeNull();
+    });
+  });
+
+  describe('while training speed', () => {
+    it('counts the loops towards the next tempo instead of the notes', () => {
+      useSpeedTrainerStore.setState({
+        training: { startBpm: 80, stepBpm: 5, loopsPerStep: 4, targetBpm: 140 },
+        session: { bpm: 95, loopsDone: 2, held: false, finished: false },
+      });
+
+      render(<PracticePanel />);
+
+      expect(screen.getByTestId('trainer-readout')).toHaveTextContent('volta 3 de 4');
+      expect(screen.getByTestId('trainer-readout')).toHaveTextContent('95 BPM');
+    });
+
+    it('says plainly that the climb is paused when the student held it', () => {
+      useSpeedTrainerStore.setState({
+        training: { startBpm: 80, stepBpm: 5, loopsPerStep: 4, targetBpm: 140 },
+        session: { bpm: 95, loopsDone: 2, held: true, finished: false },
+      });
+
+      render(<PracticePanel />);
+
+      expect(screen.getByTestId('trainer-readout')).toHaveTextContent(/segurando em 95 BPM/i);
+    });
+
+    it('reports where the climb ended once it is over', () => {
+      useSpeedTrainerStore.setState({ session: null, lastResult: { startBpm: 80, bpm: 140 } });
+
+      render(<PracticePanel />);
+
+      expect(screen.getByTestId('trainer-result')).toHaveTextContent(/140 BPM/);
+      expect(screen.getByTestId('trainer-result')).toHaveTextContent(/80/);
+    });
+
+    it('goes back to counting notes when no training is running', () => {
+      render(<PracticePanel />);
+
+      expect(screen.queryByTestId('trainer-readout')).not.toBeInTheDocument();
+      expect(screen.getByText(/2 notas/i)).toBeInTheDocument();
     });
   });
 });

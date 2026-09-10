@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Square, RotateCcw, BookmarkPlus } from 'lucide-react';
+import { Play, Square, RotateCcw, BookmarkPlus, Gauge } from 'lucide-react';
 import { IconButton } from '../ui/IconButton';
 import { Chip } from '../ui/Chip';
 import { MetronomeControls } from '../metronome/MetronomeControls';
@@ -10,6 +10,9 @@ import { useMetronome } from '../../hooks/useMetronome';
 import { useFretboardStore } from '../../state/fretboard-store';
 import { useExerciseStore } from '../../state/exercise-store';
 import { usePlaybackStore } from '../../state/playback-store';
+import { useSpeedTrainerStore } from '../../state/speed-trainer-store';
+import { useSpeedTrainer } from '../../hooks/useSpeedTrainer';
+import { SpeedTrainerSettings } from './SpeedTrainerSettings';
 import type { PlaybackDirection } from '../../domain/fretboard/fretboard-model';
 
 export function ControlBar() {
@@ -20,11 +23,24 @@ export function ControlBar() {
   const hasSelection = useFretboardStore((state) => state.selectedNotes.length > 0);
   const saveCurrentSelection = useExerciseStore((state) => state.saveCurrentSelection);
 
+  const trainerOn = useSpeedTrainerStore((state) => state.enabled);
+  const setTrainerOn = useSpeedTrainerStore((state) => state.setEnabled);
+  const activeExerciseId = useExerciseStore((state) => state.activeExerciseId);
+
   const direction = usePlaybackStore((state) => state.direction);
   const setDirection = usePlaybackStore((state) => state.setDirection);
 
   const [isNaming, setIsNaming] = useState(false);
   const [name, setName] = useState('');
+
+  // Stopping ends the training session too, which is where the tempo reached
+  // becomes the record for the exercise.
+  const stopEverything = () => {
+    stop();
+    countIn.clear();
+    useSpeedTrainerStore.getState().endSession(activeExerciseId);
+  };
+  useSpeedTrainer({ stop: stopEverything });
 
   const closeForm = () => {
     setIsNaming(false);
@@ -48,13 +64,18 @@ export function ControlBar() {
         variant="primary"
         onClick={() => {
           if (isPlaying) {
-            stop();
-            countIn.clear();
+            stopEverything();
             return;
           }
           // Playback is already scheduled to begin after the count; this shows it.
           countIn.start();
-          void play();
+          if (!trainerOn) return void play();
+
+          // The trainer chooses the tempo, so the session opens first and its
+          // starting tempo is handed straight to playback.
+          const { training, startSession } = useSpeedTrainerStore.getState();
+          startSession();
+          void play(training.startBpm);
         }}
       >
         {countIn.count !== null ? (
@@ -101,6 +122,14 @@ export function ControlBar() {
       </Chip>
 
       <IconButton
+        label="Treinador de velocidade"
+        onClick={() => setTrainerOn(!trainerOn)}
+        active={trainerOn}
+      >
+        <Gauge className="h-4 w-4" />
+      </IconButton>
+
+      <IconButton
         label="Salvar sequência"
         onClick={() => setIsNaming(true)}
         disabled={!hasSelection}
@@ -123,6 +152,8 @@ export function ControlBar() {
 
       <MetronomeControls />
       </div>
+
+      {trainerOn && <SpeedTrainerSettings />}
 
       {isNaming && (
         <form

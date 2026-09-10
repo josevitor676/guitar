@@ -65,5 +65,8 @@ export interface ISequencePlayer {
     options?: { silent?: boolean; startAfterSeconds?: number },
   ): void;
   stop(): void;
+  /** Retunes the running sequence. The speed trainer raises the tempo between
+   *  loops, and restarting the sequence to do it would cut the loop short. */
+  setBpm(bpm: number): void;
   onNoteChange(callback: (index: number) => void): () => void;
 }
