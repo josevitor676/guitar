@@ -375,42 +375,70 @@ describe('ControlBar', () => {
     });
   });
 
-  describe('moving an exercise along the neck', () => {
-    const shiftUp = () => fireEvent.click(screen.getByRole('button', { name: /uma casa para frente/i }));
+  describe('walking an exercise up the neck', () => {
+    const extend = () => fireEvent.click(screen.getByRole('button', { name: /repetir uma casa acima/i }));
+    const shrink = () => fireEvent.click(screen.getByRole('button', { name: /tirar a última casa/i }));
 
-    it('moves every note of the sequence one fret', () => {
-      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }, { string: 5, fret: 5 }] });
+    it('plays the shape again a fret further up, keeping the original', () => {
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 3 }, { string: 5, fret: 5 }]);
       render(<ControlBar />);
 
-      shiftUp();
+      extend();
 
-      expect(useFretboardStore.getState().selectedNotes.map((n) => n.fret)).toEqual([4, 6]);
+      expect(useFretboardStore.getState().selectedNotes.map((n) => n.fret)).toEqual([3, 5, 4, 6]);
     });
 
-    it('will not move a sequence off the end of the neck', () => {
-      useFretboardStore.setState({ selectedNotes: [{ string: 1, fret: 24 }] });
+    it('adds one more position on each press, and shows how many', () => {
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 3 }]);
       render(<ControlBar />);
 
-      expect(screen.getByRole('button', { name: /uma casa para frente/i })).toBeDisabled();
+      extend();
+      extend();
+
+      expect(useFretboardStore.getState().selectedNotes.map((n) => n.fret)).toEqual([3, 4, 5]);
+      expect(screen.getByText('+2 casas')).toBeInTheDocument();
+    });
+
+    it('takes the last position back', () => {
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 3 }]);
+      render(<ControlBar />);
+
+      extend();
+      shrink();
+
+      expect(useFretboardStore.getState().selectedNotes.map((n) => n.fret)).toEqual([3]);
+    });
+
+    it('offers nothing to take back before anything was added', () => {
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 3 }]);
+      render(<ControlBar />);
+
+      expect(screen.getByRole('button', { name: /tirar a última casa/i })).toBeDisabled();
+    });
+
+    it('will not run the repetition off the end of the neck', () => {
+      useFretboardStore.getState().loadSequence([{ string: 1, fret: 24 }]);
+      render(<ControlBar />);
+
+      expect(screen.getByRole('button', { name: /repetir uma casa acima/i })).toBeDisabled();
     });
 
     it('says nothing while the neck still matches the exercise', () => {
-      useExerciseStore.setState({ activeExerciseId: 'warmup-1234-low-e' });
-      useFretboardStore.setState({
-        selectedNotes: EXERCISE_CATALOG.find((e) => e.id === 'warmup-1234-low-e')!.positions,
-      });
+      const exercise = EXERCISE_CATALOG.find((e) => e.id === 'warmup-1234-low-e')!;
+      useExerciseStore.setState({ activeExerciseId: exercise.id });
+      useFretboardStore.getState().loadSequence(exercise.positions);
       render(<ControlBar />);
 
       expect(screen.queryByText(/exerc[ií]cio alterado/i)).not.toBeInTheDocument();
     });
 
-    it('offers to keep the change once the exercise has been moved', () => {
+    it('offers to keep the change once the exercise has grown', () => {
       const exercise = EXERCISE_CATALOG.find((e) => e.id === 'warmup-1234-low-e')!;
       useExerciseStore.setState({ activeExerciseId: exercise.id });
-      useFretboardStore.setState({ selectedNotes: exercise.positions });
+      useFretboardStore.getState().loadSequence(exercise.positions);
       render(<ControlBar />);
 
-      shiftUp();
+      extend();
 
       expect(screen.getByText(/exerc[ií]cio alterado/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /salvar como novo/i })).toBeInTheDocument();
@@ -420,47 +448,45 @@ describe('ControlBar', () => {
     it('does not offer to overwrite a catalogue exercise', () => {
       const exercise = EXERCISE_CATALOG.find((e) => e.id === 'warmup-1234-low-e')!;
       useExerciseStore.setState({ activeExerciseId: exercise.id });
-      useFretboardStore.setState({ selectedNotes: exercise.positions });
+      useFretboardStore.getState().loadSequence(exercise.positions);
       render(<ControlBar />);
 
-      shiftUp();
+      extend();
 
       expect(screen.queryByRole('button', { name: /salvar altera[cç][õo]es/i })).not.toBeInTheDocument();
     });
 
     it('overwrites the student’s own exercise in place', () => {
-      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 3 }]);
       const saved = useExerciseStore.getState().saveCurrentSelection('Exercício X')!;
       render(<ControlBar />);
 
-      shiftUp();
+      extend();
       fireEvent.click(screen.getByRole('button', { name: /salvar altera[cç][õo]es/i }));
 
       expect(
-        useExerciseStore.getState().userExercises.find((e) => e.id === saved.id)!.positions[0].fret,
-      ).toBe(4);
+        useExerciseStore.getState().userExercises.find((e) => e.id === saved.id)!.positions,
+      ).toHaveLength(2);
       expect(screen.queryByText(/exerc[ií]cio alterado/i)).not.toBeInTheDocument();
     });
 
     it('puts the exercise back the way it was on undo', () => {
       const exercise = EXERCISE_CATALOG.find((e) => e.id === 'warmup-1234-low-e')!;
       useExerciseStore.setState({ activeExerciseId: exercise.id });
-      useFretboardStore.setState({ selectedNotes: exercise.positions });
+      useFretboardStore.getState().loadSequence(exercise.positions);
       render(<ControlBar />);
 
-      shiftUp();
+      extend();
       fireEvent.click(screen.getByRole('button', { name: /desfazer/i }));
 
-      expect(useFretboardStore.getState().selectedNotes.map((n) => n.fret)).toEqual(
-        exercise.positions.map((p) => p.fret),
-      );
+      expect(useFretboardStore.getState().selectedNotes).toHaveLength(exercise.positions.length);
     });
 
     it('says nothing in free practice, where there is no exercise to change', () => {
-      useFretboardStore.setState({ selectedNotes: [{ string: 6, fret: 3 }] });
+      useFretboardStore.getState().loadSequence([{ string: 6, fret: 3 }]);
       render(<ControlBar />);
 
-      shiftUp();
+      extend();
 
       expect(screen.queryByText(/exerc[ií]cio alterado/i)).not.toBeInTheDocument();
     });

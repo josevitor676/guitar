@@ -255,23 +255,26 @@ describe('useExerciseStore', () => {
 
     it('writes the notes now on the neck over the exercise that is open', () => {
       const saved = saveOne();
-      useFretboardStore.getState().transposeSelection(1);
+      useFretboardStore.getState().extendPattern(1);
 
       useExerciseStore.getState().updateActiveUserExercise();
 
       const updated = useExerciseStore.getState().userExercises.find((e) => e.id === saved!.id);
-      expect(updated!.positions.map((p) => p.fret)).toEqual([4, 6]);
+      expect(updated!.positions.map((p) => p.fret)).toEqual([3, 5, 4, 6]);
     });
 
     it('keeps the change after a reload, or it was never saved at all', () => {
       saveOne();
-      useFretboardStore.getState().transposeSelection(2);
+      useFretboardStore.getState().extendPattern(1);
+      useFretboardStore.getState().extendPattern(1);
       useExerciseStore.getState().updateActiveUserExercise();
 
       useExerciseStore.setState({ userExercises: [] });
       useExerciseStore.getState().hydrateUserExercises();
 
-      expect(useExerciseStore.getState().userExercises[0].positions[0].fret).toBe(5);
+      expect(useExerciseStore.getState().userExercises[0].positions.map((p) => p.fret)).toEqual([
+        3, 5, 4, 6, 5, 7,
+      ]);
     });
 
     it('takes the tempo the student is working at now', () => {
@@ -287,7 +290,7 @@ describe('useExerciseStore', () => {
     // has to become an exercise of their own.
     it('refuses to overwrite a catalogue exercise', () => {
       useExerciseStore.getState().selectExercise('warmup-1234-low-e');
-      useFretboardStore.getState().transposeSelection(1);
+      useFretboardStore.getState().extendPattern(1);
 
       expect(useExerciseStore.getState().updateActiveUserExercise()).toBeNull();
       expect(useExerciseStore.getState().userExercises).toEqual([]);

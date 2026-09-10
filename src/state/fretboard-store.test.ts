@@ -114,35 +114,87 @@ describe('useFretboardStore', () => {
     });
   });
 
-  describe('transposeSelection', () => {
-    it('moves the whole sequence along the neck', () => {
-      useFretboardStore.getState().loadSequence([
-        { string: 6, fret: 3 },
-        { string: 5, fret: 5 },
+  describe('extendPattern', () => {
+    const pattern = [
+      { string: 6 as const, fret: 5 },
+      { string: 5 as const, fret: 7 },
+    ];
+
+    it('plays the shape again a fret further up, keeping the original', () => {
+      useFretboardStore.getState().loadSequence(pattern);
+
+      useFretboardStore.getState().extendPattern(1);
+
+      expect(useFretboardStore.getState().selectedNotes.map((n) => n.fret)).toEqual([5, 7, 6, 8]);
+    });
+
+    it('adds one more position each time', () => {
+      useFretboardStore.getState().loadSequence(pattern);
+
+      useFretboardStore.getState().extendPattern(1);
+      useFretboardStore.getState().extendPattern(1);
+
+      expect(useFretboardStore.getState().selectedNotes.map((n) => n.fret)).toEqual([
+        5, 7, 6, 8, 7, 9,
       ]);
-
-      useFretboardStore.getState().transposeSelection(1);
-
-      expect(useFretboardStore.getState().selectedNotes.map((note) => note.fret)).toEqual([4, 6]);
     });
 
-    it('refuses a move that would push a note off the neck, rather than bending the shape', () => {
-      useFretboardStore.getState().loadSequence([{ string: 1, fret: 0 }]);
+    it('takes the last position back', () => {
+      useFretboardStore.getState().loadSequence(pattern);
+      useFretboardStore.getState().extendPattern(1);
+      useFretboardStore.getState().extendPattern(1);
 
-      useFretboardStore.getState().transposeSelection(-1);
+      useFretboardStore.getState().extendPattern(-1);
 
-      expect(useFretboardStore.getState().selectedNotes).toEqual([{ string: 1, fret: 0 }]);
+      expect(useFretboardStore.getState().selectedNotes.map((n) => n.fret)).toEqual([5, 7, 6, 8]);
     });
 
-    it('brings the window with it, so the sequence does not move out of sight', () => {
+    it('never eats into the pattern itself', () => {
+      useFretboardStore.getState().loadSequence(pattern);
+
+      useFretboardStore.getState().extendPattern(-1);
+
+      expect(useFretboardStore.getState().selectedNotes).toHaveLength(2);
+    });
+
+    it('refuses a repetition that would run off the end of the neck', () => {
+      useFretboardStore.getState().loadSequence([{ string: 1, fret: 24 }]);
+
+      useFretboardStore.getState().extendPattern(1);
+
+      expect(useFretboardStore.getState().selectedNotes).toHaveLength(1);
+    });
+
+    it('brings the window with it, so the new position is not off screen', () => {
       useFretboardStore.setState({ minFret: 1, maxFret: 7, selectedNotes: [] });
       useFretboardStore.getState().loadSequence([{ string: 6, fret: 7 }]);
 
-      useFretboardStore.getState().transposeSelection(1);
+      useFretboardStore.getState().extendPattern(1);
 
       const { minFret, maxFret } = useFretboardStore.getState();
       expect(8).toBeGreaterThanOrEqual(minFret);
       expect(8).toBeLessThanOrEqual(maxFret);
+    });
+
+    // Once the student edits by hand, what is on the neck is the new pattern.
+    // Extending from the old one would resurrect notes they just removed.
+    it('takes an edited sequence as the new pattern', () => {
+      useFretboardStore.getState().loadSequence(pattern);
+      useFretboardStore.getState().extendPattern(1);
+
+      useFretboardStore.getState().appendNote({ string: 4, fret: 9 });
+      useFretboardStore.getState().extendPattern(-1);
+
+      expect(useFretboardStore.getState().selectedNotes).toHaveLength(5);
+    });
+
+    it('starts counting again from an edited sequence', () => {
+      useFretboardStore.getState().loadSequence(pattern);
+      useFretboardStore.getState().removeAt(1);
+
+      useFretboardStore.getState().extendPattern(1);
+
+      expect(useFretboardStore.getState().selectedNotes.map((n) => n.fret)).toEqual([5, 6]);
     });
   });
 
