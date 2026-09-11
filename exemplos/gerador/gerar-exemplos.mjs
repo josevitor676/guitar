@@ -19,6 +19,14 @@ const STRING_COUNT = 6;
 const LINE_GAP = 26;
 const NOTE_GAP = 54;
 const LEFT_PAD = 104;
+/**
+ * Not every typeface's digits survive the reader. Measured on these sheets,
+ * DejaVu Sans draws a 6 that comes back as a 3 and DejaVu Serif one that
+ * comes back as a 5, while Ubuntu and the monospaced faces read clean — so
+ * the fixtures are drawn in a face whose digits are known to read, and a
+ * sheet carrying every digit keeps it that way.
+ */
+const DIGIT_FONT = 'Ubuntu, "DejaVu Sans Mono", Arial, sans-serif';
 
 /** A note as `corda:casa`, the same shape the ground truth uses. */
 const note = (string, fret) => ({ string, fret });
@@ -55,7 +63,7 @@ function systemHtml(notes) {
       const halfWidth = text.length * 9 + 4;
       return `<rect x="${x - halfWidth}" y="${y - 13}" width="${halfWidth * 2}" height="26" fill="#fff" />
               <text x="${x}" y="${y + 9}" text-anchor="middle"
-                    font-family="DejaVu Sans, Arial, sans-serif" font-size="26" fill="#111">${text}</text>`;
+                    font-family="${DIGIT_FONT}" font-size="26" fill="#111">${text}</text>`;
     })
     .join('');
 
@@ -63,11 +71,11 @@ function systemHtml(notes) {
     <rect width="100%" height="100%" fill="#fff" />
     ${staff}
     <text x="${width / 2}" y="${staffBottom + 26}" text-anchor="middle"
-          font-family="DejaVu Sans" font-size="13" fill="#111" font-style="italic">mf  sim.</text>
+          font-family="${DIGIT_FONT}" font-size="13" fill="#111" font-style="italic">mf  sim.</text>
     ${lines}
-    <text x="22" y="${tabTop + LINE_GAP * 1.2}" font-family="DejaVu Sans" font-size="17" fill="#111">T</text>
-    <text x="22" y="${tabTop + LINE_GAP * 2.5}" font-family="DejaVu Sans" font-size="17" fill="#111">A</text>
-    <text x="22" y="${tabTop + LINE_GAP * 3.8}" font-family="DejaVu Sans" font-size="17" fill="#111">B</text>
+    <text x="22" y="${tabTop + LINE_GAP * 1.2}" font-family="${DIGIT_FONT}" font-size="17" fill="#111">T</text>
+    <text x="22" y="${tabTop + LINE_GAP * 2.5}" font-family="${DIGIT_FONT}" font-size="17" fill="#111">A</text>
+    <text x="22" y="${tabTop + LINE_GAP * 3.8}" font-family="${DIGIT_FONT}" font-size="17" fill="#111">B</text>
     ${digits}
   </svg>`;
 }
@@ -93,6 +101,33 @@ const SHEETS = [
     systems: [
       [note(2, 4), ...times(2, [note(2, 7), note(2, 5)]), note(2, 7)],
       [note(2, 5), note(2, 9), note(2, 7), note(2, 5), note(2, 7), note(2, 9)],
+    ],
+  },
+  {
+    file: 'exemplo-13-corda-solta.png',
+    // An arpeggio pattern that opens on the open D string and leans on the
+    // digit 6 — the two things no earlier fixture covered.
+    systems: [
+      [note(4, 0), note(1, 6), note(2, 8), note(3, 7), note(5, 8), note(1, 6), note(2, 8), note(3, 7)],
+      [note(5, 6), note(1, 6), note(2, 8), note(3, 7), note(1, 9), note(1, 8), note(1, 6), note(2, 8)],
+    ],
+  },
+  {
+    file: 'exemplo-14-corda-solta.pdf',
+    pdf: true,
+    systems: [
+      [note(4, 0), note(1, 6), note(2, 8), note(3, 7), note(5, 8), note(1, 6), note(2, 8), note(3, 7)],
+      [note(5, 6), note(1, 6), note(2, 8), note(3, 7), note(1, 9), note(1, 8), note(1, 6), note(2, 8)],
+    ],
+  },
+  {
+    file: 'exemplo-15-todos-os-digitos.png',
+    // Every digit and every two-digit fret, so a typeface the reader cannot
+    // read can never again slip into the fixtures unnoticed.
+    systems: [
+      [0, 1, 2, 3, 4, 5].map((fret, i) => note(((i % 6) + 1), fret)),
+      [6, 7, 8, 9, 10, 11].map((fret, i) => note(((i % 6) + 1), fret)),
+      [12, 6, 16, 6, 0, 6].map((fret, i) => note(((i % 6) + 1), fret)),
     ],
   },
   {
