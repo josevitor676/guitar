@@ -59,6 +59,15 @@ describe('tabSheetSvg', () => {
     expect(svg).not.toContain('<b>');
   });
 
+  // A three-note exercise makes a stave a couple of hundred pixels wide, and
+  // the title is longer than that: the page has to fit what is written on it.
+  it('is never narrower than its own heading', () => {
+    const longTitle = { ...sheet, title: 'Escala Maior de Dó em posição aberta, subindo e descendo' };
+    const width = Number(/width="(\d+)"/.exec(tabSheetSvg(longTitle))![1]);
+
+    expect(width).toBeGreaterThan(longTitle.title.length * 10);
+  });
+
   it('draws six string lines per system, which is what makes it tablature', () => {
     const svg = tabSheetSvg(sheet);
     expect(svg.match(/data-string-line/g)).toHaveLength(6);
