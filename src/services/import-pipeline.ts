@@ -11,7 +11,8 @@ import {
 import { rasterizeFile } from './rasterize';
 import { withDigitReader } from './ocr';
 import { cropDigit } from './crop';
-import { toGrayImage } from './grayscale';
+import { toGrayImage, toCanvas } from './grayscale';
+import { detectSkew, deskew } from '../domain/import/deskew';
 
 export const NO_TAB_FOUND_MESSAGE =
   'Não encontrei uma tablatura nesse arquivo. Tente uma imagem mais nítida, ' +
@@ -65,7 +66,17 @@ export async function importTabFromFile(
   await withDigitReader(async ({ readDigits, readSlurInContext }) => {
     for (const [pageIndex, canvas] of pages.entries()) {
       const pageLabel = pages.length > 1 ? ` (página ${pageIndex + 1} de ${pages.length})` : '';
-      const gray = grayFromCanvas(canvas);
+      // A photographed sheet is never quite square to the camera, and the
+      // line detector looks for ink that runs along a row: a degree and a half
+      // of tilt is enough to smear every line across several rows and leave it
+      // finding no tablature at all. Straightening happens before anything is
+      // measured, and the page the digits are cut from is the straightened one,
+      // or the boxes would be read off one image and cropped from another.
+      const asPhotographed = grayFromCanvas(canvas);
+      const skew = detectSkew(asPhotographed);
+      const page = skew === 0 ? canvas : toCanvas(deskew(asPhotographed, skew));
+      const gray = skew === 0 ? asPhotographed : grayFromCanvas(page);
+
       const systems = detectTabSystems(gray);
       systemsSeen += systems.length;
 
@@ -92,7 +103,7 @@ export async function importTabFromFile(
 
         const span = mergeBoxes([before.box, middle, after.box]);
         const read = await readSlurInContext(
-          cropDigit(canvas, span, scaleForBox(span, OCR_TARGET_DIGIT_HEIGHT), OCR_PADDING),
+          cropDigit(page, span, scaleForBox(span, OCR_TARGET_DIGIT_HEIGHT), OCR_PADDING),
         );
         const letter = read
           .map((token) => token.text)
@@ -107,7 +118,7 @@ export async function importTabFromFile(
           fraction: (pageIndex + boxIndex / Math.max(1, boxes.length)) / pages.length,
         });
 
-        const crop = cropDigit(canvas, box, scaleForBox(box, OCR_TARGET_DIGIT_HEIGHT), OCR_PADDING);
+        const crop = cropDigit(page, box, scaleForBox(box, OCR_TARGET_DIGIT_HEIGHT), OCR_PADDING);
 
         // The crop holds exactly one mark, so its text is whatever came back,
         // and its position on the page is the box it was cut from. A crop the

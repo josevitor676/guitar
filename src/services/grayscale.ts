@@ -19,3 +19,30 @@ export function toGrayImage(imageData: ImageData): GrayImage {
 
   return { data: gray, width, height };
 }
+
+/**
+ * Paints a grey image back onto a canvas, which is what the OCR crops are cut
+ * from. Going back through a canvas rather than keeping two copies of the page
+ * means the straightened image the detector measures and the one the reader
+ * sees are the same pixels.
+ */
+export function toCanvas({ data, width, height }: GrayImage): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext('2d');
+  if (!context) return canvas;
+
+  const image = context.createImageData(width, height);
+  for (let i = 0; i < data.length; i += 1) {
+    const offset = i * 4;
+    image.data[offset] = data[i];
+    image.data[offset + 1] = data[i];
+    image.data[offset + 2] = data[i];
+    image.data[offset + 3] = 255;
+  }
+  context.putImageData(image, 0, 0);
+
+  return canvas;
+}

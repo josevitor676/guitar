@@ -79,3 +79,36 @@ describe('progressionsFor', () => {
     }
   });
 });
+
+describe('how the key is spelled', () => {
+  // F major has one flat. Its fourth degree is Bb: spelling it A# would use
+  // the letter A twice and skip B, which no key signature does.
+  it('writes the fourth degree of F major as Bb', () => {
+    const chords = diatonicChords({ tonic: 'F', mode: 'major' });
+    expect(chords.map((chord) => chord.root)).toEqual(['F', 'G', 'A', 'Bb', 'C', 'D', 'E']);
+  });
+
+  it('gives every key seven different letters', () => {
+    for (const tonic of ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'G', 'D', 'A', 'E', 'B', 'F#']) {
+      const letters = diatonicChords({ tonic, mode: 'major' }).map((chord) => chord.root[0]);
+      expect(new Set(letters).size, `${tonic} maior`).toBe(7);
+    }
+  });
+
+  it('writes a minor key by its own signature', () => {
+    const chords = diatonicChords({ tonic: 'G', mode: 'minor' });
+    expect(chords.map((chord) => chord.root)).toEqual(['G', 'A', 'Bb', 'C', 'D', 'Eb', 'F']);
+  });
+
+  it('reads a chord written with a flat as easily as one written with a sharp', () => {
+    expect(keyForChord('Bb', '')).toEqual({ tonic: 'Bb', mode: 'major' });
+    expect(keyForChord('A#', '')).toEqual({ tonic: 'A#', mode: 'major' });
+  });
+
+  it('names the key a dominant seventh points at the way that key is written', () => {
+    // C7 wants to become F, and F is a flat key.
+    expect(keyForChord('C', '7')).toEqual({ tonic: 'F', mode: 'major' });
+    // F7 wants Bb, not A#.
+    expect(keyForChord('F', '7')).toEqual({ tonic: 'Bb', mode: 'major' });
+  });
+});

@@ -1,6 +1,8 @@
 import { STANDARD_TUNING } from '../../domain/music-theory/tuning';
 import type { StringNumber } from '../../domain/music-theory/tuning';
 import { getNoteAt, getPitchClass } from '../../domain/music-theory/notes';
+import { spell, semitoneOfPitchClass } from '../../domain/music-theory/spelling';
+import type { Accidental } from '../../domain/music-theory/spelling';
 import { isSounding } from '../../domain/chords/chord-voicing';
 import type { ChordVoicing } from '../../domain/chords/chord-voicing';
 
@@ -19,12 +21,22 @@ const DISPLAY_STRINGS: StringNumber[] = [1, 2, 3, 4, 5, 6];
 
 interface ChordNeckProps {
   voicing: ChordVoicing;
+  /**
+   * How the chord on the neck is written. A B flat chord whose notes were
+   * labelled A#, D, F would name the same note two ways on one screen.
+   */
+  accidental?: Accidental;
   onToggleFret: (string: StringNumber, fret: number) => void;
   onToggleOpen: (string: StringNumber) => void;
 }
 
 /** The neck the student builds a chord on: one note per string, plus open and muted. */
-export function ChordNeck({ voicing, onToggleFret, onToggleOpen }: ChordNeckProps) {
+export function ChordNeck({
+  voicing,
+  accidental = 'sharp',
+  onToggleFret,
+  onToggleOpen,
+}: ChordNeckProps) {
   const gridHeight = DISPLAY_STRINGS.length * ROW_HEIGHT;
 
   return (
@@ -100,7 +112,7 @@ export function ChordNeck({ voicing, onToggleFret, onToggleOpen }: ChordNeckProp
                             : 'border border-transparent text-transparent group-hover:border-edge-strong'
                         }`}
                       >
-                        {note.pitchClass}
+                        {spell(semitoneOfPitchClass(note.pitchClass), accidental)}
                       </span>
                     </button>
                   );
