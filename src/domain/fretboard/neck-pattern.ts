@@ -11,11 +11,14 @@ const HIGHEST_FRET = 24;
  * in place would interleave the positions instead, which is a different
  * exercise and a much harder one to read.
  */
-export function extendedSequence(base: FretPosition[], extensions: number): FretPosition[] {
-  const passes = Array.from({ length: extensions + 1 }, (_, step) =>
+export function patternBlocks(base: FretPosition[], extensions: number): FretPosition[][] {
+  return Array.from({ length: extensions + 1 }, (_, step) =>
     base.map((position) => ({ ...position, fret: position.fret + step })),
   );
-  return passes.flat();
+}
+
+export function extendedSequence(base: FretPosition[], extensions: number): FretPosition[] {
+  return patternBlocks(base, extensions).flat();
 }
 
 /** Whether one more repetition would still land on the neck. */
