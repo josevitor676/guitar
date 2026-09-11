@@ -1,4 +1,4 @@
-const PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+import { spell, accidentalFor, semitoneOfPitchClass, spellDegree } from '../music-theory/spelling';
 
 export type Mode = 'major' | 'minor';
 
@@ -61,7 +61,7 @@ const NAMED_PROGRESSIONS: Record<Mode, { name: string; degrees: string[] }[]> = 
 };
 
 function semitoneOf(pitchClass: string): number {
-  return PITCH_CLASSES.indexOf(pitchClass);
+  return semitoneOfPitchClass(pitchClass);
 }
 
 /**
@@ -78,7 +78,10 @@ export function keyForChord(root: string, symbol: string): Key | null {
 
   if (MAJOR_LIKE.has(symbol)) return { tonic: root, mode: 'major' };
   if (MINOR_LIKE.has(symbol)) return { tonic: root, mode: 'minor' };
-  if (DOMINANT_LIKE.has(symbol)) return { tonic: PITCH_CLASSES[(rootSemitone + 5) % 12], mode: 'major' };
+  if (DOMINANT_LIKE.has(symbol)) {
+    const tonicSemitone = (rootSemitone + 5) % 12;
+    return { tonic: spell(tonicSemitone, accidentalFor(tonicSemitone, 'major')), mode: 'major' };
+  }
 
   return null;
 }
@@ -88,9 +91,14 @@ export function diatonicChords({ tonic, mode }: Key): DegreeChord[] {
   const tonicSemitone = semitoneOf(tonic);
   const degrees = mode === 'major' ? MAJOR_DEGREES : MINOR_DEGREES;
 
-  return degrees.map((degree) => ({
+  // Each degree takes the next letter of the alphabet, so the key uses all
+  // seven and uses each once — which is what a key signature means. Spelling
+  // each chord on its own would give F major an A# where it needs a Bb.
+  const spelledTonic = spell(tonicSemitone, accidentalFor(tonicSemitone, mode));
+
+  return degrees.map((degree, degreeIndex) => ({
     degree: degree.degree,
-    root: PITCH_CLASSES[(tonicSemitone + degree.semitone) % 12],
+    root: spellDegree(spelledTonic, degreeIndex, tonicSemitone + degree.semitone),
     symbol: degree.symbol,
     intervals: degree.intervals,
   }));

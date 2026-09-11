@@ -80,4 +80,27 @@ describe('identifyChord', () => {
   it('is not an inversion when the root is in the bass', () => {
     expect(identifyChord(voicing(3, 2, 0, 0, 0, 3), STANDARD_TUNING)?.isInversion).toBe(false);
   });
+
+  describe('how the name is spelled', () => {
+    // The B flat major triad: Bb-D-F. Calling it A# would use the letter A
+    // twice over and skip B, and no piece of music writes it that way.
+    it('writes a flat-key chord with a flat', () => {
+      const voicing = { 6: 'muted', 5: 1, 4: 3, 3: 3, 2: 3, 1: 1 } as const;
+      expect(identifyChord(voicing, STANDARD_TUNING)?.root).toBe('Bb');
+    });
+
+    it('writes a sharp-key chord with a sharp', () => {
+      // F# major: F#-A#-C#.
+      const voicing = { 6: 2, 5: 4, 4: 4, 3: 3, 2: 2, 1: 2 } as const;
+      expect(identifyChord(voicing, STANDARD_TUNING)?.root).toBe('F#');
+    });
+
+    it('spells the bass of an inversion the same way as the chord', () => {
+      // Eb major over G: an E flat chord, so the bass is written Bb-side too.
+      const voicing = { 6: 'muted', 5: 6, 4: 5, 3: 3, 2: 4, 1: 'muted' } as const;
+      const chord = identifyChord(voicing, STANDARD_TUNING);
+      expect(chord?.root).toBe('Eb');
+      expect(chord?.displayName).not.toMatch(/#/);
+    });
+  });
 });

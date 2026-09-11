@@ -4,7 +4,7 @@ import { ALL_STRINGS, isSounding, voicingSpan, lowestFret, voicingKey } from './
 import { fingerChord } from './chord-fingering';
 import type { ChordVoicing, StringPlay } from './chord-voicing';
 
-const PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+import { semitoneOfPitchClass } from '../music-theory/spelling';
 
 /** Four frets is what a hand covers without shifting. */
 const WINDOW_FRETS = 4;
@@ -22,7 +22,7 @@ export interface VoicingSearch {
 }
 
 function semitoneOf(pitchClass: string): number {
-  return PITCH_CLASSES.indexOf(pitchClass);
+  return semitoneOfPitchClass(pitchClass);
 }
 
 /** The frets on one string, inside a window, whose note belongs to the chord. */

@@ -1,9 +1,19 @@
 import type { Tuning } from '../music-theory/tuning';
 import { getNoteAt } from '../music-theory/notes';
 import { CHORD_QUALITIES } from './chord-formulas';
+import { spell, accidentalFor } from '../music-theory/spelling';
+import type { Accidental } from '../music-theory/spelling';
 import { ALL_STRINGS, isSounding, type ChordVoicing } from './chord-voicing';
 
-const PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+/**
+ * A chord is written in the key it belongs to, and its own quality is the
+ * best guide to which one: a minor third points at a minor key. That is what
+ * decides Bb over A# — the B flat major chord lives in keys written with
+ * flats, and no piece writes an A sharp major triad.
+ */
+function modeOf(intervals: number[]): 'major' | 'minor' {
+  return intervals.includes(3) ? 'minor' : 'major';
+}
 
 export interface IdentifiedChord {
   root: string;
@@ -13,6 +23,8 @@ export interface IdentifiedChord {
   isInversion: boolean;
   /** What the chord is called: "G", "Am7", "G/D". */
   displayName: string;
+  /** How this chord writes its black keys, so the rest of the screen agrees. */
+  accidental: Accidental;
   intervals: number[];
 }
 
@@ -57,8 +69,11 @@ export function identifyChord(voicing: ChordVoicing, tuning: Tuning): Identified
       const hasItsColour = quality.defining.every((interval) => semitones.has((root + interval) % 12));
       if (!explainsEverything || !hasItsColour) continue;
 
-      const rootName = PITCH_CLASSES[root];
-      const bassName = PITCH_CLASSES[bassSemitone];
+      // The bass takes the chord's accidental too: writing Bb/D# would put
+      // two different spellings in one name.
+      const accidental = accidentalFor(root, modeOf(quality.intervals));
+      const rootName = spell(root, accidental);
+      const bassName = spell(bassSemitone, accidental);
       const isInversion = bassSemitone !== root;
 
       candidates.push({
@@ -72,6 +87,7 @@ export function identifyChord(voicing: ChordVoicing, tuning: Tuning): Identified
           symbol: quality.symbol,
           bass: bassName,
           isInversion,
+          accidental,
           displayName: `${rootName}${quality.symbol}${isInversion ? `/${bassName}` : ''}`,
           intervals: quality.intervals,
         },

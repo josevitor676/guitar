@@ -83,8 +83,14 @@ export function ChordPanel() {
           </div>
         </div>
 
+        {/*
+          Only once the chord has a name: before that there is no key to spell
+          the notes in, and guessing one would change the labels under the
+          student's hand as they build.
+        */}
         <ChordNeck
           voicing={voicing}
+          accidental={chord?.accidental}
           onToggleFret={toggleFret}
           onToggleOpen={(string) => setString(string, voicing[string] === 0 ? 'muted' : 0)}
         />
