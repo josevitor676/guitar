@@ -22,6 +22,18 @@ const LEFT_PAD = 96;
 const RIGHT_PAD = 40;
 const SYSTEM_GAP = 46;
 const HEADER_HEIGHT = 78;
+const MARGIN = 24;
+/**
+ * Roughly how wide a character is, as a fraction of the font size. Helvetica
+ * and the sans-serif the SVG falls back to are close enough for this, and the
+ * number is deliberately generous: guessing wide leaves white space on the
+ * right, guessing narrow cuts the title in half.
+ */
+const CHAR_WIDTH = 0.62;
+
+function approximateWidth(text: string, size: number): number {
+  return text.length * CHAR_WIDTH * size;
+}
 
 export type Align = 'left' | 'center';
 
@@ -78,19 +90,26 @@ export function slurMark(position: FretPosition, previous: FretPosition | undefi
 export function layoutTabSheet(sheet: TabSheet, perSystem: number = NOTES_PER_SYSTEM): TabLayout {
   const systems = splitIntoSystems(sheet.positions, perSystem);
   const longest = systems.reduce((most, system) => Math.max(most, system.length), 0);
-  const width = LEFT_PAD + Math.max(longest - 1, 0) * NOTE_GAP + RIGHT_PAD;
+  const staveWidth = LEFT_PAD + Math.max(longest - 1, 0) * NOTE_GAP + RIGHT_PAD;
+
+  const caption = `${sheet.bpm} BPM · ${SUBDIVISION_LABELS[sheet.subdivision]} · ${sheet.positions.length} notas`;
+  // A short exercise makes a narrow stave, and a narrow stave is no reason to
+  // cut the title off: the page is as wide as the widest thing on it.
+  const headerWidth =
+    MARGIN * 2 + Math.max(approximateWidth(sheet.title, 21), approximateWidth(caption, 14));
+  const width = Math.max(staveWidth, Math.ceil(headerWidth));
   const systemHeight = (STRING_COUNT - 1) * LINE_GAP + SYSTEM_GAP;
   const height = HEADER_HEIGHT + Math.max(systems.length, 1) * systemHeight;
 
   const items: DrawItem[] = [
-    { kind: 'text', x: 24, y: 34, text: sheet.title, size: 21, align: 'left', bold: true },
+    { kind: 'text', x: MARGIN, y: 34, text: sheet.title, size: 21, align: 'left', bold: true },
     {
       kind: 'text',
-      x: 24,
+      x: MARGIN,
       y: 56,
       // Tablature without a tempo says which notes to play and nothing about
       // how, which is the half a student needs most a week later.
-      text: `${sheet.bpm} BPM · ${SUBDIVISION_LABELS[sheet.subdivision]} · ${sheet.positions.length} notas`,
+      text: caption,
       size: 14,
       align: 'left',
     },
