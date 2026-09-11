@@ -28,8 +28,8 @@ describe('Fretboard', () => {
 
   it('renders a clickable cell for every string/fret combination in range', () => {
     render(<Fretboard currentIndex={null} />);
-    // 6 strings x 7 frets (1-7) = 42 fret cells
-    expect(screen.getAllByRole('button')).toHaveLength(42);
+    // 6 strings x (7 frets, 1-7, plus the open string) = 48 cells
+    expect(screen.getAllByRole('button')).toHaveLength(48);
   });
 
   it('marks a cell as pressed after it is clicked', async () => {
@@ -149,6 +149,62 @@ describe('Fretboard', () => {
       render(<Fretboard currentIndex={null} mode="append" />);
 
       expect(screen.queryByTestId('repeat-count-5-7')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('the open string', () => {
+    it('gives every string a column of its own, before the first fret', () => {
+      render(<Fretboard currentIndex={null} />);
+
+      expect(screen.getAllByRole('button', { name: /corda \d, solta/i })).toHaveLength(6);
+    });
+
+    it('labels the column zero, the way tablature writes it', () => {
+      render(<Fretboard currentIndex={null} />);
+
+      expect(screen.getByTestId('fret-number-0')).toHaveTextContent('0');
+    });
+
+    it('marks the open string when it is clicked', async () => {
+      render(<Fretboard currentIndex={null} />);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /corda 4, solta/i }));
+      });
+
+      expect(useFretboardStore.getState().selectedNotes).toEqual([{ string: 4, fret: 0 }]);
+    });
+
+    it('shows an imported open string, which used to vanish off the left of the neck', () => {
+      useFretboardStore.setState({ selectedNotes: [{ string: 4, fret: 0 }] });
+      render(<Fretboard currentIndex={null} />);
+
+      expect(screen.getByRole('button', { name: /corda 4, solta/i })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    });
+
+    it('adds the open string again in append mode, so a riff can come back to it', async () => {
+      render(<Fretboard currentIndex={null} mode="append" />);
+      const open = screen.getByRole('button', { name: /corda 6, solta/i });
+
+      await act(async () => {
+        fireEvent.click(open);
+      });
+      await act(async () => {
+        fireEvent.click(open);
+      });
+
+      expect(useFretboardStore.getState().selectedNotes).toHaveLength(2);
+    });
+
+    it('stays put when the window is paged up the neck, since an open string has no fret', () => {
+      useFretboardStore.setState({ minFret: 5, maxFret: 12, selectedNotes: [] });
+      render(<Fretboard currentIndex={null} />);
+
+      expect(screen.getByRole('button', { name: /corda 4, solta/i })).toBeInTheDocument();
+      expect(screen.queryByTestId('fret-number-1')).not.toBeInTheDocument();
     });
   });
 });

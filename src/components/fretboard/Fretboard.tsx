@@ -39,6 +39,12 @@ export function Fretboard({
   // notes were marked in.
   const sequence = usePlaybackSequence();
   const frets = Array.from({ length: maxFret - minFret + 1 }, (_, i) => minFret + i);
+  /**
+   * The open string sits outside the window and never scrolls with it: it is
+   * not a fret, it is the string sounding at its own pitch, and it is always
+   * within reach whatever position the hand is in.
+   */
+  const OPEN_FRET = 0;
   const highlightedPosition = currentIndex !== null ? sequence[currentIndex] : undefined;
   const gridHeightPx = STRING_ORDER.length * ROW_HEIGHT_PX;
 
@@ -46,6 +52,9 @@ export function Fretboard({
     <div className="relative inline-block">
       <div className="flex items-center border-b border-edge pb-1 text-xs text-text-secondary">
         <span className="w-10" />
+        <span data-testid="fret-number-0" className="flex w-14 items-center justify-center">
+          0
+        </span>
         {frets.map((fret) => (
           <span key={fret} data-testid={`fret-number-${fret}`} className="flex w-14 items-center justify-center">
             {fret}
@@ -87,7 +96,7 @@ export function Fretboard({
               <span className="relative z-10 w-10 text-center text-sm text-text-secondary">
                 {getPitchClass(STANDARD_TUNING[string])}
               </span>
-              {frets.map((fret) => {
+              {[OPEN_FRET, ...frets].map((fret) => {
                 const position = { string, fret };
                 const timesPlayed = selectedNotes.filter((note) =>
                   positionsEqual(note, position),
@@ -96,7 +105,10 @@ export function Fretboard({
                 const highlighted = !!highlightedPosition && positionsEqual(highlightedPosition, position);
                 const note = getNoteAt(STANDARD_TUNING, position);
                 return (
-                  <div key={fret} className="relative z-10 border-r border-edge">
+                  <div
+                    key={fret}
+                    className={`relative z-10 border-r ${fret === OPEN_FRET ? 'border-edge-strong' : 'border-edge'}`}
+                  >
                     <FretMarker
                       string={string}
                       fret={fret}

@@ -18,6 +18,9 @@ traz, para cada arquivo, a lista de notas esperadas no formato
 | `exemplo-10-oitavos-repetidos.png` | blocos de `5-5-5` na mesma casa, mudando de corda | a mesma casa tocada três vezes seguidas |
 | `exemplo-11-alternancia.png` | `7-5-7-5-7` e `9-7-5-7-9` | duas notas revezando, cada uma repetida no compasso |
 | `exemplo-12-celula-repetida.pdf` | PDF de 2 páginas, célula de 3 notas girando 3 vezes | repetição atravessando a rasterização e a junção de páginas |
+| `exemplo-13-corda-solta.png` | arpejo que abre na corda ré solta, cheio de casas 6 | corda solta (casa 0) sobrevivendo à leitura |
+| `exemplo-14-corda-solta.pdf` | o mesmo em PDF de 2 páginas | corda solta atravessando a rasterização |
+| `exemplo-15-todos-os-digitos.png` | 0 a 12, mais 16 e três 6 | todo dígito que existe numa tablatura, de uma vez |
 
 Todas as folhas trazem **pauta de cinco linhas junto da tablatura**, além de
 marcações de quiáltera e dinâmica, justamente para verificar que a notação é
@@ -42,6 +45,9 @@ gabarito:
 | exemplo-10 | 18 | 18 | 100% |
 | exemplo-11 | 12 | 12 | 100% |
 | exemplo-12 | 18 | 18 | 100% |
+| exemplo-13 | 16 | 16 | 100% |
+| exemplo-14 | 16 | 16 | 100% |
+| exemplo-15 | 18 | 18 | 100% |
 
 Nos exemplos 6 a 9 a conferência inclui a **articulação**, não só corda e casa:
 um `7b9` só conta como acerto se voltar como bend, e não como hammer-on.
@@ -87,3 +93,25 @@ Antes de qualquer medição, a página é endireitada: a leitura procura, entre
 −4° e +4°, o ângulo em que a tinta se concentra no menor número de fileiras, e
 gira a folha de volta. Uma página já reta mede exatamente zero e não é girada,
 porque toda rotação custa um pouco de nitidez.
+
+## A fonte das folhas
+
+Os dígitos não são todos iguais aos olhos do leitor. Medido nestas folhas, com
+o mesmo `6` desenhado em cinco tipografias:
+
+| fonte | leu o 6 como |
+| --- | --- |
+| DejaVu Sans | `3` |
+| DejaVu Serif | `5` |
+| Ubuntu | `6` |
+| Ubuntu Mono | `6` |
+| DejaVu Sans Mono | `6` |
+
+Não é espaçamento nem densidade — testei as duas coisas, e o erro não se move.
+Também não é o modo do OCR: `SINGLE_CHAR` piora, perde marcas inteiras.
+
+O gerador desenhava em DejaVu Sans, então **as folhas geradas tinham um 6 que
+o app não conseguia ler** — e, como quase nenhuma delas usava a casa 6, isso
+passou despercebido. Agora ele desenha numa fonte cujos dígitos leem limpo, e
+o `exemplo-15` carrega todos os dígitos justamente para que uma fonte ruim não
+volte a entrar sem ninguém notar.

@@ -35,7 +35,9 @@ export function FretMarker({
   return (
     <button
       type="button"
-      aria-label={`corda ${string}, casa ${fret}`}
+      // The open string is named, not numbered: "casa 0" is not what a player
+      // calls it, and the neck has no fret there to point at.
+      aria-label={fret === 0 ? `corda ${string}, solta` : `corda ${string}, casa ${fret}`}
       aria-pressed={selected}
       onClick={onClick}
       style={{ height: `${ROW_HEIGHT_PX}px`, width: `${FRET_CELL_WIDTH_PX}px` }}
