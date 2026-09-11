@@ -9,7 +9,7 @@ traz, para cada arquivo, a lista de notas esperadas no formato
 | `exemplo-1-tercas-repetidas.png` | 3 sistemas, 9 notas cada, padrões repetidos em tercinas, com pauta acima | caso realista denso, parecido com uma folha de estudo |
 | `exemplo-2-escala-casas-altas.png` | 1 sistema, casas de dois dígitos (10, 11, 12) | prova que números de dois dígitos são lidos inteiros |
 | `exemplo-3-uma-corda-por-sistema.png` | 3 sistemas, só 3 notas cada | caso esparso, que exigiu segmentar os dígitos antes do OCR |
-| `exemplo-4-foto-inclinada.jpg` | mesma folha girada 1,6°, fundo amarelado, ruído e compressão JPEG | caso difícil de propósito: foto de celular |
+| `exemplo-4-foto-inclinada.jpg` | mesma folha girada 1,6°, fundo amarelado, ruído e compressão JPEG | caso difícil de propósito: foto de celular, endireitada antes da leitura |
 | `exemplo-5-duas-paginas.pdf` | PDF de 2 páginas, 1 sistema por página, 4 notas cada | prova o caminho do pdf.js e a concatenação de páginas |
 | `exemplo-6-hammer-pull.png` | `3h5`, `7p5` em duas cordas | hammer-on e pull-off |
 | `exemplo-7-slide-bend.png` | `5/9`, `9\5`, `7b9`, `5b7` | slide nos dois sentidos e bend |
@@ -33,7 +33,7 @@ gabarito:
 | exemplo-1 | 27 | 27 | 100% |
 | exemplo-2 | 9 | 9 | 100% |
 | exemplo-3 | 9 | 9 | 100% |
-| exemplo-4 | 6 | 0 | 0% |
+| exemplo-4 | 6 | 6 | 100% |
 | exemplo-5 | 8 | 8 | 100% |
 | exemplo-6 | 8 | 8 | 100% |
 | exemplo-7 | 8 | 8 | 100% |
@@ -46,10 +46,10 @@ gabarito:
 Nos exemplos 6 a 9 a conferência inclui a **articulação**, não só corda e casa:
 um `7b9` só conta como acerto se voltar como bend, e não como hammer-on.
 
-Tudo que não está girado sai completo e na ordem certa. O único que falha é
-o exemplo-4, girado 1,6° de propósito: a detecção depende de linhas
-horizontais escuras, e a inclinação as dissolve. Está descrito em
-`docs/superpowers/specs/2026-09-09-tab-import-design.md`.
+Todas as doze saem completas e na ordem certa, inclusive a foto inclinada —
+que durante um bom tempo foi a única a falhar, e por um motivo concreto: a
+detecção procura linhas horizontais escuras, e a inclinação as dissolve. Ver
+"Páginas tortas" abaixo.
 
 Para refazer a medição, gere os arquivos e rode o app contra eles comparando
 com `gabarito.json`.
@@ -75,3 +75,15 @@ node exemplos/gerador/gerar-exemplos.mjs
 
 Só os exemplos 10 a 12 saem dele; os anteriores foram gerados antes de o
 script existir e estão versionados como estão.
+
+## Páginas tortas
+
+Nenhuma foto sai quadrada com a câmera. O detector de linhas procura tinta que
+corre ao longo de uma fileira de pixels, e **um grau e meio de inclinação já
+espalha cada linha por várias fileiras** — o bastante para ele não achar
+tablatura nenhuma, que é por que o `exemplo-4` marcava 0%.
+
+Antes de qualquer medição, a página é endireitada: a leitura procura, entre
+−4° e +4°, o ângulo em que a tinta se concentra no menor número de fileiras, e
+gira a folha de volta. Uma página já reta mede exatamente zero e não é girada,
+porque toda rotação custa um pouco de nitidez.
