@@ -45,6 +45,12 @@ export function Fretboard({
    * within reach whatever position the hand is in.
    */
   const OPEN_FRET = 0;
+  /**
+   * Where a fret sits among the cells that are drawn. The open string is cell
+   * zero, so every fret is one cell further along than its place in the list
+   * of frets — which is what the position markers have to follow too.
+   */
+  const cellIndexOf = (fret: number) => fret - minFret + 1;
   const highlightedPosition = currentIndex !== null ? sequence[currentIndex] : undefined;
   const gridHeightPx = STRING_ORDER.length * ROW_HEIGHT_PX;
 
@@ -64,7 +70,7 @@ export function Fretboard({
 
       <div className="relative">
         <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
-          {frets.map((fret, index) => {
+          {frets.map((fret) => {
             const isDouble = DOUBLE_INLAY_FRETS.has(fret);
             if (!isDouble && !INLAY_FRETS.has(fret)) return null;
 
@@ -74,7 +80,7 @@ export function Fretboard({
                 data-testid={`inlay-fret-${fret}`}
                 className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-8"
                 style={{
-                  left: `${LABEL_WIDTH_PX + index * FRET_CELL_WIDTH_PX + FRET_CELL_WIDTH_PX / 2}px`,
+                  left: `${LABEL_WIDTH_PX + cellIndexOf(fret) * FRET_CELL_WIDTH_PX + FRET_CELL_WIDTH_PX / 2}px`,
                   top: `${gridHeightPx / 2}px`,
                 }}
               >
@@ -107,6 +113,12 @@ export function Fretboard({
                 return (
                   <div
                     key={fret}
+                    // The width is set here so the fret wire is drawn *inside*
+                    // the cell. Left to the border to add its own pixel, every
+                    // cell would be a pixel wider than the constant says, and
+                    // the neck would drift a pixel further from the markers
+                    // with each fret.
+                    style={{ width: `${FRET_CELL_WIDTH_PX}px` }}
                     className={`relative z-10 border-r ${fret === OPEN_FRET ? 'border-edge-strong' : 'border-edge'}`}
                   >
                     <FretMarker

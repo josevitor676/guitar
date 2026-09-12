@@ -50,10 +50,16 @@ export const MIN_VISIBLE_FRETS = 4;
  * render, or wherever ResizeObserver is unavailable — and the full span is the
  * right assumption there, since it is what a normal screen shows anyway.
  */
-export function fretSpanForWidth(availableWidth: number, cellWidth: number, labelWidth: number): number {
+export function fretSpanForWidth(
+  availableWidth: number,
+  cellWidth: number,
+  /** Everything the neck draws that is not a fret: the string label, and the
+   *  open-string cell that sits before the first fret. */
+  reservedWidth: number,
+): number {
   if (availableWidth <= 0) return MAX_VISIBLE_FRETS;
 
-  const fits = Math.floor((availableWidth - labelWidth) / cellWidth);
+  const fits = Math.floor((availableWidth - reservedWidth) / cellWidth);
   return Math.min(MAX_VISIBLE_FRETS, Math.max(MIN_VISIBLE_FRETS, fits));
 }
 
