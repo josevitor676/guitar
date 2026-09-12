@@ -207,4 +207,42 @@ describe('Fretboard', () => {
       expect(screen.queryByTestId('fret-number-1')).not.toBeInTheDocument();
     });
   });
+
+  describe('the position markers', () => {
+    const LABEL = 40;
+    const CELL = 56;
+    /**
+     * The middle of a fret's own cell. The `+ 1` is the open string, which is
+     * drawn before the first fret and shifts every fret one cell along — the
+     * step the markers were missing.
+     */
+    const centreOf = (fret: number, minFret = 1) =>
+      LABEL + (fret - minFret + 1) * CELL + CELL / 2;
+
+    it('puts each dot on the fret it marks', () => {
+      useFretboardStore.setState({ minFret: 1, maxFret: 12, selectedNotes: [] });
+      render(<Fretboard currentIndex={null} />);
+
+      for (const fret of [3, 5, 7, 9]) {
+        expect(screen.getByTestId(`inlay-fret-${fret}`), `casa ${fret}`).toHaveStyle({
+          left: `${centreOf(fret)}px`,
+        });
+      }
+    });
+
+    it('puts the double dot on the octave, which is how a player finds it', () => {
+      useFretboardStore.setState({ minFret: 1, maxFret: 12, selectedNotes: [] });
+      render(<Fretboard currentIndex={null} />);
+
+      expect(screen.getByTestId('inlay-fret-12')).toHaveStyle({ left: `${centreOf(12)}px` });
+    });
+
+    it('keeps the dots on their frets when the window is paged up the neck', () => {
+      useFretboardStore.setState({ minFret: 5, maxFret: 16, selectedNotes: [] });
+      render(<Fretboard currentIndex={null} />);
+
+      expect(screen.getByTestId('inlay-fret-7')).toHaveStyle({ left: `${centreOf(7, 5)}px` });
+      expect(screen.getByTestId('inlay-fret-12')).toHaveStyle({ left: `${centreOf(12, 5)}px` });
+    });
+  });
 });

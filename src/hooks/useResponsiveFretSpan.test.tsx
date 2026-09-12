@@ -14,6 +14,11 @@ function renderWithWidth(clientWidth: number) {
   });
 }
 
+const LABEL = 40;
+const CELL = 56;
+/** The neck draws the label, then the open-string cell, then the frets. */
+const NOT_FRETS = LABEL + CELL;
+
 describe('useResponsiveFretSpan', () => {
   beforeEach(() => {
     useFretboardStore.setState({ minFret: 1, maxFret: 7 });
@@ -21,13 +26,13 @@ describe('useResponsiveFretSpan', () => {
   });
 
   it('opens the neck to twelve frets when there is room', () => {
-    renderWithWidth(40 + 56 * 12);
+    renderWithWidth(NOT_FRETS + CELL * 12);
 
     expect(useFretboardStore.getState().maxFret).toBe(12);
   });
 
   it('shows fewer frets on a narrow screen', () => {
-    renderWithWidth(40 + 56 * 6);
+    renderWithWidth(NOT_FRETS + CELL * 6);
 
     expect(useFretboardStore.getState().maxFret).toBe(6);
   });
@@ -35,9 +40,20 @@ describe('useResponsiveFretSpan', () => {
   it('resizes the window without moving where the student paged it to', () => {
     useFretboardStore.setState({ minFret: 5, maxFret: 11 });
 
-    renderWithWidth(40 + 56 * 12);
+    renderWithWidth(NOT_FRETS + CELL * 12);
 
     expect(useFretboardStore.getState()).toMatchObject({ minFret: 5, maxFret: 16 });
+  });
+
+  // The open string is a cell like any other and is always drawn, so the frets
+  // get what is left after it. Measuring as though the label were the only
+  // thing beside them makes the neck one cell wider than its container.
+  it('leaves room for the open-string cell, not only for the string label', () => {
+    renderWithWidth(NOT_FRETS + CELL * 6);
+    const { minFret, maxFret } = useFretboardStore.getState();
+
+    const drawnWidth = LABEL + CELL + (maxFret - minFret + 1) * CELL;
+    expect(drawnWidth).toBeLessThanOrEqual(NOT_FRETS + CELL * 6);
   });
 
   it('does nothing when there is no element to measure', () => {

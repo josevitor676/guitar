@@ -19,7 +19,11 @@ export function useResponsiveFretSpan(ref: RefObject<HTMLElement | null>): void 
     if (!element) return;
 
     const apply = () => {
-      setVisibleSpan(fretSpanForWidth(element.clientWidth, FRET_CELL_WIDTH_PX, LABEL_WIDTH_PX));
+      // The label and the open-string cell are both drawn before the first
+      // fret and neither scrolls, so the frets share what is left of the width.
+      // Counting only the label makes the neck one cell wider than its box.
+      const beforeTheFrets = LABEL_WIDTH_PX + FRET_CELL_WIDTH_PX;
+      setVisibleSpan(fretSpanForWidth(element.clientWidth, FRET_CELL_WIDTH_PX, beforeTheFrets));
     };
 
     apply();
