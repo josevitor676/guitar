@@ -1,4 +1,10 @@
 .superpowers/
+# Notes, fixtures and screenshots: the working material of the project,
+# not the application. They stay on disk and out of the repository.
+docs/
+exemplos/
+imagens/
+.claude/
 node_modules/
 dist/
 dist-ssr/

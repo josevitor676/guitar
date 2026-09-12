@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    name: Testes e build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # The version the project is developed against. Pinned rather than
+          # left to "latest" so a new Node release cannot break the build on a
+          # day nobody touched the code.
+          node-version: '20'
+          cache: npm
+
+      # ci, not install: it installs exactly what the lock file says and fails
+      # if the lock file and package.json have drifted apart.
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Rodar os testes
+        run: npm test
+
+      # Runs tsc before Vite, so a type error fails here and not only in the
+      # editor. It is the same command used locally, which is the point: the
+      # pipeline should check what a person checks.
+      - name: Gerar o build de produção
+        run: npm run build
