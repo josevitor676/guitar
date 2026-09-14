@@ -369,4 +369,56 @@ export const EXERCISE_CATALOG: Exercise[] = [
       ]),
     ],
   },
+  {
+    id: 'repeat-cross-string-5-to-8',
+    name: 'Padrão cruzado nas casas 5 a 8',
+    category: 'repeticao',
+    howTo:
+      'Um desenho que atravessa quatro cordas sem sair das casas 5 a 8, e volta pelas mesmas ' +
+      'posições no caminho de casa. Cada casa aparece duas vezes: uma na ida e outra na volta. ' +
+      'Deixe a mão parada na posição e mexa só os dedos — se o braço acompanhar, o padrão perde ' +
+      'a função, que é justamente aprender a alcançar sem se mover.',
+    positions: [
+      { string: 5, fret: 5 },
+      { string: 4, fret: 6 },
+      { string: 3, fret: 7 },
+      { string: 2, fret: 8 },
+      { string: 3, fret: 6 },
+      { string: 4, fret: 7 },
+      { string: 5, fret: 8 },
+      { string: 4, fret: 7 },
+      { string: 3, fret: 6 },
+      { string: 2, fret: 5 },
+      { string: 4, fret: 6 },
+      { string: 3, fret: 7 },
+    ],
+  },
+  {
+    id: 'repeat-open-d-arpeggio',
+    name: 'Arpejo com a corda ré solta',
+    category: 'repeticao',
+    howTo:
+      'Abre na corda ré solta e depois roda um arpejo nas cordas agudas, voltando à mesma casa ' +
+      'várias vezes. A corda solta é a âncora: ela soa sem dedo nenhum, então use esse instante ' +
+      'para pôr a mão na posição das próximas três notas. Palhete alternado e deixe as notas ' +
+      'soarem umas por cima das outras.',
+    positions: [
+      { string: 4, fret: 0 },
+      { string: 1, fret: 6 },
+      { string: 2, fret: 8 },
+      { string: 3, fret: 7 },
+      { string: 5, fret: 8 },
+      { string: 1, fret: 6 },
+      { string: 2, fret: 8 },
+      { string: 3, fret: 7 },
+      { string: 5, fret: 6 },
+      { string: 1, fret: 6 },
+      { string: 2, fret: 8 },
+      { string: 3, fret: 7 },
+      { string: 1, fret: 9 },
+      { string: 1, fret: 8 },
+      { string: 1, fret: 6 },
+      { string: 2, fret: 8 },
+    ],
+  },
 ];
