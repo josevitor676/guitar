@@ -119,16 +119,25 @@ export function App() {
       {activeTab === 'exercises' && (
         // The section takes what is left of the window and the two columns
         // scroll inside it, so the catalog can grow without the page growing.
-        <section className="mt-8 flex h-[calc(100vh-13rem)] flex-col">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Treino Guiado</p>
-          <h2 className="mt-1 text-3xl font-bold">Continue sua evolução.</h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            Pratique com foco. Cada exercício foi pensado para construir sua técnica.
-          </p>
+        // The reserve is what the page spends above the section: the header
+        // and its margin, the tabs, and the page padding. Too small and the
+        // page itself scrolls; too large and the panel is cut short.
+        <section className="mt-4 flex h-[calc(100vh-12rem)] flex-col">
+          {/*
+            One line rather than a heading block. On this tab the neck and the
+            roll are stacked, and on a shorter window every row of chrome above
+            them is a row the student loses off the bottom.
+          */}
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-xl font-bold">Continue sua evolução.</h2>
+            <p className="text-sm text-text-secondary">
+              Pratique com foco. Cada exercício constrói uma técnica.
+            </p>
+          </div>
 
           {/* min-h-0 lets the children shrink; without it a flex child refuses
               to go below its content height and the section overflows anyway. */}
-          <div className="mt-6 flex min-h-0 flex-1 flex-col gap-6 lg:flex-row">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col gap-6 lg:flex-row">
             <div className="subtle-scroll min-h-0 overflow-y-auto pr-1 lg:w-64">
               <ExerciseList />
             </div>

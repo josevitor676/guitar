@@ -16,7 +16,7 @@ const STRING_ORDER: StringNumber[] = [1, 2, 3, 4, 5, 6];
  */
 const PX_PER_NOTE = 72;
 /** Shorter than the neck's rows: the roll sits under it, and both have to fit. */
-const ROW_HEIGHT_PX = 28;
+const ROW_HEIGHT_PX = 24;
 /** Wide enough that the first note, which sits at beat zero, clears the string label. */
 const LABEL_WIDTH_PX = 60;
 const TRAILING_BEATS = 2;

@@ -72,7 +72,7 @@ export function PracticePanel() {
     <Card>
       <div
         data-testid="practice-toolbar"
-        className="mb-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3"
+        className="mb-2 flex flex-wrap items-center justify-between gap-x-5 gap-y-2"
       >
         <div className="flex items-center gap-1 rounded-full border border-edge bg-surface p-1 text-xs font-medium">
           {VIEW_LABELS.map((view) => (
@@ -119,7 +119,7 @@ export function PracticePanel() {
         so the loop count takes the line, and the tempo sits beside it because
         it is the number that keeps moving.
       */}
-      <div className="mb-2 flex items-center gap-3 text-xs text-text-secondary">
+      <div className="mb-1 flex items-center gap-3 text-xs text-text-secondary">
         {session ? (
           <span data-testid="trainer-readout" className="whitespace-nowrap">
             {session.held
@@ -165,7 +165,7 @@ export function PracticePanel() {
             */}
             <Fretboard currentIndex={currentIndex} mode="append" beatHeadKeys={beatHeadKeys} />
 
-            <p className="mt-2 mb-1 text-xs text-text-secondary">
+            <p className="mt-1 mb-1 text-xs text-text-secondary">
               {editable
                 ? 'Clique no braço para acrescentar a nota no fim da sequência — a mesma casa pode ser clicada quantas vezes quiser. Clique numa nota da linha do tempo para removê-la.'
                 : sequenceRunning
