@@ -29,10 +29,20 @@ describe('EXERCISE_CATALOG', () => {
     }
   });
 
-  it('never includes fret 0 (open string) positions', () => {
+  // The catalogue used to forbid fret zero, because the neck had no cell to
+  // draw an open string in and the note would simply vanish. It has one now.
+  it('never asks for a fret below the nut', () => {
     for (const exercise of EXERCISE_CATALOG) {
-      expect(exercise.positions.every((position) => position.fret >= 1)).toBe(true);
+      expect(exercise.positions.every((position) => position.fret >= 0)).toBe(true);
     }
+  });
+
+  it('uses an open string somewhere, now that the neck can show one', () => {
+    const openStrings = EXERCISE_CATALOG.filter((exercise) =>
+      exercise.positions.some((position) => position.fret === 0),
+    );
+
+    expect(openStrings.length).toBeGreaterThan(0);
   });
 
   it('covers each technique with an exercise of its own', () => {
