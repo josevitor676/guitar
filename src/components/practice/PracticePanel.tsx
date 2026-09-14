@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Info } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Fretboard } from '../fretboard/Fretboard';
@@ -50,6 +51,14 @@ export function PracticePanel() {
     activeTab === 'exercises'
       ? EXERCISE_CATALOG.find((exercise) => exercise.id === activeExerciseId)?.howTo
       : undefined;
+
+  // Folded away by default. The text is worth reading once; the neck and the
+  // roll are worked with the whole time, and on a short window the paragraph
+  // is the difference between the roll being on screen and the panel
+  // scrolling. It folds itself back when another exercise is opened, so the
+  // next one does not arrive in a state the student had just closed.
+  const [showingHowTo, setShowingHowTo] = useState(false);
+  useEffect(() => setShowingHowTo(false), [activeExerciseId]);
 
   const neckRef = useRef<HTMLDivElement>(null);
   useResponsiveFretSpan(neckRef);
@@ -104,10 +113,10 @@ export function PracticePanel() {
         </div>
       </div>
 
-      {howTo && (
+      {howTo && showingHowTo && (
         <p
           data-testid="exercise-how-to"
-          className="mb-4 rounded-2xl border border-edge bg-body px-4 py-3 text-sm leading-relaxed text-text-secondary"
+          className="mb-2 rounded-2xl border border-edge bg-body px-4 py-2 text-sm leading-relaxed text-text-secondary"
         >
           {howTo}
         </p>
@@ -120,6 +129,27 @@ export function PracticePanel() {
         it is the number that keeps moving.
       */}
       <div className="mb-1 flex items-center gap-3 text-xs text-text-secondary">
+        {/*
+          On the transport bar this button had no room: the bar is already full
+          at a normal width, and one more control wrapped it onto a second row
+          — 52 pixels, which is more than the paragraph it was meant to save.
+          This line carries a count and a progress bar and has width to spare.
+        */}
+        {howTo && (
+          <button
+            type="button"
+            aria-pressed={showingHowTo}
+            onClick={() => setShowingHowTo(!showingHowTo)}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 transition-all duration-200 ${
+              showingHowTo
+                ? 'border-accent bg-accent-dim text-text-primary'
+                : 'border-edge hover:border-accent hover:text-accent'
+            }`}
+          >
+            <Info className="h-3 w-3" />
+            Como tocar
+          </button>
+        )}
         {session ? (
           <span data-testid="trainer-readout" className="whitespace-nowrap">
             {session.held

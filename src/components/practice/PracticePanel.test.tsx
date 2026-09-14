@@ -74,13 +74,52 @@ describe('PracticePanel', () => {
   });
 
   describe('the exercise instructions', () => {
-    it('shows them on the exercises tab', () => {
+    // Instructions are read once; the neck and the roll are used the whole
+    // time. On a short window the text is the difference between the roll
+    // being on screen and the panel scrolling, so it waits to be asked for.
+    it('keeps them folded away until the student asks', () => {
       useUiStore.setState({ activeTab: 'exercises' });
       useExerciseStore.setState({ activeExerciseId: 'technique-hammer-on-ladder' });
 
       render(<PracticePanel />);
 
+      expect(screen.queryByTestId('exercise-how-to')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /como tocar/i })).toBeInTheDocument();
+    });
+
+    it('shows them when the button is pressed, and folds them back', () => {
+      useUiStore.setState({ activeTab: 'exercises' });
+      useExerciseStore.setState({ activeExerciseId: 'technique-hammer-on-ladder' });
+      render(<PracticePanel />);
+
+      fireEvent.click(screen.getByRole('button', { name: /como tocar/i }));
       expect(screen.getByTestId('exercise-how-to')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /como tocar/i }));
+      expect(screen.queryByTestId('exercise-how-to')).not.toBeInTheDocument();
+    });
+
+    // Otherwise the next exercise opens with its text already pushing the roll
+    // down, which is the state the student just chose to leave.
+    it('folds them away again when another exercise is opened', () => {
+      useUiStore.setState({ activeTab: 'exercises' });
+      useExerciseStore.setState({ activeExerciseId: 'technique-hammer-on-ladder' });
+      const { rerender } = render(<PracticePanel />);
+      fireEvent.click(screen.getByRole('button', { name: /como tocar/i }));
+
+      useExerciseStore.setState({ activeExerciseId: 'technique-pull-off-ladder' });
+      rerender(<PracticePanel />);
+
+      expect(screen.queryByTestId('exercise-how-to')).not.toBeInTheDocument();
+    });
+
+    it('offers no button for an exercise that has no instructions', () => {
+      useUiStore.setState({ activeTab: 'exercises' });
+      useExerciseStore.setState({ activeExerciseId: 'warmup-1234-low-e' });
+
+      render(<PracticePanel />);
+
+      expect(screen.queryByRole('button', { name: /como tocar/i })).not.toBeInTheDocument();
     });
 
     it('leaves them behind on the practice tab, where no exercise is open', () => {
@@ -89,17 +128,10 @@ describe('PracticePanel', () => {
 
       render(<PracticePanel />);
 
-      expect(screen.queryByTestId('exercise-how-to')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /como tocar/i })).not.toBeInTheDocument();
     });
 
-    it('shows nothing for an exercise that has no instructions', () => {
-      useUiStore.setState({ activeTab: 'exercises' });
-      useExerciseStore.setState({ activeExerciseId: 'warmup-1234-low-e' });
 
-      render(<PracticePanel />);
-
-      expect(screen.queryByTestId('exercise-how-to')).not.toBeInTheDocument();
-    });
   });
 
   describe('building a sequence on the timeline', () => {
