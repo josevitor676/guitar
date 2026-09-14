@@ -23,6 +23,13 @@ const TRAILING_BEATS = 2;
 /** Beats per bar, which is where the heavier divider falls. */
 const BEATS_PER_BAR = 4;
 const SCROLL_MARGIN_PX = 120;
+/** Half a note. A note is a circle centred on its string line, so it reaches
+ *  this far past the line, above and below. */
+const NOTE_RADIUS_PX = 14;
+/** The pitch name sits this far above its note. */
+const PITCH_LABEL_ROOM_PX = 16;
+/** A slur's letter sits higher still, above the note it arrives at. */
+const SLUR_LABEL_ROOM_PX = 44;
 
 interface TimelineRollProps {
   timeline: TimedNote[];
@@ -61,6 +68,11 @@ export function TimelineRoll({
   // A slur label sits 40px above its note, which on the first string is above
   // the grid. Only a sequence that has one needs the room reserved.
   const hasSlurs = timeline.some((note) => !!note.position.articulation);
+  // The outer lines sit half a row inside the grid, so a note on one of them
+  // hangs over the edge by whatever its radius has left. Clipped, and the
+  // bottom string's notes come out with a slice taken off them.
+  const overhang = Math.max(0, NOTE_RADIUS_PX - ROW_HEIGHT_PX / 2);
+  const roomAbove = hasSlurs ? SLUR_LABEL_ROOM_PX : overhang + PITCH_LABEL_ROOM_PX;
 
   // Dividers fall *between* notes, not through them, so each note sits inside
   // its own cell exactly as it sits between two frets on the neck. Boundary k
@@ -94,7 +106,8 @@ export function TimelineRoll({
   return (
     <div
       ref={scrollRef}
-      className={`subtle-scroll relative overflow-x-auto overflow-y-hidden ${hasSlurs ? 'pt-11' : 'pt-3'}`}
+      style={{ paddingTop: `${roomAbove}px`, paddingBottom: `${overhang}px` }}
+      className="subtle-scroll relative overflow-x-auto overflow-y-hidden"
     >
       <div className="relative" style={{ width: `${widthPx}px`, height: `${gridHeightPx}px` }}>
         {/*
