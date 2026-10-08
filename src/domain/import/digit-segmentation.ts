@@ -8,8 +8,23 @@ const MIN_HEIGHT_RATIO = 0.2;
 const MAX_HEIGHT_RATIO = 1.1;
 const MIN_WIDTH_RATIO = 0.08;
 const MAX_WIDTH_RATIO = 1.2;
-/** Marks closer than this, in spacings, are two digits of one number. */
-const JOIN_GAP_RATIO = 0.35;
+/**
+ * Marks closer than this, as a fraction of a digit's height, are two digits of
+ * one number. Measuring the gap against the digit rather than against the
+ * spacing between strings is what keeps it right on both a cramped sheet and a
+ * generous one: the strings can be far apart while the numbers are small.
+ */
+const JOIN_GAP_OF_HEIGHT = 0.5;
+/**
+ * A fret number is centered on its string, within this fraction of a spacing.
+ * Ornaments drawn above the tablature — a bend arrow, a "FULL" label — are not.
+ */
+const ON_LINE_RATIO = 0.22;
+/** How far a fret number's height may stray from the other numbers' on the page. */
+const MIN_HEIGHT_OF_MEDIAN = 0.6;
+const MAX_HEIGHT_OF_MEDIAN = 1.45;
+/** Two halves of a severed digit overlap horizontally by at least this much. */
+const STITCH_OVERLAP_RATIO = 0.5;
 /** A guard against a pathological image producing millions of components. */
 const MAX_BOXES = 400;
 
@@ -34,6 +49,14 @@ function spacingOf(system: TabSystem): number {
  * through. So a pixel on a line row survives when ink continues directly above
  * or below the line — that ink belongs to a symbol crossing the line, not to
  * the line itself.
+ *
+ * That per-column test is not enough on its own. Engraved tablature interrupts
+ * the string where a number sits, and inside that gap the only ink on the row
+ * is the number's own stroke. Where the stroke runs horizontally for a few
+ * pixels — the waist of a 2, the middle of a 3 — no ink lies directly over or
+ * under it, and the column test erases it, splitting the digit in half. So a
+ * short run of ink on the row, short enough that it cannot be the string, is
+ * kept whole as soon as any part of it continues above or below.
  */
 function inkMaskWithoutLines(image: GrayImage, system: TabSystem): Uint8Array {
   const { data, width, height } = image;
@@ -66,12 +89,12 @@ function boxesOverlapVertically(a: DigitBox, b: DigitBox): boolean {
 }
 
 /** Joins side-by-side marks that form one number, such as the 1 and 2 of "12". */
-function joinAdjacent(boxes: DigitBox[], spacing: number): DigitBox[] {
+function joinAdjacent(boxes: DigitBox[], maxGap: number): DigitBox[] {
   const joined: DigitBox[] = [];
 
   for (const box of boxes) {
     const previous = joined[joined.length - 1];
-    const closeEnough = previous && box.x0 - previous.x1 <= spacing * JOIN_GAP_RATIO;
+    const closeEnough = previous && box.x0 - previous.x1 <= maxGap;
 
     if (previous && closeEnough && boxesOverlapVertically(previous, box)) {
       previous.x1 = Math.max(previous.x1, box.x1);
@@ -93,6 +116,90 @@ function joinAdjacent(boxes: DigitBox[], spacing: number): DigitBox[] {
  * a wide, mostly blank strip, the OCR engine finds nothing, but handed one
  * tightly cropped digit it reads reliably.
  */
+/**
+ * Sews back together a digit the string cut in half.
+ *
+ * Erasing a string leaves behind whatever ink visibly crosses it, column by
+ * column. Where a glyph's own stroke runs flat along the string — the waist of
+ * a 2, the middle of a 3 — no ink lies directly above or below it, so those
+ * columns go with the string and the digit falls into an upper and a lower
+ * piece. Each piece is half-height, which is exactly what an ornament looks
+ * like, so they have to be rejoined before anything is thrown away.
+ *
+ * Two pieces belong together when one sits above a string and the other below
+ * that same string, at the same place along it.
+ */
+function stitchAcrossLines(boxes: DigitBox[], system: TabSystem): DigitBox[] {
+  const stitched: DigitBox[] = [];
+
+  for (const box of boxes) {
+    const partner = stitched.find((other) => {
+      const overlap = Math.min(other.x1, box.x1) - Math.max(other.x0, box.x0);
+      const narrower = Math.min(other.x1 - other.x0, box.x1 - box.x0);
+      if (overlap < narrower * STITCH_OVERLAP_RATIO) return false;
+
+      const [upper, lower] = other.y0 <= box.y0 ? [other, box] : [box, other];
+      if (lower.y0 - upper.y1 > LINE_HALF_THICKNESS * 2 + 2) return false;
+      return system.lineYs.some((lineY) => upper.y1 <= lineY + LINE_HALF_THICKNESS && lineY <= lower.y0 + LINE_HALF_THICKNESS);
+    });
+
+    if (partner) {
+      partner.x0 = Math.min(partner.x0, box.x0);
+      partner.x1 = Math.max(partner.x1, box.x1);
+      partner.y0 = Math.min(partner.y0, box.y0);
+      partner.y1 = Math.max(partner.y1, box.y1);
+      continue;
+    }
+
+    stitched.push({ ...box });
+  }
+
+  return stitched;
+}
+
+/** How far a box's middle sits from the nearest string. */
+function distanceToNearestLine(box: DigitBox, system: TabSystem): number {
+  const center = (box.y0 + box.y1) / 2;
+  return Math.min(...system.lineYs.map((lineY) => Math.abs(lineY - center)));
+}
+
+/**
+ * Drops everything that is not a fret number.
+ *
+ * Tablature found in the wild draws its techniques as pictures rather than as
+ * letters: a slide is a slanted line between two numbers, a bend is a curved
+ * arrow arching above the staff with a "½" or "FULL" beside it. Each of those
+ * is ink inside the system, so each used to be cropped and handed to the OCR,
+ * which dutifully reported a digit for it — one imported sheet came back as a
+ * wall of 1s.
+ *
+ * Two things tell a fret number from a drawing. It sits centered on a string,
+ * where an arrow and its label arch above. And it is the same height as the
+ * other numbers on the page, where a slide's line is a flat sliver. The height
+ * to compare against is measured from the boxes sitting on a string, since
+ * those are overwhelmingly the numbers.
+ */
+function onlyFretNumbers(
+  boxes: DigitBox[],
+  system: TabSystem,
+  spacing: number,
+): { kept: DigitBox[]; digitHeight: number } {
+  const onLine = boxes.filter((box) => distanceToNearestLine(box, system) <= spacing * ON_LINE_RATIO);
+  if (onLine.length === 0) return { kept: boxes, digitHeight: spacing };
+
+  const heights = onLine.map((box) => box.y1 - box.y0).sort((a, b) => a - b);
+  const digitHeight = heights[Math.floor(heights.length / 2)];
+
+  const kept = onLine.filter((box) => {
+    const boxHeight = box.y1 - box.y0;
+    return (
+      boxHeight >= digitHeight * MIN_HEIGHT_OF_MEDIAN && boxHeight <= digitHeight * MAX_HEIGHT_OF_MEDIAN
+    );
+  });
+
+  return { kept, digitHeight };
+}
+
 export function findDigitBoxes(image: GrayImage, system: TabSystem): DigitBox[] {
   const { width, height } = image;
   const spacing = spacingOf(system);
@@ -161,7 +268,8 @@ export function findDigitBoxes(image: GrayImage, system: TabSystem): DigitBox[] 
   });
 
   plausible.sort((a, b) => a.x0 - b.x0);
-  return joinAdjacent(plausible, spacing);
+  const { kept, digitHeight } = onlyFretNumbers(stitchAcrossLines(plausible, system), system, spacing);
+  return joinAdjacent(kept, digitHeight * JOIN_GAP_OF_HEIGHT);
 }
 
 const MIN_OCR_SCALE = 1;

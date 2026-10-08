@@ -123,6 +123,42 @@ describe('findDigitBoxes', () => {
 
     expect(findDigitBoxes(image, system)).toHaveLength(1);
   });
+
+  // Tablature found in the wild draws its techniques as pictures rather than as
+  // letters, and every one of those drawings is ink inside the system.
+  describe('drawn techniques', () => {
+    it('ignores the slanted line a slide is drawn as', () => {
+      const image = withTabLines(blankPage());
+      drawDigit(image, 60, 2);
+      drawDigit(image, 160, 2);
+      // A flat sliver between the two numbers, on their line.
+      drawRect(image, 80, LINE_YS[2] - 2, 60, 4);
+
+      expect(findDigitBoxes(image, system)).toHaveLength(2);
+    });
+
+    it('ignores a bend arrow and its label arching over the staff', () => {
+      const image = withTabLines(blankPage());
+      drawDigit(image, 60, 2);
+      drawDigit(image, 160, 2);
+      // The arrow's shaft, rising between the two numbers.
+      drawRect(image, 108, LINE_YS[2] - 20, 4, 18);
+      // The "FULL" beside it, set in the small type labels use.
+      drawRect(image, 120, LINE_YS[2] - 23, 24, 7);
+
+      expect(findDigitBoxes(image, system)).toHaveLength(2);
+    });
+
+    it('keeps a real number that happens to be taller than its neighbours', () => {
+      const image = withTabLines(blankPage());
+      drawDigit(image, 60, 2);
+      drawDigit(image, 160, 2);
+      // A ghost note printed in parentheses stands taller than a bare digit.
+      drawRect(image, 254, LINE_YS[2] - 10, 12, 21);
+
+      expect(findDigitBoxes(image, system)).toHaveLength(3);
+    });
+  });
 });
 
 describe('scaleForBox', () => {
